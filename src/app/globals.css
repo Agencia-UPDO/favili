@@ -76,3 +76,20 @@
     animation: none;
   }
 }
+
+/* Carrossel contínuo só com CSS (sai pronto do servidor): a faixa tem a lista duas vezes e anda metade */
+@keyframes esteira {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@utility animate-esteira {
+  animation: esteira 40s linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}

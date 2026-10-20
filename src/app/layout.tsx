@@ -3,7 +3,7 @@ import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { AppContextProvider } from '@/context/AppContext';
 import { interTight, montserrat } from '@/utils/font';
 import { Metadata } from 'next';
-import { ReactNode, Suspense } from 'react';
+import { ReactNode } from 'react';
 import './globals.css';
 
 // Endereço público do site: defina NEXT_PUBLIC_SITE_URL no deploy (a Vercel preenche sozinha).
@@ -41,9 +41,7 @@ export default function RootLayout({
       <body className={`${interTight.variable} ${montserrat.variable} bg-white antialiased`}>
         <AppContextProvider>
           <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
-            <Suspense>
-              <SmoothScrollProvider>{children}</SmoothScrollProvider>
-            </Suspense>
+            <SmoothScrollProvider>{children}</SmoothScrollProvider>
           </ThemeProvider>
         </AppContextProvider>
       </body>

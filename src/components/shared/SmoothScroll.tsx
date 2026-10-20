@@ -1,6 +1,6 @@
 'use client';
 import { ReactLenis, useLenis } from 'lenis/react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useRef } from 'react';
 
 interface SmoothScrollingProps {
@@ -8,8 +8,8 @@ interface SmoothScrollingProps {
 }
 
 const SmoothScrollProvider = ({ children }: Readonly<SmoothScrollingProps>) => {
+  // Sem useSearchParams: ele obrigava a página inteira a ser montada só no navegador
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const previousPathnameRef = useRef<string>(pathname);
   const isInitialRender = useRef(true);
 
@@ -24,7 +24,7 @@ const SmoothScrollProvider = ({ children }: Readonly<SmoothScrollingProps>) => {
     // Update refs
     previousPathnameRef.current = pathname;
     isInitialRender.current = false;
-  }, [pathname, searchParams, lenis]);
+  }, [pathname, lenis]);
 
   useEffect(() => {
     if (!lenis) {

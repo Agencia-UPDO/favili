@@ -1,8 +1,5 @@
-'use client';
-
 import { empresas } from '@/data/empreend';
 import Image from 'next/image';
-import Marquee from 'react-fast-marquee';
 import RevealAnimation from '../animation/RevealAnimation';
 import Kicker from './Kicker';
 
@@ -28,16 +25,18 @@ const Empresas = () => {
           </div>
         </div>
 
-        {/* carrossel contínuo de logos; pausa ao passar o mouse */}
+        {/* carrossel contínuo de logos só com CSS (sai pronto do servidor); pausa ao passar o mouse.
+            A lista aparece duas vezes e a faixa anda metade, para o laço não ter emenda. */}
         <RevealAnimation delay={0.3}>
-          <div className="relative">
+          <div className="relative overflow-hidden">
             <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-white to-transparent md:w-40" />
             <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-white to-transparent md:w-40" />
-            <Marquee autoFill pauseOnHover speed={45}>
-              <ul className="flex py-4">
-                {empresas.map((e) => (
+            <div className="flex w-max">
+              <ul className="animate-esteira flex w-max py-4 hover:[animation-play-state:paused]">
+                {[...empresas, ...empresas].map((e, i) => (
                   <li
-                    key={e.nome}
+                    key={`${e.nome}-${i}`}
+                    aria-hidden={i >= empresas.length || undefined}
                     className="border-stroke-2 hover:border-emp-blue mx-2 flex w-[180px] flex-col overflow-hidden rounded-[22px] border bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_40px_-28px_rgba(2,31,92,0.6)] md:mx-3 md:w-[240px]">
                     <div className="relative aspect-[4/3] bg-white">
                       <Image
@@ -54,7 +53,7 @@ const Empresas = () => {
                   </li>
                 ))}
               </ul>
-            </Marquee>
+            </div>
           </div>
         </RevealAnimation>
       </div>
