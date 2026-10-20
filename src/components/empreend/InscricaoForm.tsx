@@ -6,11 +6,8 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { formatPhone, inputClass, pillActive, pillClass } from './formStyles';
 
-const acompanhantes = ['Só eu', '+1', '+2', '+3 ou mais'];
-
 const InscricaoForm = ({ className }: { className?: string }) => {
   const [perfil, setPerfil] = useState(perfis[0]);
-  const [companhia, setCompanhia] = useState(acompanhantes[0]);
   const [telefone, setTelefone] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'error'>('idle');
   const router = useRouter();
@@ -23,7 +20,6 @@ const InscricaoForm = ({ className }: { className?: string }) => {
       whatsapp: telefone,
       email: data.get('email'),
       perfil,
-      acompanhantes: companhia,
       origem: 'empreend-2026',
     };
     setStatus('sending');
@@ -110,25 +106,9 @@ const InscricaoForm = ({ className }: { className?: string }) => {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-2">
-        <legend className="text-tagline-2 text-secondary mb-2 block font-medium">Vai com mais alguém?</legend>
-        <div className="flex gap-2">
-          {acompanhantes.map((a) => (
-            <button
-              type="button"
-              key={a}
-              aria-pressed={companhia === a}
-              onClick={() => setCompanhia(a)}
-              className={cn(pillClass, 'px-2', companhia === a && pillActive)}>
-              {a}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
       <label className="text-tagline-3 text-secondary/60 flex cursor-pointer items-start gap-3">
         <input type="checkbox" required className="accent-emp-blue mt-0.5 size-4 shrink-0" />
-        Autorizo a Faculdade Vidal a entrar em contato pelo WhatsApp e e-mail sobre o Empreend.
+        Autorizo a Faculdade Vidal a entrar em contato por telefone e e-mail sobre o Empreend.
       </label>
 
       <button
