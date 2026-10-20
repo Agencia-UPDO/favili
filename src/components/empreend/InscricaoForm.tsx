@@ -108,7 +108,7 @@ const InscricaoForm = ({ className }: { className?: string }) => {
 
       <label className="text-tagline-3 text-secondary/60 flex cursor-pointer items-start gap-3">
         <input type="checkbox" required className="accent-emp-blue mt-0.5 size-4 shrink-0" />
-        Autorizo a Faculdade Vidal a entrar em contato por telefone e e-mail sobre o Empreend.
+        Autorizo a Faculdade Vidal a entrar em contato pelo WhatsApp e e-mail sobre o Empreend.
       </label>
 
       <button
