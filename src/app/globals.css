@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+@import '../styles/variables.css';
+@import '../styles/icon-font.css';
+@import '../styles/typography.css';
+@import '../styles/common.css';
+@import '../styles/base.css';
+@import '../styles/button.css';
+@import '../styles/badge.css';
+@import '../styles/header.css';
+@import '../styles/custom-swiper.css';
+@import '../styles/number-animation.css';
+@import '../styles/lenis.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========== Identidade Empreend 2026 (cores do logo) =========== */
+@theme {
+  --color-emp-navy: #021f5c;
+  --color-emp-navy-dark: #011440;
+  --color-emp-blue: #1357d9;
+  --color-emp-royal: #0533a0;
+  --color-emp-cyan: #00cfff;
+}
+
+@theme inline {
+  --font-display: var(--font-montserrat), 'Inter Tight', sans-serif;
+}
+
+/* Letreiro do logo: Montserrat bem pesada, caixa alta e apertada */
+@utility font-letreiro {
+  font-family: var(--font-montserrat), 'Inter Tight', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+/* Subtítulo espaçado, como "F E I R A  D E  N E G Ó C I O S" */
+@utility font-espacada {
+  font-family: var(--font-montserrat), 'Inter Tight', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+/* Faixa azul do logo: degradê marinho → royal */
+@utility bg-faixa {
+  background-color: var(--color-emp-navy);
+  background-image: linear-gradient(180deg, #0533a0 0%, #021f5c 100%);
+}
+
+/* Fundo marinho do logo; as linhas de crescimento vêm do componente LinhasCrescimento */
+@utility bg-grafico {
+  background-color: var(--color-emp-navy);
+  background-image: linear-gradient(160deg, #0533a0 0%, #021f5c 55%, #011440 100%);
+}
+
+@utility bg-grafico-claro {
+  background-color: #f4f7fd;
+}
+
+/* Flutuação suave */
+@keyframes flutuar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@utility animate-flutuar {
+  animation: flutuar 3.2s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
