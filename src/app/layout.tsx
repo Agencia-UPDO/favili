@@ -3,8 +3,12 @@ import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { AppContextProvider } from '@/context/AppContext';
 import { interTight, montserrat } from '@/utils/font';
 import { Metadata } from 'next';
+import Script from 'next/script';
 import { ReactNode } from 'react';
 import './globals.css';
+
+// Google Tag Manager da Faculdade Vidal
+const GTM_ID = 'GTM-W6VKJFX6';
 
 // Endereço público do site: defina NEXT_PUBLIC_SITE_URL no deploy (a Vercel preenche sozinha).
 const siteUrl =
@@ -39,6 +43,21 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${interTight.variable} ${montserrat.variable} bg-white antialiased`}>
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
+        <Script id="gtm" strategy="afterInteractive">
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${GTM_ID}');`}
+        </Script>
         <AppContextProvider>
           <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
             <SmoothScrollProvider>{children}</SmoothScrollProvider>
