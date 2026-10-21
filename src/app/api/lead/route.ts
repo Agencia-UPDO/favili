@@ -52,10 +52,9 @@ export async function POST(request: Request) {
     // O formulário exige o aceite do termo de contato por WhatsApp e e-mail
     legal_bases: [{ category: 'communications', type: 'consent', status: 'granted' }],
   };
-  // Campo personalizado opcional para o perfil (ex.: cf_perfil), se ele existir na conta da RD
-  const campoPerfil = process.env.RDSTATION_CAMPO_PERFIL;
-  if (campoPerfil && lead.perfil) {
-    payload[campoPerfil] = lead.perfil;
+  // Campo personalizado "Você é" na RD (texto aberto)
+  if (lead.perfil) {
+    payload.cf_voce_e = lead.perfil;
   }
 
   try {
