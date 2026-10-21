@@ -7,7 +7,10 @@ export const pillClass =
 export const pillActive = 'border-emp-blue bg-emp-blue hover:border-emp-blue text-white';
 
 export const formatPhone = (value: string) => {
-  const d = value.replace(/\D/g, '').slice(0, 11);
+  // O preenchimento automático costuma trazer o +55; sem tirar, o 55 vira DDD e o número sai errado
+  let d = value.replace(/\D/g, '');
+  if (d.length > 11 && d.startsWith('55')) d = d.slice(2);
+  d = d.slice(0, 11);
   if (d.length <= 2) return d ? `(${d}` : '';
   if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
