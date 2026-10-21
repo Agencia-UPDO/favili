@@ -36,10 +36,9 @@ export async function POST(request: Request) {
 
   const apiKey = process.env.RDSTATION_API_KEY;
   if (!apiKey) {
-    // Sem token não há para onde mandar: em produção é erro, para o lead não se perder em silêncio.
-    console.error('[lead empreend-2026] RDSTATION_API_KEY não definida', lead);
-    const producao = process.env.NODE_ENV === 'production';
-    return NextResponse.json({ ok: !producao }, { status: producao ? 500 : 200 });
+    // Sem token, o lead fica só no log (como antes da integração) e o formulário segue funcionando.
+    console.error('[lead empreend-2026] RDSTATION_API_KEY não definida; lead não enviado à RD', lead);
+    return NextResponse.json({ ok: true });
   }
 
   const origem = lead.origem || 'empreend-2026';
