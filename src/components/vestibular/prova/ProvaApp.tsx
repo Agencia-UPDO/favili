@@ -356,6 +356,14 @@ const ProvaApp = () => {
         </p>
       )}
 
+      {/* Progresso da prova (a prova segue em sequência, sem pular questões) */}
+      <div className="mb-4 h-2 overflow-hidden rounded-full bg-white" aria-hidden>
+        <div
+          className="bg-vest-blue h-full rounded-full transition-all"
+          style={{ width: `${((atual + 1) / questoes.length) * 100}%` }}
+        />
+      </div>
+
       <article className="space-y-5 rounded-[24px] bg-white p-5 md:p-8">
         <p className="text-vest-blue text-[13px] font-bold tracking-[0.12em] uppercase">
           Questão {q.numero} de {questoes.length} · {q.area}
@@ -423,35 +431,6 @@ const ProvaApp = () => {
             Entregar prova
           </button>
         )}
-      </div>
-
-      {/* Mapa das questões */}
-      <div className="mt-6 rounded-[24px] bg-white p-5">
-        <p className="text-vest-navy mb-3 text-[14px] font-bold">Mapa da prova</p>
-        <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
-          {questoes.map((x, idx) => (
-            <button
-              key={x.id}
-              type="button"
-              onClick={() => setAtual(idx)}
-              aria-label={`Questão ${x.numero}${respostas[x.id] ? ', respondida' : ', em branco'}`}
-              className={cn(
-                'h-11 cursor-pointer rounded-xl border-2 text-[15px] font-bold',
-                respostas[x.id]
-                  ? 'bg-vest-blue border-vest-blue text-white'
-                  : 'border-stroke-3 text-vest-navy bg-white',
-                idx === atual && 'ring-vest-yellow ring-4',
-              )}>
-              {x.numero}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => setConfirmar(true)}
-          className="text-vest-blue mt-4 w-full cursor-pointer text-center text-[15px] font-bold underline-offset-4 hover:underline">
-          Entregar prova
-        </button>
       </div>
 
       {confirmar && (
