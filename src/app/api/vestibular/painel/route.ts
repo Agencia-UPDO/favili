@@ -33,6 +33,7 @@ const baixar = (nome: string, conteudo: string) =>
   });
 
 const nomeForma = (id: string) => formas.find((f) => f.id === id)?.rotulo ?? id;
+const dataBr = (iso?: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '');
 const brasilia = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '';
 
@@ -84,7 +85,7 @@ export async function GET(request: Request) {
           brasilia(i.criado_em),
           i.nome,
           i.cpf,
-          i.nascimento,
+          dataBr(i.nascimento),
           i.email,
           i.celular,
           nomeForma(i.forma),
@@ -112,8 +113,8 @@ export async function GET(request: Request) {
   }
 
   const previa = await previaResultado();
+  const porNumero = new Map(inscricoes.map((i) => [i.numero, i]));
   if (planilha === 'resultado') {
-    const porNumero = new Map(inscricoes.map((i) => [i.numero, i]));
     return baixar(
       'vestibular-2027-1-resultado.csv',
       csv([
@@ -123,6 +124,10 @@ export async function GET(request: Request) {
           'Nº inscrição',
           'Nome',
           'CPF',
+          'Nascimento',
+          'E-mail',
+          'WhatsApp',
+          'Forma de ingresso',
           'Curso',
           'Nota',
           'Nota Matemática',
@@ -135,6 +140,10 @@ export async function GET(request: Request) {
           l.numero,
           porNumero.get(l.numero)?.nome,
           porNumero.get(l.numero)?.cpf,
+          dataBr(porNumero.get(l.numero)?.nascimento),
+          porNumero.get(l.numero)?.email,
+          porNumero.get(l.numero)?.celular,
+          nomeForma(porNumero.get(l.numero)?.forma ?? ''),
           l.oferta,
           l.nota,
           l.notaMatematica,
@@ -170,10 +179,15 @@ export async function GET(request: Request) {
         numero: i.numero,
         criadoEm: i.criado_em,
         nome: i.nome,
+        cpf: i.cpf,
+        nascimento: i.nascimento,
         celular: i.celular,
         email: i.email,
         forma: nomeForma(i.forma),
-        curso: `${i.curso} · ${i.modalidade} · ${i.unidade}`,
+        curso: `${i.curso} · ${i.modalidade} · ${i.unidade} · ${i.turno}`,
+        origemAcademica: [i.instituicao_origem, i.curso_origem, i.periodo_atual && `${i.periodo_atual} período`]
+          .filter(Boolean)
+          .join(' · '),
         prova: i.faz_prova
           ? `${i.dia_prova?.split('-').reverse().slice(0, 2).join('/')} ${i.hora_prova?.slice(0, 5)}`
           : '—',
@@ -187,7 +201,11 @@ export async function GET(request: Request) {
         nota: i.nota ?? null,
         atendimentoEspecial: i.atendimento_especial,
       })),
-    previa: previa.linhas,
+    // A prévia leva os dados completos do candidato: o painel é interno (a página pública usa só as iniciais)
+    previa: previa.linhas.map((l) => {
+      const i = porNumero.get(l.numero);
+      return { ...l, nome: i?.nome ?? '', cpf: i?.cpf ?? '', email: i?.email ?? '', celular: i?.celular ?? '' };
+    }),
     publicadoEm: publicado?.publicadoEm ?? null,
   });
 }

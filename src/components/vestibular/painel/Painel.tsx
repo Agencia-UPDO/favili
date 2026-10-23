@@ -2,6 +2,7 @@
 
 import { notaMinimaBolsa } from '@/data/bolsas';
 import { cn } from '@/utils/cn';
+import { formatarCpf } from '@/utils/vestibular/validacao';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 // Painel interno da faculdade: acompanhar inscrições, conferir a prévia do resultado, publicar e baixar planilhas
@@ -18,9 +19,12 @@ type Dados = {
     numero: number;
     criadoEm: string;
     nome: string;
+    cpf: string;
+    nascimento: string;
     celular: string;
     email: string;
     forma: string;
+    origemAcademica: string;
     curso: string;
     prova: string;
     situacao: string;
@@ -35,6 +39,10 @@ type Dados = {
     notaMatematica: number;
     aprovado: boolean;
     ajuste: Ajuste | null;
+    nome: string;
+    cpf: string;
+    email: string;
+    celular: string;
     classificacaoGeral: number | null;
     classificacaoOferta: number | null;
     bolsa: number | null;
@@ -118,6 +126,20 @@ const faixa = (l: Linha) => (!l.aprovado ? 'Reprovado' : l.bolsa ? `Bolsa ${l.bo
 
 const dataHora = (iso: string) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const celular = (c: string) => c.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+const dataBr = (iso: string) => iso.slice(0, 10).split('-').reverse().join('/');
+const idade = (nascimento: string) => {
+  const hoje = new Date();
+  const [a, m, d] = nascimento.split('-').map(Number);
+  return (
+    hoje.getFullYear() - a - (hoje.getMonth() + 1 < m || (hoje.getMonth() + 1 === m && hoje.getDate() < d) ? 1 : 0)
+  );
+};
+
+const LinkWhats = ({ numero }: { numero: string }) => (
+  <a href={`https://wa.me/55${numero}`} target="_blank" rel="noopener" className="text-vest-blue whitespace-nowrap">
+    {celular(numero)}
+  </a>
+);
 
 const Cartao = ({ titulo, valor }: { titulo: string; valor: number | string }) => (
   <div className="rounded-2xl bg-white p-4">
@@ -214,7 +236,9 @@ const Painel = () => {
   }
 
   const filtradas = dados.inscricoes.filter((i) =>
-    `${i.numero} ${i.nome} ${i.email} ${i.curso}`.toLowerCase().includes(busca.toLowerCase()),
+    `${i.numero} ${i.nome} ${i.cpf} ${formatarCpf(i.cpf)} ${i.email} ${i.celular} ${i.curso}`
+      .toLowerCase()
+      .includes(busca.trim().toLowerCase()),
   );
   const contemplados = dados.previa.filter((l) => l.bolsa);
   const aprovados = dados.previa.filter((l) => l.aprovado);
@@ -262,7 +286,7 @@ const Painel = () => {
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por nome, e-mail, curso ou nº"
+              placeholder="Buscar por nome, CPF, e-mail, WhatsApp, curso ou nº"
               className="border-stroke-3 h-11 min-w-[240px] flex-1 rounded-full border px-4"
             />
             <a
@@ -272,10 +296,21 @@ const Painel = () => {
             </a>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-[14px]">
+            <table className="w-full min-w-[1100px] text-left text-[14px]">
               <thead className="text-secondary/60 border-stroke-2 border-b">
                 <tr>
-                  {['Nº', 'Data', 'Nome', 'WhatsApp', 'Forma', 'Curso', 'Prova', 'Situação', 'Nota'].map((c) => (
+                  {[
+                    'Nº',
+                    'Inscrição',
+                    'Candidato',
+                    'Nascimento',
+                    'WhatsApp',
+                    'Forma',
+                    'Curso',
+                    'Prova',
+                    'Situação',
+                    'Nota',
+                  ].map((c) => (
                     <th key={c} className="px-2 py-2 font-semibold">
                       {c}
                     </th>
@@ -288,8 +323,11 @@ const Painel = () => {
                     <td className="px-2 py-2 font-semibold">{i.numero}</td>
                     <td className="px-2 py-2 whitespace-nowrap">{dataHora(i.criadoEm)}</td>
                     <td className="px-2 py-2">
-                      {i.nome}
-                      <span className="text-secondary/60 block text-[12px]">{i.email}</span>
+                      <span className="font-semibold">{i.nome}</span>
+                      <span className="text-secondary/70 block text-[12px]">CPF {formatarCpf(i.cpf)}</span>
+                      <a href={`mailto:${i.email}`} className="text-vest-blue block text-[12px]">
+                        {i.email}
+                      </a>
                       {i.atendimentoEspecial && (
                         <span className="mt-1 block rounded bg-amber-100 px-1.5 text-[12px] text-amber-900">
                           Atendimento especial: {i.atendimentoEspecial}
@@ -297,15 +335,18 @@ const Painel = () => {
                       )}
                     </td>
                     <td className="px-2 py-2 whitespace-nowrap">
-                      <a
-                        href={`https://wa.me/55${i.celular}`}
-                        target="_blank"
-                        rel="noopener"
-                        className="text-vest-blue">
-                        {celular(i.celular)}
-                      </a>
+                      {dataBr(i.nascimento)}
+                      <span className="text-secondary/60 block text-[12px]">{idade(i.nascimento)} anos</span>
                     </td>
-                    <td className="px-2 py-2">{i.forma}</td>
+                    <td className="px-2 py-2">
+                      <LinkWhats numero={i.celular} />
+                    </td>
+                    <td className="px-2 py-2">
+                      {i.forma}
+                      {i.origemAcademica && (
+                        <span className="text-secondary/60 block text-[12px]">{i.origemAcademica}</span>
+                      )}
+                    </td>
                     <td className="px-2 py-2">{i.curso}</td>
                     <td className="px-2 py-2 whitespace-nowrap">{i.prova}</td>
                     <td className="px-2 py-2">{i.situacao}</td>
@@ -376,7 +417,7 @@ const Painel = () => {
             ajuste manual
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1080px] text-left text-[14px]">
+            <table className="w-full min-w-[1240px] text-left text-[14px]">
               <thead className="text-secondary/60 border-stroke-2 border-b">
                 <tr>
                   {['Geral', 'No curso', 'Nº', 'Candidato', 'Curso', 'Nota', 'Mat.', 'Faixa', 'Ajuste manual'].map(
@@ -402,7 +443,12 @@ const Painel = () => {
                     </td>
                     <td className="px-2 py-2">{l.classificacaoOferta ? `${l.classificacaoOferta}º` : '—'}</td>
                     <td className="px-2 py-2">{l.numero}</td>
-                    <td className="px-2 py-2">{l.iniciais}</td>
+                    <td className="px-2 py-2">
+                      <span className="font-semibold">{l.nome}</span>
+                      <span className="block text-[12px] opacity-70">CPF {formatarCpf(l.cpf)}</span>
+                      <span className="block text-[12px] opacity-70">{l.email}</span>
+                      <LinkWhats numero={l.celular} />
+                    </td>
                     <td className="px-2 py-2">{l.oferta}</td>
                     <td className="px-2 py-2">{l.nota.toFixed(1)}</td>
                     <td className="px-2 py-2">{l.notaMatematica.toFixed(1)}</td>
