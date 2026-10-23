@@ -76,10 +76,9 @@ const Confirmacao = ({
           </p>
         </div>
       ) : (
-        <div className="space-y-2 text-center">
-          <h2 className="font-chamada text-vest-navy text-[36px] md:text-[44px]">Olá, {primeiroNome}!</h2>
-          <p className="text-[16px] md:text-lg">Esta é a sua inscrição no {vestibular.nome}.</p>
-        </div>
+        <p className="text-vest-navy hidden text-center text-[20px] font-bold print:block">
+          Comprovante de inscrição · {vestibular.nome}
+        </p>
       )}
 
       <div className="bg-vest print:border-vest-navy print:text-vest-navy relative overflow-hidden rounded-[28px] p-6 text-center text-white md:p-8 print:border-2 print:bg-none">

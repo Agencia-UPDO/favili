@@ -1,6 +1,6 @@
 'use client';
 
-import { diasProva, horaDeEntrar, horariosProva, minutosAntes } from '@/data/inscricao';
+import { diasProva, horaDeEntrar, horariosProva, minutosAntes, ofertas } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { formatarCpf, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
@@ -74,7 +74,7 @@ const StatusProva = ({
 
   const ms = inicio.getTime() - agora;
   const fimDoDia = new Date(`${inscricao.diaProva}T20:00:00-03:00`).getTime();
-  const liberada = !inscricao.provaEntregue && (modoTeste || inscricao.provaIniciada || (ms <= 0 && agora < fimDoDia));
+  const liberada = !inscricao.provaEntregue && (inscricao.provaIniciada || (ms <= 0 && agora < fimDoDia));
 
   if (inscricao.provaEntregue) {
     return (
@@ -140,13 +140,17 @@ const StatusProva = ({
 
   if (ms > 0) {
     return (
-      <div className="bg-primary-50 rounded-[22px] p-5 text-center">
-        <p className="text-vest-blue text-[12px] font-bold tracking-[0.2em] uppercase">Sua prova abre em</p>
-        <p className="font-chamada text-vest-navy mt-1 text-[40px]">{faltam(ms)}</p>
-        <p className="text-[15px]">
-          Entre aqui {minutosAntes} minutos antes do horário (às {horaDeEntrar(inscricao.horaProva ?? '00:00')}) para
-          liberar a prova. Você tem até {vestibular.duracaoHoras} horas.
+      <div className="bg-vest rounded-[22px] p-6 text-center text-white">
+        <p className="text-vest-cyan text-[12px] font-bold tracking-[0.2em] uppercase">Sua prova</p>
+        <p className="font-chamada mt-1 text-[30px] leading-tight text-white md:text-[36px]">
+          {diasProva.find((d) => d.id === inscricao.diaProva)?.rotulo}, às {inscricao.horaProva?.replace(':00', 'h')}
         </p>
+        <p className="text-vest-yellow mt-2 text-[16px] font-bold">
+          Entre aqui às {horaDeEntrar(inscricao.horaProva ?? '00:00')} ({minutosAntes} minutos antes) para liberar a
+          prova
+        </p>
+        <p className="mt-4 text-[13px] text-white/80 uppercase">Faltam</p>
+        <p className="font-chamada text-[40px] leading-none text-white">{faltam(ms)}</p>
       </div>
     );
   }
@@ -270,6 +274,7 @@ const AreaCandidato = () => {
   const [aviso, setAviso] = useState('');
   const [esqueci, setEsqueci] = useState(false);
   const [modoTeste, setModoTeste] = useState(false);
+  const [detalhes, setDetalhes] = useState(false);
   const [agora, setAgora] = useState(() => Date.now());
 
   const entrar = async (cpfEntrada: string, codigoEntrada: string, silencioso = false) => {
@@ -328,22 +333,53 @@ const AreaCandidato = () => {
   if (inscricao) {
     const podeTrocar =
       inscricao.fazProva &&
+      !inscricao.provaIniciada &&
+      !inscricao.provaEntregue &&
       agora < new Date(vestibular.fimInscricoes).getTime() &&
       (inicioDaProva(inscricao)?.getTime() ?? 0) > agora;
+    const oferta = ofertas.find((o) => o.id === inscricao.ofertaId);
     return (
-      <div className="space-y-6">
-        <Confirmacao
-          inscricao={inscricao}
-          modo="area"
-          extra={
-            <div className="space-y-4 print:hidden">
-              <StatusProva inscricao={inscricao} agora={agora} modoTeste={modoTeste} />
-              {podeTrocar && (
+      <div className="space-y-5">
+        <div className="space-y-4 print:hidden">
+          <h2 className="font-chamada text-vest-navy text-center text-[32px] md:text-[40px]">
+            Olá, {inscricao.nome.split(' ')[0]}!
+          </h2>
+          <StatusProva inscricao={inscricao} agora={agora} modoTeste={modoTeste} />
+          {modoTeste && inscricao.fazProva && !inscricao.provaIniciada && !inscricao.provaEntregue && (
+            <a
+              href="/vestibular/prova"
+              className="block rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 p-3 text-center text-[14px] font-bold text-amber-900">
+              Modo de teste (só neste computador): começar a prova agora →
+            </a>
+          )}
+          <p className="text-secondary/70 text-center text-[14px]">
+            {inscricao.nome} · {oferta ? `${oferta.curso} (${oferta.modalidade})` : ''} · Inscrição nº{' '}
+            {inscricao.numero}
+          </p>
+        </div>
+
+        <div className="border-stroke-2 rounded-[22px] border print:border-0">
+          <button
+            type="button"
+            onClick={() => setDetalhes(!detalhes)}
+            aria-expanded={detalhes}
+            className="text-vest-navy flex w-full cursor-pointer items-center justify-between gap-3 px-5 py-4 text-left text-[16px] font-bold print:hidden">
+            Ver comprovante e opções
+            <span aria-hidden className={cn('text-[22px] transition-transform', detalhes && 'rotate-45')}>
+              +
+            </span>
+          </button>
+          {/* Fechado na tela, mas sempre aparece na impressão do comprovante */}
+          <div className={cn('space-y-6 px-5 pb-6 print:block print:px-0', !detalhes && 'hidden')}>
+            <Confirmacao inscricao={inscricao} modo="area" />
+            {podeTrocar && (
+              <div className="print:hidden">
                 <TrocarHorario inscricao={inscricao} cpf={cpf} codigo={inscricao.codigo} aoTrocar={setInscricao} />
-              )}
-            </div>
-          }
-        />
+              </div>
+            )}
+          </div>
+        </div>
+
         <button
           type="button"
           onClick={sair}

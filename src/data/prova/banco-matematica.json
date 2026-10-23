@@ -1,0 +1,692 @@
+[
+  {
+    "id": "mat-01",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Quatro números, –2, x, y e z, nesta ordem, estão em progressão aritmética crescente. Sabe-se que a soma dos quadrados dos extremos é 365 e que a soma dos quadrados dos meios é 169. Então, a soma dos valores de x e y é",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "18."
+      },
+      {
+        "letra": "B",
+        "texto": "16."
+      },
+      {
+        "letra": "C",
+        "texto": "15."
+      },
+      {
+        "letra": "D",
+        "texto": "17."
+      }
+    ],
+    "correta": "D"
+  },
+  {
+    "id": "mat-03",
+    "area": "matematica",
+    "nivel": "facil",
+    "enunciado": "Uma startup de tecnologia, com potencial de crescimento, possuía 5 clientes em janeiro de 2023. Em fevereiro de 2023 a startup conquistou 2 novos clientes, e o mesmo ocorreu nos próximos 4 meses. Quantos clientes a startup terá no final de junho de 2023?",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "12"
+      },
+      {
+        "letra": "B",
+        "texto": "13"
+      },
+      {
+        "letra": "C",
+        "texto": "17"
+      },
+      {
+        "letra": "D",
+        "texto": "21"
+      },
+      {
+        "letra": "E",
+        "texto": "15"
+      }
+    ],
+    "correta": "E"
+  },
+  {
+    "id": "mat-04",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Uma empresa, em seu primeiro ano de atuação no ramo de fabricação de smartphones, fabricou 9.000 unidades de smartphones. No ano seguinte, investiu em novas tecnologias, adquirindo novas máquinas, e aumentou sua produção em 50%. Estima-se que esse percentual se repita nos próximos anos, o que garantiria um acréscimo anual de 50%. Considerando a quantidade (Q) anual de smartphones fabricados no ano (t) de funcionamento da empresa, se a estimativa for alcançada, qual a expressão que determina o número de unidades produzidas Q em função do tempo t, considerando desde o seu primeiro ano de atuação?",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "Q(t) = 4500·t⁻¹ + 9000"
+      },
+      {
+        "letra": "B",
+        "texto": "Q(t) = 9000·(1,5)^(t−1)"
+      },
+      {
+        "letra": "C",
+        "texto": "Q(t) = 0,5·t⁻¹ + 9000"
+      },
+      {
+        "letra": "D",
+        "texto": "Q(t) = 9000·(0,5)^(t−1)"
+      },
+      {
+        "letra": "E",
+        "texto": "Q(t) = 50·t⁻¹ + 9000"
+      }
+    ],
+    "correta": "B"
+  },
+  {
+    "id": "mat-05",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "As medidas, expressas em graus, dos ângulos internos de um triângulo retângulo constituem uma progressão aritmética. Se x é a medida de um dos ângulos agudos deste triângulo, então tg(x) pode ser igual a",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "√2 / 2"
+      },
+      {
+        "letra": "B",
+        "texto": "√3 / 2"
+      },
+      {
+        "letra": "C",
+        "texto": "√2"
+      },
+      {
+        "letra": "D",
+        "texto": "√3"
+      }
+    ],
+    "correta": "D"
+  },
+  {
+    "id": "mat-06",
+    "area": "matematica",
+    "nivel": "facil",
+    "fonte": "ESA",
+    "enunciado": "Assinale a alternativa cujo gráfico representa a função exponencial f(x) = 2ˣ.",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "Gráfico A",
+        "imagem": "mat-06-a.png"
+      },
+      {
+        "letra": "B",
+        "texto": "Gráfico B",
+        "imagem": "mat-06-b.png"
+      },
+      {
+        "letra": "C",
+        "texto": "Gráfico C",
+        "imagem": "mat-06-c.png"
+      },
+      {
+        "letra": "D",
+        "texto": "Gráfico D",
+        "imagem": "mat-06-d.png"
+      },
+      {
+        "letra": "E",
+        "texto": "Gráfico E",
+        "imagem": "mat-06-e.png"
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-07",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Um biomédico desenvolveu um medicamento capaz de erradicar a doença de Alzheimer, se ela for diagnosticada precocemente. Entretanto, esse medicamento ainda está em processo de patenteamento, por isso tem sua fórmula guardada em um cofre, cujo segredo para sua abertura é marcado por uma sequência de quatro dígitos distintos, os quais utilizam os algarismos de 0 a 9. O biomédico faleceu, e seu sócio não conhece o segredo para abrir o cofre. Assim, contratou um especialista que demora dois segundos para fazer cada tentativa para abri-lo. O tempo máximo que o especialista levará para abrir o cofre será:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "2h48min."
+      },
+      {
+        "letra": "B",
+        "texto": "5040h."
+      },
+      {
+        "letra": "C",
+        "texto": "720h52min."
+      },
+      {
+        "letra": "D",
+        "texto": "4h26min."
+      },
+      {
+        "letra": "E",
+        "texto": "36h."
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-08",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Os valores a seguir foram coletados por alguns pesquisadores. Para que eles possam trabalhar, é necessário colocar os resultados em ordem crescente: 3/5; 0,333...; 0,35; 4/3; 7/6; 1,999... Portanto, a ordem crescente desses valores é, respectivamente,",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "0,333...; 0,35; 3/5; 7/6; 4/3; 1,999..."
+      },
+      {
+        "letra": "B",
+        "texto": "3/5; 4/3; 7/6; 0,333...; 0,35; 1,999..."
+      },
+      {
+        "letra": "C",
+        "texto": "4/3; 3/5; 7/6; 0,333...; 1,999...; 0,35"
+      },
+      {
+        "letra": "D",
+        "texto": "0,333...; 1,999...; 0,35; 3/5; 4/3; 7/6"
+      },
+      {
+        "letra": "E",
+        "texto": "0,333...; 1,999...; 3/5; 4/3; 7/6; 0,35"
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-09",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Uma instituição de ensino ampliará a reserva de vagas para negros (pretos ou pardos) em 1000 vagas nos próximos 3 anos. No primeiro ano, a instituição pretende disponibilizar dois quintos das 1000 vagas planejadas; no segundo ano, pretende aumentar essa disponibilidade em dois quintos do restante de vagas planejadas e ainda não disponibilizadas; e no terceiro ano, aumentará a disponibilidade com as vagas que faltaram para completar as 1000. O número de vagas a mais que serão ofertadas no terceiro ano será",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "300."
+      },
+      {
+        "letra": "B",
+        "texto": "200."
+      },
+      {
+        "letra": "C",
+        "texto": "260."
+      },
+      {
+        "letra": "D",
+        "texto": "360."
+      }
+    ],
+    "correta": "D"
+  },
+  {
+    "id": "mat-10",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Naldo sugeriu em um grupo limitado de amigos dois filmes, indicando como filme 1 \"O homem que viu o infinito\" e como filme 2 \"Uma mente brilhante\". Desses amigos, quinze assistiram ao filme 1, quinze assistiram só ao filme 2, dez assistiram aos dois filmes e quinze não assistiram nenhum deles. É CORRETO afirmar que o número total de amigos desse grupo é de:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "30"
+      },
+      {
+        "letra": "B",
+        "texto": "45"
+      },
+      {
+        "letra": "C",
+        "texto": "55"
+      },
+      {
+        "letra": "D",
+        "texto": "60"
+      }
+    ],
+    "correta": "B"
+  },
+  {
+    "id": "mat-11",
+    "area": "matematica",
+    "nivel": "facil",
+    "fonte": "UFT",
+    "enunciado": "Em um triângulo obtusângulo, o ângulo γ mede 20° a mais do que o ângulo α, e o ângulo β mede o triplo de γ, conforme a figura.\nÉ CORRETO afirmar que a medida do ângulo α é de:",
+    "imagem": "mat-11.png",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "10°"
+      },
+      {
+        "letra": "B",
+        "texto": "20°"
+      },
+      {
+        "letra": "C",
+        "texto": "40°"
+      },
+      {
+        "letra": "D",
+        "texto": "60°"
+      }
+    ],
+    "correta": "B"
+  },
+  {
+    "id": "mat-13",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "As medidas dos lados de um triângulo retângulo estão em progressão geométrica. Sendo θ o menor ângulo de tal triângulo, é CORRETO afirmar que",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "sen θ = (√5 − 1) / 2"
+      },
+      {
+        "letra": "B",
+        "texto": "sen θ = (√5 + 1) / 4"
+      },
+      {
+        "letra": "C",
+        "texto": "sen θ = (√5 + 1) / 2"
+      },
+      {
+        "letra": "D",
+        "texto": "sen θ = (√5 − 1) / 4"
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-14",
+    "area": "matematica",
+    "nivel": "facil",
+    "enunciado": "Ana comprou sua tão desejada casa própria. Ela decidiu pintar as paredes de sua casa. Para isso, ela usou quatro galões de tinta. A tinta foi distribuída uniformemente nos 288 m² de parede. Qual foi a taxa, em galões por m², de tinta que Ana usou para pintar sua casa?",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "1/72"
+      },
+      {
+        "letra": "B",
+        "texto": "1/288"
+      },
+      {
+        "letra": "C",
+        "texto": "1/144"
+      },
+      {
+        "letra": "D",
+        "texto": "72"
+      },
+      {
+        "letra": "E",
+        "texto": "288"
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-15",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Uma bola de futebol tradicional é formada por pentágonos e hexágonos. Observando isso, um professor perguntou aos seus alunos qual a diferença entre a soma dos ângulos internos do hexágono e a do pentágono, se eles fossem considerados regulares. A resposta esperada é",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "150°."
+      },
+      {
+        "letra": "B",
+        "texto": "180°."
+      },
+      {
+        "letra": "C",
+        "texto": "120°."
+      },
+      {
+        "letra": "D",
+        "texto": "200°."
+      }
+    ],
+    "correta": "B"
+  },
+  {
+    "id": "mat-16",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "O Sr. Carlos vai construir, no seu jardim, um pequeno canteiro retangular. A área, A, em metros quadrados, do canteiro, em função da medida, x, em metros, de um dos lados, é dada por A(x) = 8x − x², com 0 < x < 8. O perímetro, em metros, do canteiro que Sr. Carlos vai construir é igual a",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "10."
+      },
+      {
+        "letra": "B",
+        "texto": "12."
+      },
+      {
+        "letra": "C",
+        "texto": "16."
+      },
+      {
+        "letra": "D",
+        "texto": "20."
+      }
+    ],
+    "correta": "C"
+  },
+  {
+    "id": "mat-17",
+    "area": "matematica",
+    "nivel": "medio",
+    "fonte": "FUVEST (USP)",
+    "enunciado": "Para medir o volume de uma pedra com formato irregular, Ana utilizou um recipiente cilíndrico de raio r = 8 cm e com água até a altura de 20 cm. Após colocar a pedra no recipiente, a altura da água subiu para 23,5 cm, conforme a figura.\nO volume da pedra é:",
+    "imagem": "mat-17.png",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "128π cm³"
+      },
+      {
+        "letra": "B",
+        "texto": "224π cm³"
+      },
+      {
+        "letra": "C",
+        "texto": "240π cm³"
+      },
+      {
+        "letra": "D",
+        "texto": "282π cm³"
+      },
+      {
+        "letra": "E",
+        "texto": "320π cm³"
+      }
+    ],
+    "correta": "B"
+  },
+  {
+    "id": "mat-19",
+    "area": "matematica",
+    "nivel": "facil",
+    "enunciado": "Somando-se 23 à terça parte de um número ∇, obtemos o mesmo número ∇, diminuído de 11. Portanto, a soma dos algarismos de ∇ é:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "12."
+      },
+      {
+        "letra": "B",
+        "texto": "4."
+      },
+      {
+        "letra": "C",
+        "texto": "6."
+      },
+      {
+        "letra": "D",
+        "texto": "8."
+      },
+      {
+        "letra": "E",
+        "texto": "9."
+      }
+    ],
+    "correta": "C"
+  },
+  {
+    "id": "mat-21",
+    "area": "matematica",
+    "nivel": "medio",
+    "fonte": "COLUNI/UFV",
+    "enunciado": "Em uma Olimpíada de Matemática realizada no país A, para o nível de Ensino Fundamental 2, os alunos tiveram que resolver a equação da figura.\nÉ CORRETO afirmar que o valor de x é igual a:",
+    "imagem": "mat-21.png",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "−1"
+      },
+      {
+        "letra": "B",
+        "texto": "1"
+      },
+      {
+        "letra": "C",
+        "texto": "0"
+      },
+      {
+        "letra": "D",
+        "texto": "1/8"
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-22",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Dada a equação 2x² − 14x + k = 0, determine o valor de k de modo que as raízes sejam números consecutivos.",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "24"
+      },
+      {
+        "letra": "B",
+        "texto": "12"
+      },
+      {
+        "letra": "C",
+        "texto": "6"
+      },
+      {
+        "letra": "D",
+        "texto": "3"
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-23",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Ao resolver a equação x² − 8x + 10 = 0, Rafael percebeu que as raízes obtidas são as medidas, em cm, dos lados de um retângulo. Dessa forma, pode-se concluir que o perímetro desse retângulo e a medida de sua diagonal, em cm, são, respectivamente,",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "8 e 10"
+      },
+      {
+        "letra": "B",
+        "texto": "8 e 2√10"
+      },
+      {
+        "letra": "C",
+        "texto": "16 e 2√10"
+      },
+      {
+        "letra": "D",
+        "texto": "16 e 2√11"
+      },
+      {
+        "letra": "E",
+        "texto": "16 e 11"
+      }
+    ],
+    "correta": "D"
+  },
+  {
+    "id": "mat-24",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "No CMB, há E alunos, que contam com o apoio de M monitores e D professores, que trabalham integrados para oferecer as melhores condições de aprendizado. Imagine que você tenha encontrado no interior de um cofre a seguinte informação: \"E e D valem, respectivamente, mil vezes a maior raiz e mil vezes a menor raiz da equação 25x² − 70x + 13 = 0\". A Seção Psicopedagógica do CMB implementará um programa de tutoria, no qual cada professor ficará responsável por orientar mensalmente um grupo fixo de alunos. Considere que os E alunos serão divididos em D grupos com o mesmo número de participantes e que cada grupo ficará sob a responsabilidade de um professor. Nesse caso, cada professor deverá orientar quantos alunos?",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "10"
+      },
+      {
+        "letra": "B",
+        "texto": "13"
+      },
+      {
+        "letra": "C",
+        "texto": "25"
+      },
+      {
+        "letra": "D",
+        "texto": "38"
+      },
+      {
+        "letra": "E",
+        "texto": "70"
+      }
+    ],
+    "correta": "B"
+  },
+  {
+    "id": "mat-26",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "\"A pesquisa, feita com dados do SER (Sistema Estadual de Regulação) do último dia 10 de agosto, mostra que os serviços que tratam tumores urológicos têm 410 pacientes na fila para iniciar o tratamento.\" (Adaptado: UOL, 2018). Sabendo que x' e x'' são raízes da equação x² − 10x + 16 = 0, marque a alternativa que contém a expressão da quantidade de pacientes que estão na fila para iniciar o tratamento.",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "2x' + 2x''"
+      },
+      {
+        "letra": "B",
+        "texto": "x' + x''"
+      },
+      {
+        "letra": "C",
+        "texto": "41·(x' + x'')"
+      },
+      {
+        "letra": "D",
+        "texto": "10·(x' + x'')"
+      }
+    ],
+    "correta": "C"
+  },
+  {
+    "id": "mat-27",
+    "area": "matematica",
+    "nivel": "medio",
+    "fonte": "OBMEP",
+    "enunciado": "Nove amigos comeram 5 pizzas, algumas cortadas em 6 fatias e outras cortadas em 8 fatias. Todos comeram o mesmo número de fatias e não sobrou nada.\nQuantas fatias cada um comeu?",
+    "imagem": "mat-27.png",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "4"
+      },
+      {
+        "letra": "B",
+        "texto": "5"
+      },
+      {
+        "letra": "C",
+        "texto": "6"
+      },
+      {
+        "letra": "D",
+        "texto": "7"
+      },
+      {
+        "letra": "E",
+        "texto": "8"
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-28",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Considere três variáveis A, B, C que assumem valores apenas do conjunto {0, 1, 2, 3} na expressão T = A + B/C. Nessa expressão, variáveis distintas representam números distintos. Assim, por exemplo, se A = 1, B = 0 e C = 3, então T = 1/3. Dadas as condições acima, o total de possíveis valores diferentes para T é igual a",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "6."
+      },
+      {
+        "letra": "B",
+        "texto": "7."
+      },
+      {
+        "letra": "C",
+        "texto": "8."
+      },
+      {
+        "letra": "D",
+        "texto": "9."
+      }
+    ],
+    "correta": "C"
+  },
+  {
+    "id": "mat-29",
+    "area": "matematica",
+    "nivel": "medio",
+    "fonte": "CMJF",
+    "textoBase": "Observe a figura.\n(Fonte: http://genjuridico.com.br/2020/07/27/poluica-o-ambiente-marinho-plasticos/ilha-lixo-pacifico/. Acesso em 19/07/2022.)",
+    "imagem": "mat-29.jpg",
+    "enunciado": "Tomando por base as informações contidas no texto, analise as afirmações abaixo.\nI. A ilha tem uma superfície de oito quintos de milhão de km².\nII. A ilha contém dezoito décimos de trilhão de peças de plástico.\nIII. Estima-se que anualmente os plásticos ferem, asfixiam ou afogam cem milhões de animais marinhos.\nIV. Os objetos mais antigos datam, em algarismos romanos, de MCMLLXXVII.\nV. 94% dos objetos são macroplásticos.\nMarque a opção correta.",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "As afirmações I e II estão corretas."
+      },
+      {
+        "letra": "B",
+        "texto": "As afirmações I, III e V estão corretas."
+      },
+      {
+        "letra": "C",
+        "texto": "As afirmações I, II e IV estão corretas."
+      },
+      {
+        "letra": "D",
+        "texto": "Somente a afirmação II está correta."
+      },
+      {
+        "letra": "E",
+        "texto": "Nenhuma afirmação está correta."
+      }
+    ],
+    "correta": "A"
+  },
+  {
+    "id": "mat-30",
+    "area": "matematica",
+    "nivel": "facil",
+    "enunciado": "No período da Black Friday, promoções assertivas têm de ser executadas. A promoção \"Leve 3 e Pague 2\" é bastante utilizada devido ao seu nível alto de atratividade, pois o cliente se sente motivado a comprar já que receberá um benefício: pagar por dois produtos e levar um de graça. Quando feitas de modo que o cliente ganhe de fato um produto, essas promoções dão um desconto, sobre cada unidade vendida, de",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "50%."
+      },
+      {
+        "letra": "B",
+        "texto": "50/3%."
+      },
+      {
+        "letra": "C",
+        "texto": "30%."
+      },
+      {
+        "letra": "D",
+        "texto": "100/3%."
+      }
+    ],
+    "correta": "D"
+  }
+]

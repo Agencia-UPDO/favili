@@ -16,8 +16,9 @@ type Questao = {
   area: string;
   textoBase: string | null;
   enunciado: string;
+  fonte: string | null;
   imagem: string | null;
-  alternativas: { letra: string; texto: string }[];
+  alternativas: { letra: string; texto: string; imagem: string | null }[];
   resposta: string | null;
 };
 
@@ -46,6 +47,46 @@ const relogio = (ms: number) => {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   return `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+};
+
+// Trechos marcados com __assim__ no banco aparecem sublinhados (questões que pedem a palavra sublinhada)
+const ComSublinhado = ({ texto }: { texto: string }) => (
+  <>
+    {texto.split('__').map((parte, i) =>
+      i % 2 ? (
+        <u key={i} className="decoration-2 underline-offset-2">
+          {parte}
+        </u>
+      ) : (
+        parte
+      ),
+    )}
+  </>
+);
+
+// Texto de apoio: textos longos ficam num bloco rolável, com opção de abrir inteiro
+const TextoBase = ({ texto }: { texto: string }) => {
+  const [aberto, setAberto] = useState(false);
+  const longo = texto.length > 900;
+  return (
+    <div className="bg-background-3 rounded-2xl">
+      <div
+        className={cn(
+          'p-4 text-[16px] leading-relaxed whitespace-pre-line',
+          longo && !aberto && 'max-h-[45vh] overflow-y-auto',
+        )}>
+        {texto}
+      </div>
+      {longo && (
+        <button
+          type="button"
+          onClick={() => setAberto(!aberto)}
+          className="text-vest-blue w-full cursor-pointer border-t border-white px-4 py-2 text-[14px] font-bold">
+          {aberto ? 'Recolher texto' : 'Ver texto completo'}
+        </button>
+      )}
+    </div>
+  );
 };
 
 const Aviso = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => (
@@ -249,7 +290,7 @@ const ProvaApp = () => {
         )}
         <ul className="space-y-2 text-[15px]">
           {[
-            `${estado.totalQuestoes} questões objetivas, cada uma com 5 alternativas.`,
+            `${estado.totalQuestoes} questões objetivas: metade de Linguagens e Códigos, metade de Matemática.`,
             `Você tem até ${vestibular.duracaoHoras} horas a partir de agora, sem passar das 20h.`,
             'Cada resposta é salva na hora. Se a internet cair, entre de novo com CPF e código: o tempo continua correndo.',
             'Você pode voltar às questões e trocar a resposta até entregar.',
@@ -318,14 +359,13 @@ const ProvaApp = () => {
       <article className="space-y-5 rounded-[24px] bg-white p-5 md:p-8">
         <p className="text-vest-blue text-[13px] font-bold tracking-[0.12em] uppercase">
           Questão {q.numero} de {questoes.length} · {q.area}
+          {q.fonte && <span className="text-secondary/50 ml-2 font-semibold normal-case">({q.fonte})</span>}
         </p>
-        {q.textoBase && (
-          <div className="bg-background-3 rounded-2xl p-4 text-[16px] leading-relaxed whitespace-pre-line">
-            {q.textoBase}
-          </div>
-        )}
+        {q.textoBase && <TextoBase key={q.id} texto={q.textoBase} />}
         {q.imagem && <img src={q.imagem} alt="Imagem da questão" className="mx-auto max-h-[360px] w-auto rounded-xl" />}
-        <p className="text-vest-navy text-[18px] leading-snug font-semibold whitespace-pre-line">{q.enunciado}</p>
+        <p className="text-vest-navy text-[18px] leading-snug font-semibold whitespace-pre-line">
+          <ComSublinhado texto={q.enunciado} />
+        </p>
         <div role="radiogroup" aria-label={`Alternativas da questão ${q.numero}`} className="space-y-3">
           {q.alternativas.map((a) => {
             const marcada = respostas[q.id] === a.letra;
@@ -347,7 +387,13 @@ const ProvaApp = () => {
                   )}>
                   {a.letra}
                 </span>
-                <span className="pt-1">{a.texto}</span>
+                {a.imagem ? (
+                  <img src={a.imagem} alt={a.texto} className="max-h-[180px] w-auto rounded-lg" />
+                ) : (
+                  <span className="pt-1">
+                    <ComSublinhado texto={a.texto} />
+                  </span>
+                )}
               </button>
             );
           })}

@@ -36,6 +36,7 @@ export type DadosProva = {
   prova_inicio?: string | null;
   prova_fim?: string | null;
   prova_entregue_em?: string | null;
+  questoes_sorteadas?: string[] | null;
   respostas?: Record<string, string> | null;
   acertos?: number | null;
   nota?: number | null;

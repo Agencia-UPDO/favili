@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [25, 50, 75, 100],
   },
+  // Figuras das questões do vestibular: ficam fora de /public e só saem pela API da prova
+  outputFileTracingIncludes: {
+    '/api/vestibular/prova': ['./src/data/prova/img/**'],
+  },
 };
 
 export default nextConfig;

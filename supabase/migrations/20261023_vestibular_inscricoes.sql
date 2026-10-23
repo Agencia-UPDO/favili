@@ -36,6 +36,7 @@ alter table vestibular_inscricoes
   add column if not exists prova_inicio timestamptz,
   add column if not exists prova_fim timestamptz,
   add column if not exists prova_entregue_em timestamptz,
+  add column if not exists questoes_sorteadas jsonb,
   add column if not exists respostas jsonb not null default '{}'::jsonb,
   add column if not exists acertos integer,
   add column if not exists nota numeric(4, 1),
