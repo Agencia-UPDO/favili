@@ -2,6 +2,7 @@ import { diasProva, horariosProva } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { entrar, trocarHorario, visaoCandidato } from '@/utils/vestibular/inscricoes';
 import { entregarSeVenceu, modoTeste } from '@/utils/vestibular/prova';
+import { resultadoDoCandidato } from '@/utils/vestibular/resultado';
 import { soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
 
@@ -38,7 +39,13 @@ export async function POST(request: Request) {
   if (!inscricao) {
     return naoEncontrada();
   }
-  return NextResponse.json({ ok: true, inscricao: visaoCandidato(await entregarSeVenceu(inscricao)), modoTeste });
+  const atual = await entregarSeVenceu(inscricao);
+  return NextResponse.json({
+    ok: true,
+    inscricao: visaoCandidato(atual),
+    modoTeste,
+    resultado: atual.faz_prova ? await resultadoDoCandidato(atual) : null,
+  });
 }
 
 export async function PATCH(request: Request) {

@@ -41,3 +41,11 @@ alter table vestibular_inscricoes
   add column if not exists acertos integer,
   add column if not exists nota numeric(4, 1),
   add column if not exists nota_matematica numeric(4, 1);
+
+-- Configurações do vestibular (ex.: o resultado publicado, congelado no momento da publicação)
+create table if not exists vestibular_config (
+  chave text primary key,
+  valor jsonb,
+  atualizado_em timestamptz not null default now()
+);
+alter table vestibular_config enable row level security;

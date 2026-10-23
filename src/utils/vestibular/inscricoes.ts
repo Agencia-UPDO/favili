@@ -196,3 +196,72 @@ export const visaoCandidato = (i: Inscricao) => ({
   provaIniciada: !!i.prova_inicio,
   provaEntregue: !!i.prova_entregue_em,
 });
+
+export const listarInscricoes = async (): Promise<Inscricao[]> => {
+  const sb = supabase();
+  if (!sb) {
+    return lerLocal();
+  }
+  const res = await fetch(`${sb.url}?order=numero.asc`, { headers: sb.headers, cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
+  }
+  return (await res.json()) as Inscricao[];
+};
+
+// ---------- Configurações (resultado publicado) ----------
+// Tabela vestibular_config (chave, valor jsonb) no Supabase; arquivo .data/vestibular-config.json em desenvolvimento
+const arquivoConfig = path.join(process.cwd(), '.data', 'vestibular-config.json');
+
+const configSupabase = () => {
+  const sb = supabase();
+  return sb ? { ...sb, url: sb.url.replace(/vestibular_inscricoes$/, 'vestibular_config') } : null;
+};
+
+export const lerConfig = async <T>(chave: string): Promise<T | null> => {
+  const sb = configSupabase();
+  if (!sb) {
+    try {
+      return (JSON.parse(await fs.readFile(arquivoConfig, 'utf8'))[chave] as T) ?? null;
+    } catch {
+      return null;
+    }
+  }
+  const res = await fetch(`${sb.url}?chave=eq.${encodeURIComponent(chave)}&limit=1`, {
+    headers: sb.headers,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
+  }
+  const [linha] = (await res.json()) as { valor: T }[];
+  return linha?.valor ?? null;
+};
+
+export const gravarConfig = async (chave: string, valor: unknown) => {
+  const sb = configSupabase();
+  if (!sb) {
+    let atual: Record<string, unknown> = {};
+    try {
+      atual = JSON.parse(await fs.readFile(arquivoConfig, 'utf8'));
+    } catch {
+      // primeiro registro
+    }
+    if (valor === null) {
+      delete atual[chave];
+    } else {
+      atual[chave] = valor;
+    }
+    await fs.mkdir(path.dirname(arquivoConfig), { recursive: true });
+    await fs.writeFile(arquivoConfig, JSON.stringify(atual, null, 2));
+    return;
+  }
+  const res = await fetch(`${sb.url}?on_conflict=chave`, {
+    method: 'POST',
+    headers: { ...sb.headers, Prefer: 'resolution=merge-duplicates' },
+    body: JSON.stringify({ chave, valor }),
+  });
+  if (!res.ok) {
+    throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
+  }
+};
