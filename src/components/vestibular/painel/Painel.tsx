@@ -200,6 +200,21 @@ const ConferirEnem = ({
 
 type LinhaInscricao = Dados['inscricoes'][number];
 
+// "Notas informadas: média prévia 488,0 · redação 0" (ou quantas notas faltam)
+const notasInformadas = (i: LinhaInscricao) => {
+  const preenchidas = areasEnem.filter((a) => typeof i.enemNotas?.[a.id] === 'number');
+  if (!preenchidas.length) {
+    return '';
+  }
+  if (preenchidas.length < areasEnem.length) {
+    return `Notas informadas pelo candidato: ${preenchidas.length} de ${areasEnem.length}`;
+  }
+  const notas = i.enemNotas as NotasEnem;
+  return `Notas informadas: média prévia ${mediaEnem(notas).toFixed(1).replace('.', ',')}${
+    notas.redacao > 0 ? '' : ' · redação zerada'
+  }${i.documentos.length ? '' : ' · sem boletim ainda'}`;
+};
+
 const Detalhe = ({ rotulo, children }: { rotulo: string; children: ReactNode }) =>
   children ? (
     <div className="flex gap-2">
@@ -240,6 +255,10 @@ const CelulaDocumentos = ({
           <span className="text-[12px] font-semibold">média {Number(i.enemMedia).toFixed(1).replace('.', ',')}</span>
         )}
       </div>
+      {/* Notas que o candidato digitou, antes da conferência da equipe (podem chegar antes do boletim) */}
+      {i.formaId === 'enem' && i.enemMedia === null && notasInformadas(i) && (
+        <p className="text-secondary/70 text-[12px]">{notasInformadas(i)}</p>
+      )}
       <div className="flex flex-wrap gap-1.5">
         {!analisado && i.documentos.length > 0 && i.formaId === 'enem' && (
           <button type="button" onClick={conferir} className={cn(botao, 'bg-vest-blue text-white')}>
@@ -638,14 +657,29 @@ const Painel = () => {
                                 )}
                               </div>
                               {i.formaId === 'enem' &&
-                                i.documentos.length > 0 &&
-                                (i.documentoStatus === 'enviado' || i.documentoStatus === 'recusado') && (
+                                (i.documentos.length > 0 &&
+                                (i.documentoStatus === 'enviado' || i.documentoStatus === 'recusado') ? (
                                   <ConferirEnem
                                     inscricao={i}
                                     travado={ocupado}
                                     confirmar={(ano, notas) => confirmarEnem(i.numero, ano, notas)}
                                   />
-                                )}
+                                ) : (
+                                  // Sem boletim (ou já decidido): só mostra o que foi informado ou confirmado
+                                  <dl className="space-y-0.5 text-[13px]">
+                                    <Detalhe rotulo="Ano do Enem">{i.enemAno}</Detalhe>
+                                    {areasEnem.map((a) => (
+                                      <Detalhe key={a.id} rotulo={a.rotulo}>
+                                        {i.enemNotas?.[a.id]?.toString().replace('.', ',')}
+                                      </Detalhe>
+                                    ))}
+                                    {!i.documentos.length && (
+                                      <p className="text-secondary/60 text-[12px]">
+                                        A conferência abre quando o boletim chegar.
+                                      </p>
+                                    )}
+                                  </dl>
+                                ))}
                             </div>
                           </td>
                         </tr>
