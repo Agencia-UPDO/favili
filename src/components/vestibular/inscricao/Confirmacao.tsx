@@ -27,6 +27,8 @@ export type InscricaoConfirmada = {
   fazProva: boolean;
   diaProva: string | null;
   horaProva: string | null;
+  provaIniciada?: boolean;
+  provaEntregue?: boolean;
 };
 
 // Comprovante da inscrição, com o número e o código de acesso. Aparece logo depois da inscrição (modo "nova")

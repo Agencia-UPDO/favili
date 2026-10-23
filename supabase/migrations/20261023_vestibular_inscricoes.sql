@@ -30,3 +30,13 @@ create table if not exists vestibular_inscricoes (
 
 -- Só o servidor (chave service_role) lê e grava; nada fica exposto para a chave pública
 alter table vestibular_inscricoes enable row level security;
+
+-- Prova on-line: início e fim calculados pelo servidor, respostas salvas a cada clique, nota na entrega
+alter table vestibular_inscricoes
+  add column if not exists prova_inicio timestamptz,
+  add column if not exists prova_fim timestamptz,
+  add column if not exists prova_entregue_em timestamptz,
+  add column if not exists respostas jsonb not null default '{}'::jsonb,
+  add column if not exists acertos integer,
+  add column if not exists nota numeric(4, 1),
+  add column if not exists nota_matematica numeric(4, 1);

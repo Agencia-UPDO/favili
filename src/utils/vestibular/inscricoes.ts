@@ -31,11 +31,23 @@ export type NovaInscricao = {
   origem: string | null;
 };
 
-export type Inscricao = NovaInscricao & {
-  numero: number;
-  codigo: string;
-  criado_em: string;
+// Campos da prova on-line (vazios até o candidato começar)
+export type DadosProva = {
+  prova_inicio?: string | null;
+  prova_fim?: string | null;
+  prova_entregue_em?: string | null;
+  respostas?: Record<string, string> | null;
+  acertos?: number | null;
+  nota?: number | null;
+  nota_matematica?: number | null;
 };
+
+export type Inscricao = NovaInscricao &
+  DadosProva & {
+    numero: number;
+    codigo: string;
+    criado_em: string;
+  };
 
 export class CpfJaInscrito extends Error {
   constructor(public inscricao: Inscricao) {
@@ -143,18 +155,20 @@ export const entrar = async (cpf: string, codigo: string): Promise<Inscricao | n
   return inscricao && normalizarCodigo(inscricao.codigo) === normalizarCodigo(codigo) ? inscricao : null;
 };
 
-export const trocarHorario = async (inscricao: Inscricao, dia: string, hora: string): Promise<Inscricao> => {
+// Atualiza campos de uma inscrição (horário da prova, respostas, entrega)
+export const atualizar = async (inscricao: Inscricao, campos: Partial<Inscricao>): Promise<Inscricao> => {
   const sb = supabase();
   if (!sb) {
     const lista = await lerLocal();
-    const atualizada = { ...inscricao, dia_prova: dia, hora_prova: hora };
+    const atual = lista.find((i) => i.numero === inscricao.numero) ?? inscricao;
+    const atualizada = { ...atual, ...campos };
     await gravarLocal(lista.map((i) => (i.numero === inscricao.numero ? atualizada : i)));
     return atualizada;
   }
   const res = await fetch(`${sb.url}?numero=eq.${inscricao.numero}`, {
     method: 'PATCH',
     headers: { ...sb.headers, Prefer: 'return=representation' },
-    body: JSON.stringify({ dia_prova: dia, hora_prova: hora }),
+    body: JSON.stringify(campos),
   });
   if (!res.ok) {
     throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
@@ -162,6 +176,9 @@ export const trocarHorario = async (inscricao: Inscricao, dia: string, hora: str
   const [atualizada] = (await res.json()) as Inscricao[];
   return atualizada;
 };
+
+export const trocarHorario = (inscricao: Inscricao, dia: string, hora: string) =>
+  atualizar(inscricao, { dia_prova: dia, hora_prova: hora });
 
 // O que o candidato vê da própria inscrição (sem CPF nem dados internos)
 export const visaoCandidato = (i: Inscricao) => ({
@@ -175,4 +192,6 @@ export const visaoCandidato = (i: Inscricao) => ({
   fazProva: i.faz_prova,
   diaProva: i.dia_prova,
   horaProva: i.hora_prova?.slice(0, 5) ?? null,
+  provaIniciada: !!i.prova_inicio,
+  provaEntregue: !!i.prova_entregue_em,
 });

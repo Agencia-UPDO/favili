@@ -13,10 +13,10 @@ const links = [
 const Header = () => (
   <header className="border-stroke-2/70 fixed inset-x-0 top-0 z-50 border-b bg-white/90 backdrop-blur-md">
     <div className="main-container flex h-[68px] items-center justify-between gap-4 lg:h-[80px]">
-      <a href="#topo" className="flex items-center gap-3">
-        <Image src={logo} alt="Faculdade Vidal" className="h-10 w-auto lg:h-12" priority />
-        <span className="border-stroke-3 hidden border-l pl-3 leading-tight sm:block">
-          <span className="font-condensada text-vest-navy block text-[19px] font-bold tracking-wide uppercase">
+      <a href="#topo" className="flex items-center gap-2.5 sm:gap-3">
+        <Image src={logo} alt="Faculdade Vidal" className="h-9 w-auto sm:h-10 lg:h-12" priority />
+        <span className="border-stroke-3 block border-l pl-2.5 leading-tight sm:pl-3">
+          <span className="font-condensada text-vest-navy block text-[16px] font-bold tracking-wide uppercase sm:text-[19px]">
             Vestibular 2027.1
           </span>
           <span className="text-tagline-3 text-secondary/60">Conquista Vidal</span>
@@ -37,7 +37,7 @@ const Header = () => (
         <a href="/vestibular/minha-inscricao" className="text-vest-blue hidden text-[15px] font-semibold hover:underline sm:block">
           Já me inscrevi
         </a>
-        <BotaoInscricao className="px-5 py-2.5 text-[15px] md:px-7 md:py-3">
+        <BotaoInscricao className="px-4 py-2.5 text-[14px] sm:px-5 sm:text-[15px] md:px-7 md:py-3">
           Inscreva-se
         </BotaoInscricao>
       </div>

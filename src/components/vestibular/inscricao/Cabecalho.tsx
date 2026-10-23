@@ -6,10 +6,10 @@ import { rotaAreaCandidato } from './Confirmacao';
 const Cabecalho = ({ link }: { link: 'inscricao' | 'area' }) => (
   <header className="border-stroke-2/70 border-b bg-white print:hidden">
     <div className="main-container flex h-[68px] items-center justify-between gap-4">
-      <a href="/vestibular" className="flex items-center gap-3">
-        <Image src={logo} alt="Faculdade Vidal" className="h-10 w-auto" priority />
-        <span className="border-stroke-3 hidden border-l pl-3 leading-tight sm:block">
-          <span className="font-condensada text-vest-navy block text-[19px] font-bold tracking-wide uppercase">
+      <a href="/vestibular" className="flex items-center gap-2.5 sm:gap-3">
+        <Image src={logo} alt="Faculdade Vidal" className="h-9 w-auto sm:h-10" priority />
+        <span className="border-stroke-3 block border-l pl-2.5 leading-tight sm:pl-3">
+          <span className="font-condensada text-vest-navy block text-[16px] font-bold tracking-wide uppercase sm:text-[19px]">
             Vestibular 2027.1
           </span>
           <span className="text-tagline-3 text-secondary/60">Conquista Vidal</span>
@@ -18,13 +18,13 @@ const Cabecalho = ({ link }: { link: 'inscricao' | 'area' }) => (
       {link === 'area' ? (
         <a
           href={rotaAreaCandidato}
-          className="border-vest-blue text-vest-blue hover:bg-vest-blue rounded-full border px-4 py-2 text-[14px] font-bold transition-colors hover:text-white">
+          className="border-vest-blue text-vest-blue hover:bg-vest-blue rounded-full border px-3 py-2 text-[13px] font-bold whitespace-nowrap transition-colors hover:text-white sm:px-4 sm:text-[14px]">
           Já me inscrevi
         </a>
       ) : (
         <a
           href="/vestibular/inscricao"
-          className="border-vest-blue text-vest-blue hover:bg-vest-blue rounded-full border px-4 py-2 text-[14px] font-bold transition-colors hover:text-white">
+          className="border-vest-blue text-vest-blue hover:bg-vest-blue rounded-full border px-3 py-2 text-[13px] font-bold whitespace-nowrap transition-colors hover:text-white sm:px-4 sm:text-[14px]">
           Fazer inscrição
         </a>
       )}

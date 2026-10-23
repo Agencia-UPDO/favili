@@ -12,7 +12,7 @@ import { campoClass, opcaoAtiva, opcaoClass, rotuloClass } from './estilos';
 // Área do candidato: entra com CPF + código, vê o comprovante, troca o horário até o fim das inscrições e,
 // na hora marcada, começa a prova. CPF e código ficam só nesta aba (sessionStorage) para sobreviver a um recarregar.
 
-const chaveSessao = 'vestibular-acesso';
+export const chaveSessao = 'vestibular-acesso';
 export const chaveCpf = 'vestibular-cpf';
 
 const ler = (chave: string) => {
@@ -37,7 +37,6 @@ const gravar = (chave: string, valor: string | null) => {
 const inicioDaProva = (i: InscricaoConfirmada) =>
   i.diaProva && i.horaProva ? new Date(`${i.diaProva}T${i.horaProva}:00-03:00`) : null;
 
-const duracaoMs = vestibular.duracaoHoras * 60 * 60 * 1000;
 const dataResultado = new Date('2026-11-24T00:00:00-03:00');
 
 const faltam = (ms: number) => {
@@ -51,7 +50,15 @@ const faltam = (ms: number) => {
   return horas > 0 ? `${horas}h ${minutos}min` : `${minutos} min`;
 };
 
-const StatusProva = ({ inscricao, agora }: { inscricao: InscricaoConfirmada; agora: number }) => {
+const StatusProva = ({
+  inscricao,
+  agora,
+  modoTeste,
+}: {
+  inscricao: InscricaoConfirmada;
+  agora: number;
+  modoTeste: boolean;
+}) => {
   const inicio = inicioDaProva(inscricao);
   if (!inscricao.fazProva || !inicio) {
     return (
@@ -66,6 +73,39 @@ const StatusProva = ({ inscricao, agora }: { inscricao: InscricaoConfirmada; ago
   }
 
   const ms = inicio.getTime() - agora;
+  const fimDoDia = new Date(`${inscricao.diaProva}T20:00:00-03:00`).getTime();
+  const liberada = !inscricao.provaEntregue && (modoTeste || inscricao.provaIniciada || (ms <= 0 && agora < fimDoDia));
+
+  if (inscricao.provaEntregue) {
+    return (
+      <div className="bg-primary-50 rounded-[22px] p-5 text-center text-[15px]">
+        <p className="text-vest-navy font-bold">Prova enviada ✓</p>
+        <p className="mt-1">
+          {agora < dataResultado.getTime()
+            ? `O resultado com as bolsas sai em ${vestibular.resultado}, aqui nesta página.`
+            : 'Confira aqui o seu resultado.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (liberada) {
+    return (
+      <div className="bg-vest rounded-[22px] p-6 text-center text-white">
+        <p className="text-[16px] text-white">
+          {inscricao.provaIniciada ? 'Sua prova está em andamento.' : 'Chegou a hora! Sua prova está liberada.'}
+        </p>
+        <a
+          href="/vestibular/prova"
+          className="bg-vest-yellow text-vest-navy mt-4 inline-flex items-center gap-2 rounded-full px-8 py-4 text-[18px] font-extrabold transition-colors hover:bg-white">
+          {inscricao.provaIniciada ? 'Continuar prova' : 'Começar prova'} <Seta />
+        </a>
+        {modoTeste && !inscricao.provaIniciada && (
+          <p className="mt-3 text-[13px] text-white/80">Modo de teste: liberada fora do horário.</p>
+        )}
+      </div>
+    );
+  }
 
   // Sala de espera: nos 15 minutos antes do horário, confirma os dados, lembra as regras e conta os segundos
   if (ms > 0 && ms <= minutosAntes * 60000) {
@@ -107,19 +147,6 @@ const StatusProva = ({ inscricao, agora }: { inscricao: InscricaoConfirmada; ago
           Entre aqui {minutosAntes} minutos antes do horário (às {horaDeEntrar(inscricao.horaProva ?? '00:00')}) para
           liberar a prova. Você tem até {vestibular.duracaoHoras} horas.
         </p>
-      </div>
-    );
-  }
-
-  if (agora < inicio.getTime() + duracaoMs) {
-    return (
-      <div className="bg-vest rounded-[22px] p-6 text-center text-white">
-        <p className="text-[16px] text-white">Chegou a hora! Sua prova está liberada.</p>
-        <a
-          href="/vestibular/prova"
-          className="bg-vest-yellow text-vest-navy mt-4 inline-flex items-center gap-2 rounded-full px-8 py-4 text-[18px] font-extrabold transition-colors hover:bg-white">
-          Começar prova <Seta />
-        </a>
       </div>
     );
   }
@@ -242,6 +269,7 @@ const AreaCandidato = () => {
   const [status, setStatus] = useState<'carregando' | 'idle' | 'entrando'>('carregando');
   const [aviso, setAviso] = useState('');
   const [esqueci, setEsqueci] = useState(false);
+  const [modoTeste, setModoTeste] = useState(false);
   const [agora, setAgora] = useState(() => Date.now());
 
   const entrar = async (cpfEntrada: string, codigoEntrada: string, silencioso = false) => {
@@ -256,6 +284,7 @@ const AreaCandidato = () => {
     setStatus('idle');
     if (res?.ok && resposta.ok) {
       setInscricao(resposta.inscricao);
+      setModoTeste(!!resposta.modoTeste);
       gravar(chaveSessao, JSON.stringify({ cpf: soDigitos(cpfEntrada), codigo: resposta.inscricao.codigo }));
       return;
     }
@@ -308,7 +337,7 @@ const AreaCandidato = () => {
           modo="area"
           extra={
             <div className="space-y-4 print:hidden">
-              <StatusProva inscricao={inscricao} agora={agora} />
+              <StatusProva inscricao={inscricao} agora={agora} modoTeste={modoTeste} />
               {podeTrocar && (
                 <TrocarHorario inscricao={inscricao} cpf={cpf} codigo={inscricao.codigo} aoTrocar={setInscricao} />
               )}

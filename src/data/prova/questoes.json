@@ -1,0 +1,59 @@
+[
+  {
+    "id": "exemplo-lin-01",
+    "area": "linguagens",
+    "nivel": "facil",
+    "textoBase": "Questão de exemplo (substituir pelo banco oficial). \"A leitura é uma ponte entre o que sabemos e o que ainda vamos descobrir.\"",
+    "enunciado": "Na frase acima, a palavra \"ponte\" foi usada em sentido:",
+    "alternativas": [
+      { "letra": "A", "texto": "literal, indicando uma construção sobre um rio." },
+      { "letra": "B", "texto": "figurado, indicando ligação ou passagem." },
+      { "letra": "C", "texto": "técnico, próprio da engenharia." },
+      { "letra": "D", "texto": "irônico, sugerindo o contrário do que se diz." },
+      { "letra": "E", "texto": "científico, com valor de definição." }
+    ],
+    "correta": "B"
+  },
+  {
+    "id": "exemplo-lin-02",
+    "area": "linguagens",
+    "nivel": "medio",
+    "enunciado": "Questão de exemplo (substituir pelo banco oficial). Qual alternativa apresenta um conectivo que expressa ideia de oposição?",
+    "alternativas": [
+      { "letra": "A", "texto": "portanto" },
+      { "letra": "B", "texto": "porque" },
+      { "letra": "C", "texto": "entretanto" },
+      { "letra": "D", "texto": "além disso" },
+      { "letra": "E", "texto": "assim que" }
+    ],
+    "correta": "C"
+  },
+  {
+    "id": "exemplo-mat-01",
+    "area": "matematica",
+    "nivel": "facil",
+    "enunciado": "Questão de exemplo (substituir pelo banco oficial). Uma camiseta de R$ 80,00 está com 25% de desconto. Qual é o preço com desconto?",
+    "alternativas": [
+      { "letra": "A", "texto": "R$ 55,00" },
+      { "letra": "B", "texto": "R$ 58,00" },
+      { "letra": "C", "texto": "R$ 60,00" },
+      { "letra": "D", "texto": "R$ 62,50" },
+      { "letra": "E", "texto": "R$ 65,00" }
+    ],
+    "correta": "C"
+  },
+  {
+    "id": "exemplo-mat-02",
+    "area": "matematica",
+    "nivel": "medio",
+    "enunciado": "Questão de exemplo (substituir pelo banco oficial). Se 2x + 6 = 20, quanto vale x?",
+    "alternativas": [
+      { "letra": "A", "texto": "5" },
+      { "letra": "B", "texto": "6" },
+      { "letra": "C", "texto": "7" },
+      { "letra": "D", "texto": "8" },
+      { "letra": "E", "texto": "13" }
+    ],
+    "correta": "C"
+  }
+]
