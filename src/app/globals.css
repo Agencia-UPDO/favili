@@ -93,3 +93,42 @@
     animation: none;
   }
 }
+
+/* =========== Identidade Vestibular Vidal 2027.1 (cores das artes da campanha) =========== */
+@theme {
+  --color-vest-deep: #031b4e;
+  --color-vest-navy: #062e72;
+  --color-vest-blue: #0d5fd1;
+  --color-vest-sky: #2b9df4;
+  --color-vest-cyan: #45d3ff;
+  --color-vest-yellow: #ffdc14;
+  --color-vest-logo: #02497f;
+}
+
+@theme inline {
+  --font-condensada: var(--font-barlow-condensed), 'Arial Narrow', sans-serif;
+  --font-serifada: var(--font-cinzel), Georgia, serif;
+}
+
+/* Títulos das artes: condensada, pesada e em caixa alta */
+@utility font-chamada {
+  font-family: var(--font-barlow-condensed), 'Arial Narrow', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+/* Fundo azul das artes: degradê do marinho ao azul-céu */
+@utility bg-vest {
+  background-color: var(--color-vest-navy);
+  background-image:
+    radial-gradient(90% 70% at 85% 10%, rgba(69, 211, 255, 0.45) 0%, rgba(69, 211, 255, 0) 60%),
+    linear-gradient(160deg, #0d5fd1 0%, #062e72 60%, #031b4e 100%);
+}
+
+/* Retícula de pontos das artes */
+@utility bg-pontos {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.22) 1.2px, transparent 1.6px);
+  background-size: 14px 14px;
+}
