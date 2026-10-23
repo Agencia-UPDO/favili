@@ -30,7 +30,7 @@ const page = async ({ searchParams }: { searchParams: Promise<Record<string, str
             <Rotulo>Inscrição grátis</Rotulo>
             <h1 className="font-chamada text-vest-navy text-[44px] md:text-[56px]">Garanta sua vaga</h1>
             <p className="text-[16px] md:text-lg">
-              {vestibular.descontoGarantido} de desconto garantido para todos. Faça a prova em {vestibular.diasCurto},
+              {vestibular.descontoGarantido} de desconto garantido para os aprovados. Faça a prova em {vestibular.diasCurto},
               no dia e horário que escolher, e concorra a bolsas de até 100%. Inscrições até{' '}
               {vestibular.inscricoes.split(' a ')[1]}, às 18h.
             </p>

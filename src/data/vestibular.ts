@@ -34,7 +34,7 @@ export const instituicao = {
   telefone: '(88) 3423-6090',
   telefoneLink: 'tel:+558834236090',
   // WhatsApp da secretaria, só números com DDI e DDD (ex.: 5588999999999). Vazio: o site não mostra o atalho
-  whatsapp: '',
+  whatsapp: '558834236090',
   site: 'favili.com.br',
   instagram: 'https://www.instagram.com/faculdadevidal/',
 };
@@ -243,9 +243,9 @@ export const bolsasResumo = [
 export const degraus = [
   {
     percentual: '40%',
-    titulo: 'Garantido para todos',
+    titulo: 'Garantido para os aprovados',
     texto:
-      'Entrou pelo Enem, segunda graduação, transferência, vestibular agendado ou ficou fora das bolsas? Você já tem 40% de desconto nas mensalidades.',
+      'Aprovado pelo Enem, segunda graduação, transferência ou no vestibular, mas ficou fora das bolsas? Você já tem 40% de desconto nas mensalidades.',
   },
   {
     percentual: '50% a 70%',

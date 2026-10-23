@@ -195,7 +195,8 @@ export const resultadoDoCandidato = async (i: Inscricao) => {
   return {
     publicado: true,
     classificado: !!linha?.aprovado,
-    reprovado: linha ? !linha.aprovado : false,
+    // reprovado pela nota, reprovado manualmente ou ausente (sem linha no resultado): sem bolsa e sem os 40%
+    reprovado: !linha?.aprovado,
     classificacaoOferta: linha?.classificacaoOferta ?? null,
     totalOferta: publicado.linhas.filter((l) => l.aprovado && l.ofertaId === i.oferta_id).length,
     bolsa: linha?.bolsa ?? null,

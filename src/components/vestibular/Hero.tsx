@@ -32,7 +32,7 @@ const Hero = () => (
             <p className="font-chamada text-[30px] leading-tight text-white md:text-[38px]">
               <Marca>Bolsas de até 100%</Marca> no vestibular
               <span className="mt-1 block text-[22px] text-white/90 md:text-[26px]">
-                e {vestibular.descontoGarantido} de desconto garantido para todos
+                e {vestibular.descontoGarantido} de desconto garantido para os aprovados
               </span>
             </p>
           </RevealAnimation>
