@@ -135,7 +135,7 @@ export async function GET(request: Request) {
           l.oferta,
           l.nota,
           l.notaMatematica,
-          l.bolsa ? `${l.bolsa}%` : '40% garantido',
+          !l.aprovado ? 'Reprovado' : l.bolsa ? `${l.bolsa}%` : '40% garantido',
         ]),
       ]),
     );

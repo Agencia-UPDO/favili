@@ -21,12 +21,20 @@ const exemplos = [
   ['Teste Elisa Nogueira', 'psicologia', 6, 3.5, '2006-06-30', true],
   ['Teste Fábio Araújo', 'psicologia', 3, 1.5, '2005-02-14', true],
   ['Teste Gabriela Sousa', 'psicologia', 2.5, 1, '2007-09-09', true],
+  // Psicologia tem 65, 60, 60, 50 e 50: Daniel (7,5) leva os 65%; Otávio (7,2) e Paula (6,2) ficam com os 60%;
+  // Elisa (6,0) chega quando os 60% acabaram e desce para 50%; Rafael (5,0) leva o último 50%;
+  // Sofia (5,0) é aprovada sem vaga: 40% garantido
+  ['Teste Otávio Lemos', 'psicologia', 7.2, 3.5, '2005-04-04', true],
+  ['Teste Paula Rabelo', 'psicologia', 6.2, 3, '2006-01-11', true],
+  ['Teste Rafael Teixeira', 'psicologia', 5, 2.5, '2004-03-03', true],
+  ['Teste Sofia Maia', 'psicologia', 5, 2.5, '2007-03-03', true], // empata com Rafael, que é mais velho
+  ['Teste Tiago Barreto', 'direito', 4.5, 2, '2006-10-10', true], // abaixo de 5: reprovado
   ['Teste Heitor Pinheiro', 'enfermagem', 8, 4.5, '2006-12-02', true],
   ['Teste Iara Freitas', 'enfermagem', 8, 4.5, '2003-04-18', true], // empate total: a mais velha fica à frente
-  ['Teste João Pedro Costa', 'administracao-ead', 7, 3, '1998-07-22', true],
-  ['Teste Karina Holanda', 'administracao-ead', 5.5, 2.5, '1995-10-10', true],
+  ['Teste João Pedro Costa', 'administracao-ead', 7, 3, '1998-07-22', true], // sem nota para 70%: fica com 60%
+  ['Teste Karina Holanda', 'administracao-ead', 5.5, 2.5, '1995-10-10', true], // abaixo de 6: 40% garantido
   ['Teste Lucas Moreira', 'pedagogia-semi', 6.5, 2, '2001-05-03', true],
-  ['Teste Marina Bezerra', 'odontologia', 0, 0, '2006-02-27', true], // zerou: não é classificada
+  ['Teste Marina Bezerra', 'odontologia', 0, 0, '2006-02-27', true], // zerou: reprovada
   ['Teste Nicolas Fernandes', 'fisioterapia', null, null, '2006-08-15', false], // faltou
 ];
 

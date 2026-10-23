@@ -1,5 +1,6 @@
 'use client';
 
+import { notaAprovacao } from '@/data/bolsas';
 import { cn } from '@/utils/cn';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
@@ -32,12 +33,17 @@ type Dados = {
     oferta: string;
     nota: number;
     notaMatematica: number;
-    classificacaoGeral: number;
-    classificacaoOferta: number;
+    aprovado: boolean;
+    classificacaoGeral: number | null;
+    classificacaoOferta: number | null;
     bolsa: number | null;
   }[];
   publicadoEm: string | null;
 };
+
+// Faixa de cada candidato no resultado
+const faixa = (l: Dados['previa'][number]) =>
+  !l.aprovado ? `Reprovado (< ${notaAprovacao})` : l.bolsa ? `Bolsa ${l.bolsa}%` : '40% garantido';
 
 const dataHora = (iso: string) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const celular = (c: string) => c.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
@@ -140,6 +146,7 @@ const Painel = () => {
     `${i.numero} ${i.nome} ${i.email} ${i.curso}`.toLowerCase().includes(busca.toLowerCase()),
   );
   const contemplados = dados.previa.filter((l) => l.bolsa);
+  const aprovados = dados.previa.filter((l) => l.aprovado);
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
@@ -290,13 +297,14 @@ const Painel = () => {
           </div>
           {aviso && <p className="text-[14px] font-semibold text-red-600">{aviso}</p>}
           <p className="text-secondary/70 text-[14px]">
-            {dados.previa.length} classificados · {contemplados.length} contemplados com bolsa
+            {aprovados.length} aprovados · {contemplados.length} contemplados com bolsa ·{' '}
+            {dados.previa.length - aprovados.length} reprovados (nota abaixo de {notaAprovacao})
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-[14px]">
               <thead className="text-secondary/60 border-stroke-2 border-b">
                 <tr>
-                  {['Geral', 'No curso', 'Nº', 'Candidato', 'Curso', 'Nota', 'Mat.', 'Bolsa'].map((c) => (
+                  {['Geral', 'No curso', 'Nº', 'Candidato', 'Curso', 'Nota', 'Mat.', 'Faixa'].map((c) => (
                     <th key={c} className="px-2 py-2 font-semibold">
                       {c}
                     </th>
@@ -305,15 +313,23 @@ const Painel = () => {
               </thead>
               <tbody>
                 {dados.previa.map((l) => (
-                  <tr key={l.numero} className={cn('border-stroke-2 border-b', l.bolsa && 'bg-primary-50')}>
-                    <td className="px-2 py-2 font-semibold">{l.classificacaoGeral}º</td>
-                    <td className="px-2 py-2">{l.classificacaoOferta}º</td>
+                  <tr
+                    key={l.numero}
+                    className={cn(
+                      'border-stroke-2 border-b',
+                      l.bolsa && 'bg-primary-50',
+                      !l.aprovado && 'text-secondary/50',
+                    )}>
+                    <td className="px-2 py-2 font-semibold">
+                      {l.classificacaoGeral ? `${l.classificacaoGeral}º` : '—'}
+                    </td>
+                    <td className="px-2 py-2">{l.classificacaoOferta ? `${l.classificacaoOferta}º` : '—'}</td>
                     <td className="px-2 py-2">{l.numero}</td>
                     <td className="px-2 py-2">{l.iniciais}</td>
                     <td className="px-2 py-2">{l.oferta}</td>
                     <td className="px-2 py-2">{l.nota.toFixed(1)}</td>
                     <td className="px-2 py-2">{l.notaMatematica.toFixed(1)}</td>
-                    <td className="px-2 py-2 font-bold">{l.bolsa ? `${l.bolsa}%` : '40% garantido'}</td>
+                    <td className="px-2 py-2 font-bold">{faixa(l)}</td>
                   </tr>
                 ))}
               </tbody>
