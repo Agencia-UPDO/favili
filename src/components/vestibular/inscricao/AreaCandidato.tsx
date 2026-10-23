@@ -1,6 +1,6 @@
 'use client';
 
-import { diasProva, horariosProva } from '@/data/inscricao';
+import { diasProva, horaDeEntrar, horariosProva, minutosAntes } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { formatarCpf, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
@@ -66,13 +66,46 @@ const StatusProva = ({ inscricao, agora }: { inscricao: InscricaoConfirmada; ago
   }
 
   const ms = inicio.getTime() - agora;
+
+  // Sala de espera: nos 15 minutos antes do horário, confirma os dados, lembra as regras e conta os segundos
+  if (ms > 0 && ms <= minutosAntes * 60000) {
+    const seg = Math.ceil(ms / 1000);
+    return (
+      <div className="bg-vest space-y-4 rounded-[22px] p-6 text-white">
+        <div className="text-center">
+          <p className="text-vest-cyan text-[12px] font-bold tracking-[0.2em] uppercase">Sala de espera</p>
+          <p className="font-chamada mt-1 text-[48px] text-white">
+            {Math.floor(seg / 60)}:{String(seg % 60).padStart(2, '0')}
+          </p>
+          <p className="text-[15px] text-white/90">para a sua prova começar. Não feche esta página.</p>
+        </div>
+        <ul className="space-y-2 rounded-2xl bg-white/10 p-4 text-[14px] text-white">
+          {[
+            `São ${vestibular.duracaoHoras} horas para responder as 20 questões, contadas a partir do início.`,
+            'Use um lugar tranquilo e confira a internet e a bateria do aparelho.',
+            'Suas respostas ficam salvas a cada questão; se a conexão cair, entre de novo com CPF e código.',
+            'Cada candidato faz a prova uma única vez.',
+          ].map((regra) => (
+            <li key={regra} className="flex gap-2">
+              <span aria-hidden className="text-vest-yellow">
+                •
+              </span>
+              {regra}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   if (ms > 0) {
     return (
       <div className="bg-primary-50 rounded-[22px] p-5 text-center">
         <p className="text-vest-blue text-[12px] font-bold tracking-[0.2em] uppercase">Sua prova abre em</p>
         <p className="font-chamada text-vest-navy mt-1 text-[40px]">{faltam(ms)}</p>
         <p className="text-[15px]">
-          O botão para começar a prova aparece aqui no horário marcado. Você tem até {vestibular.duracaoHoras} horas.
+          Entre aqui {minutosAntes} minutos antes do horário (às {horaDeEntrar(inscricao.horaProva ?? '00:00')}) para
+          liberar a prova. Você tem até {vestibular.duracaoHoras} horas.
         </p>
       </div>
     );
@@ -244,7 +277,7 @@ const AreaCandidato = () => {
       setCpf(formatarCpf(ler(chaveCpf) ?? ''));
       setStatus('idle');
     }
-    const timer = setInterval(() => setAgora(Date.now()), 30000);
+    const timer = setInterval(() => setAgora(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 

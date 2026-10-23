@@ -1,6 +1,6 @@
 // Ofertas da inscrição do Vestibular Conquista Vidal 2027.1, iguais às do SEI (processos 148 a 152, consultados em
 // 23/10/2026). O código do processo seletivo vai junto com a inscrição para a secretaria lançar no SEI sem dúvida.
-import { FormaId } from './vestibular';
+import { FormaId, vestibular } from './vestibular';
 
 export type Oferta = {
   id: string;
@@ -106,3 +106,21 @@ export const documentoPorForma: Partial<Record<FormaId, string>> = {
   'segunda-graduacao': 'o diploma e o histórico da graduação',
   transferencia: 'a declaração de vínculo ou o histórico com status de cursando',
 };
+
+// Endereço da área do candidato, por extenso, para o comprovante, o WhatsApp e a agenda
+export const rotaAreaCandidato = '/vestibular/minha-inscricao';
+export const linkAreaCandidato = `${vestibular.site}${rotaAreaCandidato}`;
+export const linkAreaCandidatoCurto = linkAreaCandidato.replace(/^https?:\/\//, '');
+
+// O candidato entra 15 minutos antes do horário para liberar a prova: "10:00" → "9h45"
+export const minutosAntes = 15;
+export const horaDeEntrar = (hora: string) => {
+  const [h, m] = hora.split(':').map(Number);
+  const total = h * 60 + m - minutosAntes;
+  const hh = Math.floor(total / 60);
+  const mm = total % 60;
+  return mm ? `${hh}h${String(mm).padStart(2, '0')}` : `${hh}h`;
+};
+
+export const avisoEntrada = (hora: string) =>
+  `No dia da prova, entre em ${linkAreaCandidatoCurto} com seu CPF e código pelo menos ${minutosAntes} minutos antes do seu horário (às ${horaDeEntrar(hora)} para a prova das ${hora.replace(':00', 'h')}) para liberar a prova.`;

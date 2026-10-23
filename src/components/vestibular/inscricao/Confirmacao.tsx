@@ -1,12 +1,20 @@
 'use client';
 
-import { diasProva, documentoPorForma, nomeOferta, ofertas } from '@/data/inscricao';
+import {
+  avisoEntrada,
+  diasProva,
+  documentoPorForma,
+  linkAreaCandidatoCurto,
+  nomeOferta,
+  ofertas,
+  rotaAreaCandidato,
+} from '@/data/inscricao';
 import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
 import { ReactNode, useState } from 'react';
 import { Check } from '../ui';
 import SalvarInscricao from './SalvarInscricao';
 
-export const rotaAreaCandidato = '/vestibular/minha-inscricao';
+export { rotaAreaCandidato };
 
 export type InscricaoConfirmada = {
   numero: number;
@@ -107,6 +115,13 @@ const Confirmacao = ({
       {extra}
 
       <div className="space-y-3">
+        <div className="border-vest-blue bg-primary-50 rounded-[18px] border-l-4 p-4 text-[15px]">
+          <p className="text-secondary/70 text-[13px]">Para ver sua inscrição e fazer a prova, acesse:</p>
+          <a href={rotaAreaCandidato} className="text-vest-navy text-[17px] font-bold break-all underline">
+            {linkAreaCandidatoCurto}
+          </a>
+          <p className="text-secondary/70 text-[13px]">com o seu CPF e o código de acesso.</p>
+        </div>
         <p className="font-chamada text-vest-navy text-[24px]">Próximos passos</p>
         <ol className="space-y-3 text-[15px]">
           {inscricao.fazProva && (
@@ -121,11 +136,8 @@ const Confirmacao = ({
               <li className="flex gap-3">
                 <span className="text-vest-blue font-bold">2.</span>
                 <span>
-                  No dia e horário escolhidos, entre em{' '}
-                  <a href={rotaAreaCandidato} className="text-vest-blue font-semibold underline">
-                    Minha inscrição
-                  </a>{' '}
-                  com seu CPF e o código acima. Você tem até {vestibular.duracaoHoras} horas.
+                  {inscricao.horaProva ? avisoEntrada(inscricao.horaProva) : null} Você tem até{' '}
+                  {vestibular.duracaoHoras} horas de prova.
                 </span>
               </li>
               <li className="flex gap-3">

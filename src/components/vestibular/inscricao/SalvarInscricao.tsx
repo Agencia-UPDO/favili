@@ -1,13 +1,11 @@
 'use client';
 
-import { diasProva } from '@/data/inscricao';
+import { avisoEntrada, diasProva, linkAreaCandidato, minutosAntes } from '@/data/inscricao';
 import { vestibular } from '@/data/vestibular';
-import { InscricaoConfirmada, rotaAreaCandidato } from './Confirmacao';
+import { InscricaoConfirmada } from './Confirmacao';
 
 // Botões para o candidato guardar o código: mandar para o próprio WhatsApp e pôr a prova na agenda
-// (arquivo .ics, que abre no calendário do celular, ou o Google Agenda), com lembretes de 1 dia e 1 hora antes.
-
-const linkArea = () => `${window.location.origin}${rotaAreaCandidato}`;
+// (arquivo .ics, que abre no calendário do celular, ou o Google Agenda), com lembretes de 1 dia, 1 hora e 15 minutos antes.
 
 const inicioFim = (i: InscricaoConfirmada) => {
   if (!i.diaProva || !i.horaProva) {
@@ -35,13 +33,19 @@ const mensagem = (i: InscricaoConfirmada) =>
     `Inscrição nº ${i.numero}`,
     `Código de acesso: *${i.codigo}*`,
     textoProva(i) ? `Prova: ${textoProva(i)}` : null,
-    `Entre com seu CPF e o código em: ${linkArea()}`,
+    i.horaProva ? avisoEntrada(i.horaProva) : `Entre com seu CPF e o código em: ${linkAreaCandidato}`,
   ]
     .filter(Boolean)
     .join('\n');
 
 const detalhesAgenda = (i: InscricaoConfirmada) =>
-  `Código de acesso: ${i.codigo}\nInscrição nº ${i.numero}\nEntre com seu CPF e o código em ${linkArea()}\nVocê tem até ${vestibular.duracaoHoras} horas.`;
+  [
+    `Código de acesso: ${i.codigo}`,
+    `Inscrição nº ${i.numero}`,
+    i.horaProva ? avisoEntrada(i.horaProva) : `Entre com seu CPF e o código em ${linkAreaCandidato}`,
+    `Link: ${linkAreaCandidato}`,
+    `Você tem até ${vestibular.duracaoHoras} horas de prova.`,
+  ].join('\n');
 
 const baixarIcs = (i: InscricaoConfirmada) => {
   const horario = inicioFim(i);
@@ -59,9 +63,9 @@ const baixarIcs = (i: InscricaoConfirmada) => {
     `DTSTAMP:${utc(new Date())}`,
     `DTSTART:${utc(horario.inicio)}`,
     `DTEND:${utc(horario.fim)}`,
-    `SUMMARY:${escapar('Prova Vestibular Vidal')}`,
+    `SUMMARY:${escapar(`Prova Vestibular Vidal (entre ${minutosAntes} min antes)`)}`,
     `DESCRIPTION:${escapar(detalhesAgenda(i))}`,
-    `URL:${linkArea()}`,
+    `URL:${linkAreaCandidato}`,
     'BEGIN:VALARM',
     'TRIGGER:-P1D',
     'ACTION:DISPLAY',
@@ -71,6 +75,11 @@ const baixarIcs = (i: InscricaoConfirmada) => {
     'TRIGGER:-PT1H',
     'ACTION:DISPLAY',
     'DESCRIPTION:A prova do vestibular começa em 1 hora',
+    'END:VALARM',
+    'BEGIN:VALARM',
+    `TRIGGER:-PT${minutosAntes}M`,
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Entre agora com seu CPF e código para liberar a prova',
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR',
@@ -90,7 +99,7 @@ const linkGoogle = (i: InscricaoConfirmada) => {
   }
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: 'Prova Vestibular Vidal',
+    text: `Prova Vestibular Vidal (entre ${minutosAntes} min antes)`,
     dates: `${utc(horario.inicio)}/${utc(horario.fim)}`,
     details: detalhesAgenda(i),
   });

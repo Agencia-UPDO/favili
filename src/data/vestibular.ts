@@ -20,6 +20,8 @@ export const vestibular = {
   descontoGarantido: '40%',
   regulamento: '/vestibular/regulamento-vestibular-conquista-vidal-2027-1.pdf',
   // Inscrição própria do vestibular: destino de todos os botões de inscrição
+  // Endereço público do site (usado por extenso no comprovante, no WhatsApp e na agenda)
+  site: 'https://materiais.favili.com.br',
   inscricao: '/vestibular/inscricao',
   // Sistema acadêmico da faculdade (SEI), onde os aprovados completam o cadastro e fazem a matrícula
   sei: 'https://sei.favili.edu.br/processoSeletivo',
