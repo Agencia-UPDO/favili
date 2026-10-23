@@ -1,5 +1,6 @@
 import AreaCandidato from '@/components/vestibular/inscricao/AreaCandidato';
 import Cabecalho from '@/components/vestibular/inscricao/Cabecalho';
+import Rodape from '@/components/vestibular/inscricao/Rodape';
 import { Rotulo } from '@/components/vestibular/ui';
 import { Metadata } from 'next';
 
@@ -22,6 +23,7 @@ const page = () => (
         </div>
       </div>
     </main>
+    <Rodape />
   </>
 );
 

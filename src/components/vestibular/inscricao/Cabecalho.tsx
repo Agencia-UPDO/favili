@@ -9,7 +9,7 @@ const Cabecalho = ({ link }: { link: 'inscricao' | 'area' }) => (
       <a href="/vestibular" className="flex items-center gap-2.5 sm:gap-3">
         <Image src={logo} alt="Faculdade Vidal" className="h-9 w-auto sm:h-10" priority />
         <span className="border-stroke-3 block border-l pl-2.5 leading-tight sm:pl-3">
-          <span className="font-condensada text-vest-navy block text-[16px] font-bold tracking-wide uppercase sm:text-[19px]">
+          <span className="font-condensada text-vest-navy block text-[16px] font-bold tracking-wide whitespace-nowrap uppercase sm:text-[19px]">
             Vestibular 2027.1
           </span>
           <span className="text-tagline-3 text-secondary/60">Conquista Vidal</span>

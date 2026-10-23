@@ -16,17 +16,17 @@ const Header = () => (
       <a href="#topo" className="flex items-center gap-2.5 sm:gap-3">
         <Image src={logo} alt="Faculdade Vidal" className="h-9 w-auto sm:h-10 lg:h-12" priority />
         <span className="border-stroke-3 block border-l pl-2.5 leading-tight sm:pl-3">
-          <span className="font-condensada text-vest-navy block text-[16px] font-bold tracking-wide uppercase sm:text-[19px]">
+          <span className="font-condensada text-vest-navy block text-[16px] font-bold tracking-wide whitespace-nowrap uppercase sm:text-[19px]">
             Vestibular 2027.1
           </span>
           <span className="text-tagline-3 text-secondary/60">Conquista Vidal</span>
         </span>
       </a>
       <nav aria-label="Seções" className="hidden lg:block">
-        <ul className="flex gap-7">
+        <ul className="flex gap-5 xl:gap-7">
           {links.map((l) => (
             <li key={l.href}>
-              <a href={l.href} className="text-secondary/80 hover:text-vest-blue text-[15px] font-medium transition-colors">
+              <a href={l.href} className="text-secondary/80 hover:text-vest-blue text-[15px] font-medium whitespace-nowrap transition-colors">
                 {l.rotulo}
               </a>
             </li>
@@ -34,10 +34,10 @@ const Header = () => (
         </ul>
       </nav>
       <div className="flex items-center gap-4">
-        <a href="/vestibular/minha-inscricao" className="text-vest-blue hidden text-[15px] font-semibold hover:underline sm:block">
+        <a href="/vestibular/minha-inscricao" className="text-vest-blue hidden text-[15px] font-semibold whitespace-nowrap hover:underline sm:block lg:hidden xl:block">
           Já me inscrevi
         </a>
-        <BotaoInscricao className="px-4 py-2.5 text-[14px] sm:px-5 sm:text-[15px] md:px-7 md:py-3">
+        <BotaoInscricao className="px-4 py-2.5 text-[14px] whitespace-nowrap sm:px-5 sm:text-[15px] md:px-7 md:py-3">
           Inscreva-se
         </BotaoInscricao>
       </div>

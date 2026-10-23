@@ -1,4 +1,5 @@
 import Cabecalho from '@/components/vestibular/inscricao/Cabecalho';
+import Rodape from '@/components/vestibular/inscricao/Rodape';
 import FormInscricao from '@/components/vestibular/inscricao/FormInscricao';
 import { Rotulo } from '@/components/vestibular/ui';
 import { ofertas } from '@/data/inscricao';
@@ -46,6 +47,7 @@ const page = async ({ searchParams }: { searchParams: Promise<Record<string, str
           </div>
         </div>
       </main>
+      <Rodape />
     </>
   );
 };
