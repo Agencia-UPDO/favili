@@ -1,6 +1,14 @@
-import { notaMinimaBolsa } from '@/data/bolsas';
+import { areasEnem, notaMinimaBolsa } from '@/data/bolsas';
 import { formas } from '@/data/vestibular';
-import { listarInscricoes } from '@/utils/vestibular/inscricoes';
+import { itensDocumento } from '@/data/inscricao';
+import {
+  confirmarNotasEnem,
+  ErroDocumento,
+  lerLocal,
+  linkDeLeitura,
+  revisarDocumentos,
+} from '@/utils/vestibular/documentos';
+import { listarInscricoes, statusDocumento } from '@/utils/vestibular/inscricoes';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
 import {
   ajustar,
@@ -45,8 +53,30 @@ export async function GET(request: Request) {
     return negar('Entre com a senha do painel.', 401);
   }
 
-  const planilha = new URL(request.url).searchParams.get('planilha');
+  const params = new URL(request.url).searchParams;
+  const planilha = params.get('planilha');
   const inscricoes = await listarInscricoes();
+
+  // Abrir um documento: link da pasta privada que expira em 5 minutos (em desenvolvimento, o próprio arquivo)
+  if (params.has('documento')) {
+    const doc = inscricoes
+      .find((i) => String(i.numero) === params.get('documento'))
+      ?.documentos?.find((d) => d.id === params.get('id'));
+    if (!doc) {
+      return negar('Documento não encontrado.', 404);
+    }
+    const link = await linkDeLeitura(doc.caminho);
+    if (link) {
+      return NextResponse.redirect(link);
+    }
+    return new NextResponse(new Uint8Array(await lerLocal(doc.caminho)), {
+      headers: {
+        'Content-Type': doc.tipo,
+        'Content-Disposition': `inline; filename="${encodeURIComponent(doc.nome)}"`,
+        'Cache-Control': 'no-store',
+      },
+    });
+  }
 
   if (planilha === 'inscricoes') {
     return baixar(
@@ -79,6 +109,13 @@ export async function GET(request: Request) {
           'Nota',
           'Nota Matemática',
           'Origem',
+          'Documentos',
+          'Situação dos documentos',
+          'Motivo (documento recusado)',
+          'Revisado por',
+          'Ano do Enem',
+          ...areasEnem.map((a) => `Enem ${a.rotulo}`),
+          'Média do Enem',
         ],
         ...inscricoes.map((i) => [
           i.numero,
@@ -107,6 +144,13 @@ export async function GET(request: Request) {
           i.nota,
           i.nota_matematica,
           i.origem,
+          (i.documentos ?? []).length,
+          statusDocumento(i),
+          i.documento_obs,
+          i.documento_revisado_por,
+          i.enem_ano,
+          ...areasEnem.map((a) => i.enem_notas?.[a.id]),
+          i.enem_media,
         ]),
       ]),
     );
@@ -170,6 +214,7 @@ export async function GET(request: Request) {
       fazemProva: inscricoes.filter((i) => i.faz_prova).length,
       iniciaram: inscricoes.filter((i) => i.prova_inicio).length,
       entregaram: inscricoes.filter((i) => i.prova_entregue_em).length,
+      documentosParaAnalisar: inscricoes.filter((i) => statusDocumento(i) === 'enviado').length,
       porForma: formas.map((f) => ({ forma: f.rotulo, total: inscricoes.filter((i) => i.forma === f.id).length })),
     },
     inscricoes: inscricoes
@@ -184,6 +229,7 @@ export async function GET(request: Request) {
         celular: i.celular,
         email: i.email,
         forma: nomeForma(i.forma),
+        formaId: i.forma,
         curso: `${i.curso} · ${i.modalidade} · ${i.unidade} · ${i.turno}`,
         origemAcademica: [i.instituicao_origem, i.curso_origem, i.periodo_atual && `${i.periodo_atual} período`]
           .filter(Boolean)
@@ -200,6 +246,24 @@ export async function GET(request: Request) {
               : 'Em análise',
         nota: i.nota ?? null,
         atendimentoEspecial: i.atendimento_especial,
+        documentoStatus: statusDocumento(i),
+        documentoObs: i.documento_obs ?? null,
+        documentoRevisadoEm: i.documento_revisado_em ?? null,
+        documentoRevisadoPor: i.documento_revisado_por ?? null,
+        enemAno: i.enem_ano ?? null,
+        enemNotas: i.enem_notas ?? null,
+        enemMedia: i.enem_media ?? null,
+        // envio mais recente, para a fila "para analisar" (mais antigo primeiro)
+        documentoEnviadoEm: (i.documentos ?? []).reduce<string | null>(
+          (ultimo, d) => (!ultimo || d.enviadoEm > ultimo ? d.enviadoEm : ultimo),
+          null,
+        ),
+        documentos: (i.documentos ?? []).map(({ id, item, nome, tamanho }) => ({
+          id,
+          item: itensDocumento[i.forma as keyof typeof itensDocumento]?.find((it) => it.id === item)?.rotulo ?? item,
+          nome,
+          tamanho,
+        })),
       })),
     // A prévia leva os dados completos do candidato: o painel é interno (a página pública usa só as iniciais)
     previa: previa.linhas.map((l) => {
@@ -231,6 +295,39 @@ export async function POST(request: Request) {
 
   if (corpo.acao === 'sair') {
     await fecharSessao();
+    return NextResponse.json({ ok: true });
+  }
+  // Quem está usando o painel (nome digitado na tela), para registrar quem revisou
+  const por = typeof corpo.por === 'string' ? corpo.por.trim().slice(0, 60) : '';
+  if (corpo.acao === 'documento') {
+    const inscricao = (await listarInscricoes()).find((i) => i.numero === Number(corpo.numero));
+    const decisao = corpo.decisao;
+    if (!inscricao || !statusDocumento(inscricao)) {
+      return negar('Inscrição não encontrada ou sem documentos.', 400);
+    }
+    if (decisao !== 'aprovado' && decisao !== 'recusado' && decisao !== 'enviado') {
+      return negar('Decisão inválida.', 400);
+    }
+    const obs = typeof corpo.obs === 'string' ? corpo.obs.trim().slice(0, 300) : '';
+    if (decisao === 'recusado' && !obs) {
+      return negar('Escreva o motivo para o candidato saber o que mandar.', 400);
+    }
+    await revisarDocumentos(inscricao, decisao, obs, por);
+    return NextResponse.json({ ok: true });
+  }
+  if (corpo.acao === 'enem') {
+    const inscricao = (await listarInscricoes()).find((i) => i.numero === Number(corpo.numero));
+    if (!inscricao || inscricao.forma !== 'enem') {
+      return negar('Inscrição do Enem não encontrada.', 400);
+    }
+    try {
+      await confirmarNotasEnem(inscricao, corpo.ano, corpo.notas, por);
+    } catch (e) {
+      if (e instanceof ErroDocumento) {
+        return negar(e.message, 400);
+      }
+      throw e;
+    }
     return NextResponse.json({ ok: true });
   }
   if (corpo.acao === 'publicar') {

@@ -12,6 +12,7 @@ import {
 import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
 import { ReactNode, useState } from 'react';
 import { Check } from '../ui';
+import EnvioDocumentos, { InscricaoComDocumentos } from './EnvioDocumentos';
 import SalvarInscricao from './SalvarInscricao';
 
 export { rotaAreaCandidato };
@@ -29,19 +30,23 @@ export type InscricaoConfirmada = {
   horaProva: string | null;
   provaIniciada?: boolean;
   provaEntregue?: boolean;
-};
+} & Omit<InscricaoComDocumentos, 'forma'>;
 
 // Comprovante da inscrição, com o número e o código de acesso. Aparece logo depois da inscrição (modo "nova")
 // e na área do candidato (modo "area"), que encaixa o status da prova em `extra`.
 const Confirmacao = ({
-  inscricao,
+  inscricao: inicial,
   modo = 'nova',
   extra,
+  cpf,
 }: {
   inscricao: InscricaoConfirmada;
   modo?: 'nova' | 'area';
   extra?: ReactNode;
+  // Logo depois da inscrição, o CPF permite enviar os documentos sem entrar em Minha inscrição
+  cpf?: string;
 }) => {
+  const [inscricao, setInscricao] = useState(inicial);
   const [copiado, setCopiado] = useState(false);
   const oferta = ofertas.find((o) => o.id === inscricao.ofertaId);
   const forma = formas.find((f) => f.id === inscricao.forma);
@@ -79,6 +84,15 @@ const Confirmacao = ({
         <p className="text-vest-navy hidden text-center text-[20px] font-bold print:block">
           Comprovante de inscrição · {vestibular.nome}
         </p>
+      )}
+
+      {modo === 'nova' && cpf && documento && (
+        <EnvioDocumentos
+          inscricao={inscricao}
+          cpf={cpf}
+          codigo={inscricao.codigo}
+          aoAtualizar={(i) => setInscricao({ ...inscricao, ...i })}
+        />
       )}
 
       <div className="bg-vest print:border-vest-navy print:text-vest-navy relative overflow-hidden rounded-[28px] p-6 text-center text-white md:p-8 print:border-2 print:bg-none">
@@ -151,8 +165,9 @@ const Confirmacao = ({
             <li className="flex gap-3">
               <span className="text-vest-blue font-bold">{inscricao.fazProva ? '4.' : '1.'}</span>
               <span>
-                Nossa equipe vai chamar você no WhatsApp para receber {documento}. Com ele analisado, você recebe a
-                confirmação da vaga com {vestibular.descontoGarantido} de desconto.
+                {inscricao.documentoStatus === 'aprovado'
+                  ? `Seus documentos foram aprovados: sua vaga está confirmada com ${vestibular.descontoGarantido} de desconto.`
+                  : `Envie ${documento} pelo site (aqui ou em Minha inscrição), até 20/11 às 18h. Com ele aprovado, sua vaga fica confirmada com ${vestibular.descontoGarantido} de desconto.`}
               </span>
             </li>
           )}

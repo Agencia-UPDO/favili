@@ -33,6 +33,8 @@ export const instituicao = {
   endereco: 'Rua Cel. Antônio Joaquim, 1759 – Centro – Limoeiro do Norte/CE',
   telefone: '(88) 3423-6090',
   telefoneLink: 'tel:+558834236090',
+  // WhatsApp da secretaria, só números com DDI e DDD (ex.: 5588999999999). Vazio: o site não mostra o atalho
+  whatsapp: '',
   site: 'favili.com.br',
   instagram: 'https://www.instagram.com/faculdadevidal/',
 };
@@ -40,15 +42,27 @@ export const instituicao = {
 // Passo a passo do vestibular, com as datas do cronograma oficial
 export const cronograma = [
   { etapa: 'Inscreva-se grátis', data: 'Até 20/11', extra: 'Até as 18h. Escolha curso, modalidade, unidade e turno.' },
-  { etapa: 'Escolha o dia e o horário', data: '21 ou 22/11', extra: 'Escolha quando vai fazer a prova, entre 8h e 20h.' },
+  {
+    etapa: 'Escolha o dia e o horário',
+    data: '21 ou 22/11',
+    extra: 'Escolha quando vai fazer a prova, entre 8h e 20h.',
+  },
   {
     etapa: 'Receba seu acesso por e-mail',
     data: '1 dia antes',
     extra: 'Na véspera da prova, enviamos o link com o seu login e senha. Confira também o spam.',
   },
-  { etapa: 'Faça a prova on-line', data: 'Até 2 horas', extra: 'Entre com seu login e senha e responda as 20 questões.' },
+  {
+    etapa: 'Faça a prova on-line',
+    data: 'Até 2 horas',
+    extra: 'Entre com seu login e senha e responda as 20 questões.',
+  },
   { etapa: 'Confira o resultado', data: '24/11', extra: 'Aqui no site, pelo seu número de inscrição.' },
-  { etapa: 'Matricule-se', data: '24/11 a 04/12', extra: 'Contemplados garantem a bolsa com a matrícula de R$ 150,00.' },
+  {
+    etapa: 'Matricule-se',
+    data: '24/11 a 04/12',
+    extra: 'Contemplados garantem a bolsa com a matrícula de R$ 150,00.',
+  },
 ];
 
 export const prova = {
@@ -109,7 +123,8 @@ export const formas: Forma[] = [
       },
       {
         titulo: 'Receba seu acesso por e-mail',
-        texto: 'Um dia antes da prova, você recebe o link com o seu login e senha. Fique de olho também na caixa de spam.',
+        texto:
+          'Um dia antes da prova, você recebe o link com o seu login e senha. Fique de olho também na caixa de spam.',
       },
       {
         titulo: 'Faça a prova on-line',
@@ -139,7 +154,8 @@ export const formas: Forma[] = [
       { titulo: 'Inscreva-se', texto: 'Preencha seus dados, escolha o curso e marque que vai entrar pelo Enem.' },
       {
         titulo: 'Envie seu boletim',
-        texto: 'Mande o boletim de desempenho do Enem. Nossa equipe confirma pelo WhatsApp se ele vale para o ingresso.',
+        texto:
+          'Mande o boletim de desempenho do Enem. Nossa equipe confirma pelo WhatsApp se ele vale para o ingresso.',
       },
       { titulo: 'Receba a aprovação', texto: 'Com o boletim analisado, você recebe a confirmação da sua vaga.' },
       {
@@ -228,12 +244,14 @@ export const degraus = [
   {
     percentual: '40%',
     titulo: 'Garantido para todos',
-    texto: 'Entrou pelo Enem, segunda graduação, transferência, vestibular agendado ou ficou fora das bolsas? Você já tem 40% de desconto nas mensalidades.',
+    texto:
+      'Entrou pelo Enem, segunda graduação, transferência, vestibular agendado ou ficou fora das bolsas? Você já tem 40% de desconto nas mensalidades.',
   },
   {
     percentual: '50% a 70%',
     titulo: 'Bolsa do vestibular',
-    texto: 'Faça a prova on-line em 21 ou 22 de novembro: os mais bem classificados em cada curso ganham 50%, 60%, 65% ou 70%.',
+    texto:
+      'Faça a prova on-line em 21 ou 22 de novembro: os mais bem classificados em cada curso ganham 50%, 60%, 65% ou 70%.',
   },
   {
     percentual: '100%',
@@ -262,20 +280,118 @@ export type Curso = {
 };
 
 export const cursos: Curso[] = [
-  { nome: 'Direito', modalidade: 'Presencial', duracao: '5 anos', turno: 'Noite, 19h às 22h', desconto: '40%', bolsaVestibular: true },
-  { nome: 'Psicologia', modalidade: 'Presencial', duracao: '5 anos', turno: 'Noite, 19h às 22h', desconto: '40%', bolsaVestibular: true },
-  { nome: 'Enfermagem', modalidade: 'Presencial', duracao: '5 anos', turno: 'Noite, 19h às 22h', desconto: '40%', bolsaVestibular: true },
-  { nome: 'Fisioterapia', modalidade: 'Presencial', duracao: '5 anos', turno: 'Noite, 19h às 22h', desconto: '40%', bolsaVestibular: true },
-  { nome: 'Biomedicina', modalidade: 'Presencial', duracao: '5 anos', turno: 'Noite, 19h às 22h', desconto: '40%', bolsaVestibular: true },
-  { nome: 'Odontologia', modalidade: 'Presencial', duracao: '5 anos', turno: 'Tarde, 13h às 18h', desconto: '40%', bolsaVestibular: true },
-  { nome: 'Terapia Ocupacional', modalidade: 'Presencial', duracao: '4 anos', turno: 'Noite, 19h às 22h', desconto: '40%', bolsaVestibular: true },
-  { nome: 'Administração', modalidade: 'Presencial', duracao: '4 anos', turno: 'Noite, 19h às 22h', desconto: '50%', bolsaVestibular: true },
-  { nome: 'Administração', modalidade: 'EAD', duracao: '4 anos', turno: 'On-line, no seu ritmo', desconto: '50%', bolsaVestibular: true },
-  { nome: 'Recursos Humanos', modalidade: 'EAD', duracao: '4 anos', turno: 'On-line, no seu ritmo', desconto: '50%', bolsaVestibular: true },
-  { nome: 'Pedagogia', modalidade: 'Semipresencial', duracao: '4 anos', turno: '1 encontro presencial por semana', desconto: '50%', bolsaVestibular: true },
-  { nome: 'Marketing', modalidade: 'EAD', duracao: '4 anos', turno: 'On-line, no seu ritmo', desconto: '50%', bolsaVestibular: false },
-  { nome: 'Ciências Contábeis', modalidade: 'EAD', duracao: '4 anos', turno: 'On-line, no seu ritmo', desconto: '50%', bolsaVestibular: false },
-  { nome: 'Análise e Desenv. de Sistemas', modalidade: 'EAD', duracao: '4 anos', turno: 'On-line, no seu ritmo', desconto: '50%', bolsaVestibular: false },
+  {
+    nome: 'Direito',
+    modalidade: 'Presencial',
+    duracao: '5 anos',
+    turno: 'Noite, 19h às 22h',
+    desconto: '40%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Psicologia',
+    modalidade: 'Presencial',
+    duracao: '5 anos',
+    turno: 'Noite, 19h às 22h',
+    desconto: '40%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Enfermagem',
+    modalidade: 'Presencial',
+    duracao: '5 anos',
+    turno: 'Noite, 19h às 22h',
+    desconto: '40%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Fisioterapia',
+    modalidade: 'Presencial',
+    duracao: '5 anos',
+    turno: 'Noite, 19h às 22h',
+    desconto: '40%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Biomedicina',
+    modalidade: 'Presencial',
+    duracao: '5 anos',
+    turno: 'Noite, 19h às 22h',
+    desconto: '40%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Odontologia',
+    modalidade: 'Presencial',
+    duracao: '5 anos',
+    turno: 'Tarde, 13h às 18h',
+    desconto: '40%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Terapia Ocupacional',
+    modalidade: 'Presencial',
+    duracao: '4 anos',
+    turno: 'Noite, 19h às 22h',
+    desconto: '40%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Administração',
+    modalidade: 'Presencial',
+    duracao: '4 anos',
+    turno: 'Noite, 19h às 22h',
+    desconto: '50%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Administração',
+    modalidade: 'EAD',
+    duracao: '4 anos',
+    turno: 'On-line, no seu ritmo',
+    desconto: '50%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Recursos Humanos',
+    modalidade: 'EAD',
+    duracao: '4 anos',
+    turno: 'On-line, no seu ritmo',
+    desconto: '50%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Pedagogia',
+    modalidade: 'Semipresencial',
+    duracao: '4 anos',
+    turno: '1 encontro presencial por semana',
+    desconto: '50%',
+    bolsaVestibular: true,
+  },
+  {
+    nome: 'Marketing',
+    modalidade: 'EAD',
+    duracao: '4 anos',
+    turno: 'On-line, no seu ritmo',
+    desconto: '50%',
+    bolsaVestibular: false,
+  },
+  {
+    nome: 'Ciências Contábeis',
+    modalidade: 'EAD',
+    duracao: '4 anos',
+    turno: 'On-line, no seu ritmo',
+    desconto: '50%',
+    bolsaVestibular: false,
+  },
+  {
+    nome: 'Análise e Desenv. de Sistemas',
+    modalidade: 'EAD',
+    duracao: '4 anos',
+    turno: 'On-line, no seu ritmo',
+    desconto: '50%',
+    bolsaVestibular: false,
+  },
 ];
 
 export const unidades = ['Limoeiro do Norte', 'Fortaleza (Tauape)'];

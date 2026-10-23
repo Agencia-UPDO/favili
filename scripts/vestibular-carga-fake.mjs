@@ -1,5 +1,8 @@
 // Carga fake no Supabase para ver o painel e o resultado com volume (só para teste, antes do vestibular).
 //   npx tsx scripts/vestibular-carga-fake.mjs criar    → cria 40 inscrições fictícias, a maioria com prova entregue
+//   npx tsx scripts/vestibular-carga-fake.mjs documentos → nas fictícias do Enem, segunda graduação e transferência,
+//                                                       envia um PDF de exemplo e espalha as situações
+//                                                       (falta enviar, para analisar, aprovado, pediu outro, reprovado)
 //   npx tsx scripts/vestibular-carga-fake.mjs limpar   → apaga só essas inscrições, os ajustes manuais delas e
 //                                                       o resultado publicado
 // As fictícias têm nome começando por "TESTE", e-mail @exemplo.com e origem "carga-fake"; o CPF é aleatório
@@ -8,7 +11,8 @@
 
 import { randomInt } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { diasProva, horariosProva, ofertas } from '../src/data/inscricao.ts';
+import { randomUUID } from 'node:crypto';
+import { diasProva, horariosProva, itensDocumento, ofertas } from '../src/data/inscricao.ts';
 
 const origem = 'carga-fake';
 
@@ -142,12 +146,98 @@ const criar = async () => {
   console.log(`${criadas.length} inscrições fictícias criadas (${criadas[0].numero} a ${criadas.at(-1).numero}).`);
 };
 
+const storage = `${env.SUPABASE_URL.replace(/\/$/, '')}/storage/v1`;
+const pasta = 'vestibular-documentos';
+const pdfExemplo = Buffer.from(
+  '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj ' +
+    '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 120]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj ' +
+    '4 0 obj<</Length 52>>stream\nBT /F1 18 Tf 20 60 Td (TESTE - documento ficticio) Tj ET\nendstream endobj ' +
+    '5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj trailer<</Root 1 0 R>>\n%%EOF',
+);
+
+const documentos = async () => {
+  const lista = await pedir(`vestibular_inscricoes?origem=eq.${origem}&forma=neq.vestibular&order=numero.asc`);
+  const situacoes = ['enviado', 'enviado', 'aprovado', 'recusado', 'pendente', 'enviado', 'reprovado'];
+  for (const [idx, i] of lista.entries()) {
+    if ((i.documentos ?? []).length) {
+      continue; // já tem documentos (de um teste anterior): não mexe
+    }
+    let situacao = situacoes[idx % situacoes.length];
+    if (situacao === 'reprovado' && i.forma !== 'enem') {
+      situacao = 'enviado';
+    }
+    const docs = [];
+    if (situacao !== 'pendente') {
+      for (const item of itensDocumento[i.forma] ?? []) {
+        const id = randomUUID();
+        const caminho = `${i.numero}/${item.id}-${id}.pdf`;
+        const res = await fetch(`${storage}/object/${pasta}/${caminho}`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/pdf' },
+          body: pdfExemplo,
+        });
+        if (!res.ok) {
+          throw new Error(`Storage respondeu ${res.status}: ${await res.text()}`);
+        }
+        docs.push({
+          id: id.slice(0, 8),
+          item: item.id,
+          nome: `TESTE ${item.rotulo}.pdf`,
+          caminho,
+          tipo: 'application/pdf',
+          tamanho: pdfExemplo.length,
+          enviadoEm: new Date(Date.now() - (lista.length - idx) * 3_600_000).toISOString(),
+        });
+      }
+    }
+    const notas =
+      i.forma === 'enem' && situacao !== 'pendente'
+        ? situacao === 'reprovado'
+          ? { linguagens: 420, humanas: 410, natureza: 390, matematica: 400, redacao: 480 }
+          : { linguagens: 560, humanas: 590, natureza: 520, matematica: 610, redacao: 720 }
+        : null;
+    const revisado = situacao === 'aprovado' || situacao === 'recusado' || situacao === 'reprovado';
+    await pedir(`vestibular_inscricoes?numero=eq.${i.numero}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        documentos: docs,
+        documento_status: situacao,
+        documento_obs: situacao === 'recusado' ? 'TESTE: o documento está cortado, mande a página inteira' : null,
+        documento_revisado_em: revisado ? new Date().toISOString() : null,
+        documento_revisado_por: revisado ? 'TESTE Secretaria' : null,
+        enem_ano: notas ? 2024 : null,
+        enem_notas: notas,
+        enem_media: notas && revisado ? Object.values(notas).reduce((a, b) => a + b, 0) / 5 : null,
+      }),
+    });
+    console.log(`${i.numero} (${i.forma}): ${situacao}, ${docs.length} arquivo(s)`);
+  }
+};
+
 const limpar = async () => {
   const apagadas = await pedir(`vestibular_inscricoes?origem=eq.${origem}`, {
     method: 'DELETE',
     headers: { Prefer: 'return=representation' },
   });
   const numeros = new Set(apagadas.map((i) => String(i.numero)));
+  // Apaga tudo o que estiver na pasta de cada inscrição fictícia (inclusive arquivos de testes interrompidos)
+  const caminhos = [];
+  for (const numero of numeros) {
+    const res = await fetch(`${storage}/object/list/${pasta}`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix: numero, limit: 1000 }),
+    });
+    const arquivos = res.ok ? await res.json() : [];
+    caminhos.push(...arquivos.map((a) => `${numero}/${a.name}`));
+  }
+  if (caminhos.length) {
+    await fetch(`${storage}/object/${pasta}`, {
+      method: 'DELETE',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefixes: caminhos }),
+    });
+  }
   const [linha] = await pedir('vestibular_config?chave=eq.ajustes-manuais&limit=1');
   if (linha) {
     const ajustes = Object.fromEntries(Object.entries(linha.valor ?? {}).filter(([n]) => !numeros.has(n)));
@@ -165,8 +255,10 @@ const limpar = async () => {
 const comando = process.argv[2];
 if (comando === 'criar') {
   await criar();
+} else if (comando === 'documentos') {
+  await documentos();
 } else if (comando === 'limpar') {
   await limpar();
 } else {
-  console.log('Use: npx tsx scripts/vestibular-carga-fake.mjs criar | limpar');
+  console.log('Use: npx tsx scripts/vestibular-carga-fake.mjs criar | documentos | limpar');
 }

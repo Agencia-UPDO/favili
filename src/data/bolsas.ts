@@ -41,3 +41,24 @@ export const bolsasPorOferta: Record<string, number[]> = {
 };
 
 export const bolsaIntegral = 100;
+
+// Ingresso pelo Enem (regra da faculdade, 23/10/2026): média das 5 notas de pelo menos 450 e redação acima de 0.
+// A equipe confere o boletim no painel e confirma as notas; o sistema aprova ou reprova sozinho.
+export const enemMediaMinima = 450;
+export const enemRedacaoMinima = 0; // a redação precisa ser MAIOR que este valor
+
+export const areasEnem = [
+  { id: 'linguagens', rotulo: 'Linguagens' },
+  { id: 'humanas', rotulo: 'Ciências Humanas' },
+  { id: 'natureza', rotulo: 'Ciências da Natureza' },
+  { id: 'matematica', rotulo: 'Matemática' },
+  { id: 'redacao', rotulo: 'Redação' },
+] as const;
+
+export type NotasEnem = Record<(typeof areasEnem)[number]['id'], number>;
+
+export const mediaEnem = (notas: NotasEnem) =>
+  Math.round((areasEnem.reduce((soma, a) => soma + notas[a.id], 0) / areasEnem.length) * 100) / 100;
+
+export const enemAprovado = (notas: NotasEnem) =>
+  mediaEnem(notas) >= enemMediaMinima && notas.redacao > enemRedacaoMinima;

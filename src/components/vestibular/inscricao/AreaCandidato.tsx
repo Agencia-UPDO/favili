@@ -7,6 +7,7 @@ import { cn } from '@/utils/cn';
 import { FormEvent, useEffect, useState } from 'react';
 import { Seta } from '../ui';
 import Confirmacao, { InscricaoConfirmada } from './Confirmacao';
+import EnvioDocumentos from './EnvioDocumentos';
 import { campoClass, opcaoAtiva, opcaoClass, rotuloClass } from './estilos';
 
 // Área do candidato: entra com CPF + código, vê o comprovante, troca o horário até o fim das inscrições e,
@@ -124,15 +125,8 @@ const StatusProva = ({
   }
   const inicio = inicioDaProva(inscricao);
   if (!inscricao.fazProva || !inicio) {
-    return (
-      <div className="bg-primary-50 rounded-[22px] p-5 text-[15px]">
-        <p className="text-vest-navy font-bold">Sua inscrição está em análise</p>
-        <p className="mt-1">
-          Nossa equipe vai chamar você no WhatsApp para receber o documento. Depois da análise, você recebe a
-          confirmação da vaga com {vestibular.descontoGarantido} de desconto.
-        </p>
-      </div>
-    );
+    // Sem prova: o andamento é o dos documentos, mostrado no cartão de envio
+    return null;
   }
 
   const ms = inicio.getTime() - agora;
@@ -403,13 +397,24 @@ const AreaCandidato = () => {
       agora < new Date(vestibular.fimInscricoes).getTime() &&
       (inicioDaProva(inscricao)?.getTime() ?? 0) > agora;
     const oferta = ofertas.find((o) => o.id === inscricao.ofertaId);
+    const envio = (
+      <EnvioDocumentos
+        inscricao={inscricao}
+        cpf={soDigitos(cpf)}
+        codigo={inscricao.codigo}
+        aoAtualizar={(i) => setInscricao({ ...inscricao, ...i })}
+      />
+    );
     return (
       <div className="space-y-5">
         <div className="space-y-4 print:hidden">
           <h2 className="font-chamada text-vest-navy text-center text-[32px] md:text-[40px]">
             Olá, {inscricao.nome.split(' ')[0]}!
           </h2>
+          {/* Documentos pendentes vêm antes de tudo; aprovados descem para depois do status da prova */}
+          {inscricao.documentoStatus !== 'aprovado' && envio}
           <StatusProva inscricao={inscricao} agora={agora} modoTeste={modoTeste} resultado={resultado} />
+          {inscricao.documentoStatus === 'aprovado' && envio}
           {modoTeste && inscricao.fazProva && !inscricao.provaIniciada && !inscricao.provaEntregue && (
             <a
               href="/vestibular/prova"

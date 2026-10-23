@@ -1,9 +1,10 @@
 'use client';
 
-import { notaMinimaBolsa } from '@/data/bolsas';
+import { areasEnem, enemAprovado, enemMediaMinima, mediaEnem, notaMinimaBolsa, NotasEnem } from '@/data/bolsas';
+import { StatusDocumento } from '@/data/inscricao';
 import { cn } from '@/utils/cn';
 import { formatarCpf } from '@/utils/vestibular/validacao';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, Fragment, ReactNode, useCallback, useEffect, useState } from 'react';
 
 // Painel interno da faculdade: acompanhar inscrições, conferir a prévia do resultado, publicar e baixar planilhas
 
@@ -13,6 +14,7 @@ type Dados = {
     fazemProva: number;
     iniciaram: number;
     entregaram: number;
+    documentosParaAnalisar: number;
     porForma: { forma: string; total: number }[];
   };
   inscricoes: {
@@ -30,6 +32,16 @@ type Dados = {
     situacao: string;
     nota: number | null;
     atendimentoEspecial: string | null;
+    documentoStatus: StatusDocumento | null;
+    documentoObs: string | null;
+    documentoRevisadoEm: string | null;
+    documentoRevisadoPor: string | null;
+    documentoEnviadoEm: string | null;
+    formaId: string;
+    enemAno: number | null;
+    enemNotas: Partial<NotasEnem> | null;
+    enemMedia: number | null;
+    documentos: { id: string; item: string; nome: string; tamanho: number }[];
   }[];
   previa: {
     numero: number;
@@ -121,6 +133,151 @@ const AjusteLinha = ({
   );
 };
 
+const rotuloDocumento: Record<StatusDocumento, { texto: string; cor: string }> = {
+  pendente: { texto: 'Falta enviar', cor: 'bg-stroke-2 text-secondary' },
+  enviado: { texto: 'Para analisar', cor: 'bg-amber-100 text-amber-900' },
+  aprovado: { texto: 'Aprovado', cor: 'bg-green-100 text-green-900' },
+  recusado: { texto: 'Pediu outro', cor: 'bg-red-100 text-red-800' },
+  reprovado: { texto: 'Não aprovado (Enem)', cor: 'bg-red-100 text-red-800' },
+};
+
+// Enem: a equipe confere as notas com o boletim (pré-preenchidas pelo candidato) e confirma; o sistema decide
+const ConferirEnem = ({
+  inscricao,
+  travado,
+  confirmar,
+}: {
+  inscricao: Dados['inscricoes'][number];
+  travado: boolean;
+  confirmar: (ano: string, notas: Record<string, string>) => void;
+}) => {
+  const [ano, setAno] = useState(inscricao.enemAno ? String(inscricao.enemAno) : '');
+  const [notas, setNotas] = useState<Record<string, string>>(() =>
+    Object.fromEntries(areasEnem.map((a) => [a.id, inscricao.enemNotas?.[a.id]?.toString() ?? ''])),
+  );
+  const numeros = Object.fromEntries(areasEnem.map((a) => [a.id, Number(notas[a.id].replace(',', '.'))])) as NotasEnem;
+  const completas = areasEnem.every((a) => notas[a.id].trim() !== '' && numeros[a.id] >= 0 && numeros[a.id] <= 1000);
+  const campo = 'border-stroke-3 h-8 w-full rounded-lg border bg-white px-1.5 text-[12px]';
+  return (
+    <div className="space-y-1.5 rounded-xl border border-dashed border-amber-300 p-2">
+      <div className="grid grid-cols-3 gap-1">
+        <input
+          value={ano}
+          onChange={(e) => setAno(e.target.value)}
+          placeholder="Ano"
+          aria-label="Ano do Enem"
+          className={campo}
+        />
+        {areasEnem.map((a) => (
+          <input
+            key={a.id}
+            value={notas[a.id]}
+            onChange={(e) => setNotas({ ...notas, [a.id]: e.target.value })}
+            placeholder={a.rotulo.split(' ').pop()}
+            title={a.rotulo}
+            aria-label={a.rotulo}
+            inputMode="decimal"
+            className={campo}
+          />
+        ))}
+      </div>
+      {completas && (
+        <p className={cn('text-[12px] font-bold', enemAprovado(numeros) ? 'text-green-700' : 'text-red-700')}>
+          Média {mediaEnem(numeros).toFixed(1).replace('.', ',')} — {enemAprovado(numeros) ? 'aprovado' : 'reprovado'}{' '}
+          <span className="font-normal opacity-70">(mín. {enemMediaMinima}, redação &gt; 0)</span>
+        </p>
+      )}
+      <button
+        type="button"
+        disabled={travado || !completas}
+        onClick={() => confirmar(ano, notas)}
+        className="bg-vest-blue cursor-pointer rounded-full px-2.5 py-1 text-[12px] font-bold text-white disabled:opacity-50">
+        Confirmar notas
+      </button>
+    </div>
+  );
+};
+
+type LinhaInscricao = Dados['inscricoes'][number];
+
+const Detalhe = ({ rotulo, children }: { rotulo: string; children: ReactNode }) =>
+  children ? (
+    <div className="flex gap-2">
+      <dt className="text-secondary/60 shrink-0">{rotulo}:</dt>
+      <dd>{children}</dd>
+    </div>
+  ) : null;
+
+// Situação dos documentos e as ações do dia (aprovar, pedir outro, conferir notas do Enem)
+const CelulaDocumentos = ({
+  inscricao: i,
+  ocupado,
+  revisar,
+  conferir,
+}: {
+  inscricao: LinhaInscricao;
+  ocupado: boolean;
+  revisar: (numero: number, decisao: 'aprovado' | 'recusado' | 'enviado') => void;
+  conferir: () => void;
+}) => {
+  if (!i.documentoStatus) {
+    return <span className="text-secondary/40">—</span>;
+  }
+  const analisado = i.documentoStatus === 'aprovado' || i.documentoStatus === 'reprovado';
+  const botao = 'cursor-pointer rounded-full px-2.5 py-1 text-[12px] font-bold disabled:opacity-50';
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className={cn('rounded-full px-2 py-0.5 text-[12px] font-bold', rotuloDocumento[i.documentoStatus].cor)}>
+          {rotuloDocumento[i.documentoStatus].texto}
+        </span>
+        {i.documentos.length > 0 && (
+          <span className="text-secondary/60 text-[12px]">
+            {i.documentos.length} arquivo{i.documentos.length > 1 && 's'}
+          </span>
+        )}
+        {i.enemMedia !== null && (
+          <span className="text-[12px] font-semibold">média {Number(i.enemMedia).toFixed(1).replace('.', ',')}</span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {!analisado && i.documentos.length > 0 && i.formaId === 'enem' && (
+          <button type="button" onClick={conferir} className={cn(botao, 'bg-vest-blue text-white')}>
+            Conferir notas
+          </button>
+        )}
+        {!analisado && i.documentos.length > 0 && i.formaId !== 'enem' && (
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => revisar(i.numero, 'aprovado')}
+            className={cn(botao, 'bg-green-600 text-white')}>
+            Aprovar
+          </button>
+        )}
+        {!analisado && i.documentoStatus !== 'recusado' && i.documentos.length > 0 && (
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => revisar(i.numero, 'recusado')}
+            className={cn(botao, 'border-stroke-3 border')}>
+            Pedir outro
+          </button>
+        )}
+        {analisado && (
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => revisar(i.numero, 'enviado')}
+            className="text-secondary/70 cursor-pointer text-[12px] underline">
+            Desfazer decisão
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Faixa de cada candidato no resultado
 const faixa = (l: Linha) => (!l.aprovado ? 'Reprovado' : l.bolsa ? `Bolsa ${l.bolsa}%` : '40% garantido');
 
@@ -156,6 +313,27 @@ const Painel = () => {
   const [aba, setAba] = useState<'inscricoes' | 'resultado'>('inscricoes');
   const [busca, setBusca] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [filtroDocumento, setFiltroDocumento] = useState<StatusDocumento | ''>('');
+  const [abertas, setAbertas] = useState<Set<number>>(new Set());
+  const alternar = (numero: number, abrir?: boolean) =>
+    setAbertas((atual) => {
+      const nova = new Set(atual);
+      if (abrir ?? !nova.has(numero)) {
+        nova.add(numero);
+      } else {
+        nova.delete(numero);
+      }
+      return nova;
+    });
+  // Nome de quem está revisando (fica neste navegador) para registrar quem aprovou ou pediu outro documento
+  const [revisor, setRevisor] = useState('');
+  useEffect(() => {
+    try {
+      setRevisor(localStorage.getItem('vestibular-painel-revisor') ?? '');
+    } catch {
+      // sem armazenamento: digita de novo
+    }
+  }, []);
 
   const carregar = useCallback(async () => {
     const res = await fetch('/api/vestibular/painel', { cache: 'no-store' });
@@ -235,18 +413,58 @@ const Painel = () => {
     );
   }
 
-  const filtradas = dados.inscricoes.filter((i) =>
-    `${i.numero} ${i.nome} ${i.cpf} ${formatarCpf(i.cpf)} ${i.email} ${i.celular} ${i.curso}`
-      .toLowerCase()
-      .includes(busca.trim().toLowerCase()),
-  );
+  const filtradas = dados.inscricoes
+    .filter(
+      (i) =>
+        (!filtroDocumento || i.documentoStatus === filtroDocumento) &&
+        `${i.numero} ${i.nome} ${i.cpf} ${formatarCpf(i.cpf)} ${i.email} ${i.celular} ${i.curso}`
+          .toLowerCase()
+          .includes(busca.trim().toLowerCase()),
+    )
+    // Fila do dia: documentos para analisar, do envio mais antigo para o mais novo
+    .sort((a, b) =>
+      filtroDocumento === 'enviado' ? (a.documentoEnviadoEm ?? '').localeCompare(b.documentoEnviadoEm ?? '') : 0,
+    );
+
+  const revisar = async (numero: number, decisao: 'aprovado' | 'recusado' | 'enviado') => {
+    let obs = '';
+    if (decisao === 'recusado') {
+      obs = window.prompt('O que está faltando ou errado? O candidato vai ver este texto.')?.trim() ?? '';
+      if (!obs) {
+        return;
+      }
+    }
+    if (await acao({ acao: 'documento', numero, decisao, obs, por: revisor })) {
+      await carregar();
+    }
+  };
+
+  const confirmarEnem = async (numero: number, ano: string, notas: Record<string, string>) => {
+    if (await acao({ acao: 'enem', numero, ano, notas, por: revisor })) {
+      await carregar();
+    }
+  };
   const contemplados = dados.previa.filter((l) => l.bolsa);
   const aprovados = dados.previa.filter((l) => l.aprovado);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-chamada text-vest-navy text-[34px]">Painel do vestibular 2027.1</h1>
+        <input
+          value={revisor}
+          onChange={(e) => {
+            setRevisor(e.target.value);
+            try {
+              localStorage.setItem('vestibular-painel-revisor', e.target.value);
+            } catch {
+              // sem armazenamento
+            }
+          }}
+          placeholder="Seu nome (registra quem revisou)"
+          aria-label="Seu nome"
+          className="border-stroke-3 ml-auto h-10 w-[260px] rounded-full border bg-white px-4 text-[14px]"
+        />
         <button
           type="button"
           onClick={async () => (await acao({ acao: 'sair' })) && setStatus('login')}
@@ -255,11 +473,20 @@ const Painel = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <Cartao titulo="Inscrições" valor={dados.resumo.inscricoes} />
         <Cartao titulo="Com prova agendada" valor={dados.resumo.fazemProva} />
         <Cartao titulo="Começaram a prova" valor={dados.resumo.iniciaram} />
         <Cartao titulo="Entregaram" valor={dados.resumo.entregaram} />
+        <button
+          type="button"
+          onClick={() => {
+            setAba('inscricoes');
+            setFiltroDocumento('enviado');
+          }}
+          className="cursor-pointer text-left">
+          <Cartao titulo="Documentos para analisar" valor={dados.resumo.documentosParaAnalisar} />
+        </button>
       </div>
       <p className="text-secondary/70 text-[14px]">
         {dados.resumo.porForma.map((f) => `${f.forma}: ${f.total}`).join(' · ')}
@@ -289,70 +516,143 @@ const Painel = () => {
               placeholder="Buscar por nome, CPF, e-mail, WhatsApp, curso ou nº"
               className="border-stroke-3 h-11 min-w-[240px] flex-1 rounded-full border px-4"
             />
+            <select
+              value={filtroDocumento}
+              onChange={(e) => setFiltroDocumento(e.target.value as StatusDocumento | '')}
+              aria-label="Filtrar por documentos"
+              className="border-stroke-3 h-11 rounded-full border bg-white px-4 text-[14px]">
+              <option value="">Documentos: todos</option>
+              {(Object.keys(rotuloDocumento) as StatusDocumento[]).map((s) => (
+                <option key={s} value={s}>
+                  Documentos:{' '}
+                  {s === 'enviado' ? 'para analisar (mais antigos primeiro)' : rotuloDocumento[s].texto.toLowerCase()}
+                </option>
+              ))}
+            </select>
             <a
               href="/api/vestibular/painel?planilha=inscricoes"
               className="bg-vest-blue rounded-full px-5 py-2.5 text-[14px] font-bold text-white">
               Baixar planilha (CSV)
             </a>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px] text-left text-[14px]">
-              <thead className="text-secondary/60 border-stroke-2 border-b">
+          {/* Cabeçalho e coluna do candidato fixos; detalhes menos usados abrem numa linha abaixo */}
+          <div className="border-stroke-2 max-h-[75vh] overflow-auto rounded-2xl border">
+            <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-[13px]">
+              <thead className="text-secondary/60">
                 <tr>
-                  {[
-                    'Nº',
-                    'Inscrição',
-                    'Candidato',
-                    'Nascimento',
-                    'WhatsApp',
-                    'Forma',
-                    'Curso',
-                    'Prova',
-                    'Situação',
-                    'Nota',
-                  ].map((c) => (
-                    <th key={c} className="px-2 py-2 font-semibold">
+                  {['Candidato', 'Contato', 'Curso e forma', 'Prova', 'Documentos'].map((c, idx) => (
+                    <th
+                      key={c}
+                      className={cn(
+                        'border-stroke-2 sticky top-0 z-10 border-b bg-white px-3 py-2 font-semibold',
+                        idx === 0 && 'left-0 z-20',
+                      )}>
                       {c}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filtradas.map((i) => (
-                  <tr key={i.numero} className="border-stroke-2 border-b align-top">
-                    <td className="px-2 py-2 font-semibold">{i.numero}</td>
-                    <td className="px-2 py-2 whitespace-nowrap">{dataHora(i.criadoEm)}</td>
-                    <td className="px-2 py-2">
-                      <span className="font-semibold">{i.nome}</span>
-                      <span className="text-secondary/70 block text-[12px]">CPF {formatarCpf(i.cpf)}</span>
-                      <a href={`mailto:${i.email}`} className="text-vest-blue block text-[12px]">
-                        {i.email}
-                      </a>
-                      {i.atendimentoEspecial && (
-                        <span className="mt-1 block rounded bg-amber-100 px-1.5 text-[12px] text-amber-900">
-                          Atendimento especial: {i.atendimentoEspecial}
-                        </span>
+                {filtradas.map((i) => {
+                  const aberta = abertas.has(i.numero);
+                  const celula = 'border-stroke-2 border-b px-3 py-2 align-top';
+                  return (
+                    <Fragment key={i.numero}>
+                      <tr className="hover:bg-primary-50/40">
+                        <td className={cn(celula, 'sticky left-0 z-[1] min-w-[240px] bg-white')}>
+                          <button
+                            type="button"
+                            onClick={() => alternar(i.numero)}
+                            aria-expanded={aberta}
+                            aria-label={`Detalhes da inscrição ${i.numero}`}
+                            className="border-vest-blue text-vest-blue float-left mt-0.5 mr-2 flex size-5 cursor-pointer items-center justify-center rounded-full border text-[14px] leading-none font-bold">
+                            {aberta ? '−' : '+'}
+                          </button>
+                          <span className="text-vest-navy font-semibold">{i.nome}</span>
+                          <span className="text-secondary/60 block text-[12px]">
+                            nº {i.numero} · CPF {formatarCpf(i.cpf)}
+                          </span>
+                          {i.atendimentoEspecial && (
+                            <span className="mt-1 inline-block rounded bg-amber-100 px-1.5 text-[11px] text-amber-900">
+                              Atendimento especial
+                            </span>
+                          )}
+                        </td>
+                        <td className={celula}>
+                          <a href={`mailto:${i.email}`} className="text-vest-blue block max-w-[220px] truncate">
+                            {i.email}
+                          </a>
+                          <LinkWhats numero={i.celular} />
+                        </td>
+                        <td className={celula}>
+                          <span className="block max-w-[260px]">{i.curso}</span>
+                          <span className="text-secondary/60 block text-[12px]">{i.forma}</span>
+                        </td>
+                        <td className={cn(celula, 'whitespace-nowrap')}>
+                          {i.prova}
+                          <span className="text-secondary/60 block text-[12px]">
+                            {i.situacao}
+                            {i.nota !== null && ` · nota ${i.nota}`}
+                          </span>
+                        </td>
+                        <td className={cn(celula, 'min-w-[200px]')}>
+                          <CelulaDocumentos
+                            inscricao={i}
+                            ocupado={ocupado}
+                            revisar={revisar}
+                            conferir={() => alternar(i.numero, true)}
+                          />
+                        </td>
+                      </tr>
+                      {aberta && (
+                        <tr>
+                          <td colSpan={5} className="border-stroke-2 bg-primary-50/50 border-b px-3 py-3">
+                            <div className="grid gap-4 md:grid-cols-[1fr_1fr_1.4fr]">
+                              <dl className="space-y-1 text-[13px]">
+                                <Detalhe rotulo="Inscrição">{dataHora(i.criadoEm)}</Detalhe>
+                                <Detalhe rotulo="Nascimento">
+                                  {dataBr(i.nascimento)} ({idade(i.nascimento)} anos)
+                                </Detalhe>
+                                <Detalhe rotulo="Origem acadêmica">{i.origemAcademica}</Detalhe>
+                                <Detalhe rotulo="Atendimento especial">{i.atendimentoEspecial}</Detalhe>
+                              </dl>
+                              <div className="space-y-1 text-[13px]">
+                                {i.documentos.map((d) => (
+                                  <a
+                                    key={d.id}
+                                    href={`/api/vestibular/painel?documento=${i.numero}&id=${d.id}`}
+                                    target="_blank"
+                                    rel="noopener"
+                                    className="text-vest-blue block truncate underline">
+                                    {d.item}: {d.nome}
+                                  </a>
+                                ))}
+                                {i.documentoStatus === 'recusado' && i.documentoObs && (
+                                  <p className="text-red-800">Motivo do pedido: {i.documentoObs}</p>
+                                )}
+                                {i.documentoRevisadoEm && (
+                                  <p className="text-secondary/60 text-[12px]">
+                                    Revisado em {dataHora(i.documentoRevisadoEm)}
+                                    {i.documentoRevisadoPor && ` por ${i.documentoRevisadoPor}`}
+                                  </p>
+                                )}
+                              </div>
+                              {i.formaId === 'enem' &&
+                                i.documentos.length > 0 &&
+                                (i.documentoStatus === 'enviado' || i.documentoStatus === 'recusado') && (
+                                  <ConferirEnem
+                                    inscricao={i}
+                                    travado={ocupado}
+                                    confirmar={(ano, notas) => confirmarEnem(i.numero, ano, notas)}
+                                  />
+                                )}
+                            </div>
+                          </td>
+                        </tr>
                       )}
-                    </td>
-                    <td className="px-2 py-2 whitespace-nowrap">
-                      {dataBr(i.nascimento)}
-                      <span className="text-secondary/60 block text-[12px]">{idade(i.nascimento)} anos</span>
-                    </td>
-                    <td className="px-2 py-2">
-                      <LinkWhats numero={i.celular} />
-                    </td>
-                    <td className="px-2 py-2">
-                      {i.forma}
-                      {i.origemAcademica && (
-                        <span className="text-secondary/60 block text-[12px]">{i.origemAcademica}</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-2">{i.curso}</td>
-                    <td className="px-2 py-2 whitespace-nowrap">{i.prova}</td>
-                    <td className="px-2 py-2">{i.situacao}</td>
-                    <td className="px-2 py-2">{i.nota ?? '—'}</td>
-                  </tr>
-                ))}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
             {filtradas.length === 0 && <p className="text-secondary/60 py-6 text-center">Nenhuma inscrição.</p>}
@@ -416,9 +716,9 @@ const Painel = () => {
             {dados.previa.length - aprovados.length} reprovados · {dados.previa.filter((l) => l.ajuste).length} com
             ajuste manual
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1240px] text-left text-[14px]">
-              <thead className="text-secondary/60 border-stroke-2 border-b">
+          <div className="border-stroke-2 max-h-[75vh] overflow-auto rounded-2xl border">
+            <table className="w-full min-w-[1240px] text-left text-[13px]">
+              <thead className="text-secondary/60 border-stroke-2 sticky top-0 z-10 border-b bg-white">
                 <tr>
                   {['Geral', 'No curso', 'Nº', 'Candidato', 'Curso', 'Nota', 'Mat.', 'Faixa', 'Ajuste manual'].map(
                     (c) => (

@@ -107,6 +107,38 @@ export const documentoPorForma: Partial<Record<FormaId, string>> = {
   transferencia: 'a declaração de vínculo ou o histórico com status de cursando',
 };
 
+// Documentos que cada forma de ingresso envia pelo site (Minha inscrição), item a item
+export type ItemDocumento = { id: string; rotulo: string; dica: string };
+export const itensDocumento: Partial<Record<FormaId, ItemDocumento[]>> = {
+  enem: [
+    {
+      id: 'boletim',
+      rotulo: 'Boletim de desempenho do Enem',
+      dica: 'O boletim com as suas notas e o ano da prova (baixe na Página do Participante do Inep).',
+    },
+  ],
+  'segunda-graduacao': [
+    { id: 'diploma', rotulo: 'Diploma da graduação', dica: 'Frente e verso (pode mandar duas fotos).' },
+    { id: 'historico', rotulo: 'Histórico da graduação', dica: 'Todas as páginas.' },
+  ],
+  transferencia: [
+    {
+      id: 'vinculo',
+      rotulo: 'Declaração de vínculo ou de matrícula',
+      dica: 'Emitida pela sua faculdade atual, mostrando que você está matriculado.',
+    },
+    { id: 'historico', rotulo: 'Histórico com status de cursando', dica: 'Todas as páginas.' },
+  ],
+};
+
+// Arquivos aceitos: PDF e fotos (HEIC é o formato padrão das fotos do iPhone)
+export const documentoTamanhoMaximo = 10 * 1024 * 1024;
+export const documentoTipos = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+export const documentoArquivosPorItem = 5;
+
+// recusado: a equipe pediu outro documento; reprovado: notas do Enem abaixo do mínimo
+export type StatusDocumento = 'pendente' | 'enviado' | 'aprovado' | 'recusado' | 'reprovado';
+
 // Endereço da área do candidato, por extenso, para o comprovante, o WhatsApp e a agenda
 export const rotaAreaCandidato = '/vestibular/minha-inscricao';
 export const linkAreaCandidato = `${vestibular.site}${rotaAreaCandidato}`;

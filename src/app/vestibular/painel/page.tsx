@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const page = () => (
-  <main className="bg-background-3 min-h-screen px-4 py-8">
+  <main className="bg-background-3 min-h-screen px-3 py-6 md:px-5">
     <Painel />
   </main>
 );

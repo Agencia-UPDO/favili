@@ -3,6 +3,9 @@ import 'server-only';
 import { randomInt } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { NotasEnem } from '@/data/bolsas';
+import { itensDocumento, StatusDocumento } from '@/data/inscricao';
+import { FormaId } from '@/data/vestibular';
 
 // Onde as inscrições ficam guardadas: no Supabase (tabela vestibular_inscricoes, ver supabase/migrations) quando
 // SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estão definidas; sem elas, num arquivo local em .data/ só para testar
@@ -43,8 +46,31 @@ export type DadosProva = {
   nota_matematica?: number | null;
 };
 
+// Documento enviado pelo candidato (o arquivo fica na pasta privada; aqui só os dados)
+export type Documento = {
+  id: string;
+  item: string;
+  nome: string;
+  caminho: string;
+  tipo: string;
+  tamanho: number;
+  enviadoEm: string;
+};
+
+export type DadosDocumentos = {
+  documentos?: Documento[] | null;
+  documento_status?: StatusDocumento | null;
+  documento_obs?: string | null;
+  documento_revisado_em?: string | null;
+  documento_revisado_por?: string | null;
+  enem_ano?: number | null;
+  enem_notas?: Partial<NotasEnem> | null;
+  enem_media?: number | null;
+};
+
 export type Inscricao = NovaInscricao &
-  DadosProva & {
+  DadosProva &
+  DadosDocumentos & {
     numero: number;
     codigo: string;
     criado_em: string;
@@ -181,6 +207,10 @@ export const atualizar = async (inscricao: Inscricao, campos: Partial<Inscricao>
 export const trocarHorario = (inscricao: Inscricao, dia: string, hora: string) =>
   atualizar(inscricao, { dia_prova: dia, hora_prova: hora });
 
+// Situação dos documentos: quem precisa mandar e ainda não tem registro está pendente
+export const statusDocumento = (i: Inscricao): StatusDocumento | null =>
+  i.documento_status ?? (itensDocumento[i.forma as FormaId] ? 'pendente' : null);
+
 // O que o candidato vê da própria inscrição (sem CPF nem dados internos)
 export const visaoCandidato = (i: Inscricao) => ({
   numero: i.numero,
@@ -195,6 +225,11 @@ export const visaoCandidato = (i: Inscricao) => ({
   horaProva: i.hora_prova?.slice(0, 5) ?? null,
   provaIniciada: !!i.prova_inicio,
   provaEntregue: !!i.prova_entregue_em,
+  documentoStatus: statusDocumento(i),
+  documentoObs: i.documento_status === 'recusado' ? (i.documento_obs ?? null) : null,
+  enemAno: i.enem_ano ?? null,
+  enemNotas: i.enem_notas ?? null,
+  documentos: (i.documentos ?? []).map(({ id, item, nome, tamanho }) => ({ id, item, nome, tamanho })),
 });
 
 export const listarInscricoes = async (): Promise<Inscricao[]> => {

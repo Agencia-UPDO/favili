@@ -208,7 +208,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
   };
 
   if (confirmada) {
-    return <Confirmacao inscricao={confirmada} />;
+    return <Confirmacao inscricao={confirmada} cpf={soDigitos(campos.cpf)} />;
   }
 
   const campo = (
