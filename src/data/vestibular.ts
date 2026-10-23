@@ -19,8 +19,10 @@ export const vestibular = {
   // Desconto garantido para todos os ingressantes 2027.1 (alguns cursos têm 50%), com ou sem vestibular
   descontoGarantido: '40%',
   regulamento: '/vestibular/regulamento-vestibular-conquista-vidal-2027-1.pdf',
-  // Sistema de inscrição da faculdade (SEI): destino de todos os botões de inscrição
-  inscricao: 'https://sei.favili.edu.br/processoSeletivo',
+  // Inscrição própria do vestibular: destino de todos os botões de inscrição
+  inscricao: '/vestibular/inscricao',
+  // Sistema acadêmico da faculdade (SEI), onde os aprovados completam o cadastro e fazem a matrícula
+  sei: 'https://sei.favili.edu.br/processoSeletivo',
 };
 
 export const instituicao = {

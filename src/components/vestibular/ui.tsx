@@ -1,4 +1,4 @@
-import { vestibular } from '@/data/vestibular';
+import { FormaId, vestibular } from '@/data/vestibular';
 import { cn } from '@/utils/cn';
 import { ReactNode } from 'react';
 
@@ -36,20 +36,20 @@ export const Pilula = ({ children, cheia, className }: { children: ReactNode; ch
   </span>
 );
 
-// Botão de inscrição: sempre leva ao sistema de inscrição da faculdade
+// Botão de inscrição: leva à inscrição do vestibular, já com a forma de ingresso quando vem de uma delas
 export const BotaoInscricao = ({
   children = 'Inscreva-se grátis',
   className,
   variante = 'amarelo',
+  forma,
 }: {
   children?: ReactNode;
   className?: string;
   variante?: 'amarelo' | 'azul';
+  forma?: FormaId;
 }) => (
   <a
-    href={vestibular.inscricao}
-    target="_blank"
-    rel="noopener"
+    href={forma ? `${vestibular.inscricao}?forma=${forma}` : vestibular.inscricao}
     className={cn(
       'inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-[17px] font-extrabold transition-colors duration-300',
       variante === 'amarelo'

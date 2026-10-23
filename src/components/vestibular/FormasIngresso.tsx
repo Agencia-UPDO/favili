@@ -116,7 +116,7 @@ const FormasIngresso = () => {
                   </ol>
 
                   <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between md:pl-16">
-                    <BotaoInscricao>{f.cta}</BotaoInscricao>
+                    <BotaoInscricao forma={f.id}>{f.cta}</BotaoInscricao>
                     {f.id === 'vestibular' && (
                       <a href="#bolsas" className="text-vest-blue text-[15px] font-semibold underline-offset-4 hover:underline">
                         Ver as bolsas
