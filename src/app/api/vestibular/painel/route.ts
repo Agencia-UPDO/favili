@@ -1,7 +1,9 @@
+import { notaMinimaBolsa } from '@/data/bolsas';
 import { formas } from '@/data/vestibular';
 import { listarInscricoes } from '@/utils/vestibular/inscricoes';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
 import {
+  ajustar,
   despublicarResultado,
   previaResultado,
   publicarResultado,
@@ -125,6 +127,7 @@ export async function GET(request: Request) {
           'Nota',
           'Nota Matemática',
           'Bolsa',
+          'Ajuste manual',
         ],
         ...previa.linhas.map((l) => [
           l.classificacaoGeral,
@@ -136,6 +139,15 @@ export async function GET(request: Request) {
           l.nota,
           l.notaMatematica,
           !l.aprovado ? 'Reprovado' : l.bolsa ? `${l.bolsa}%` : '40% garantido',
+          l.ajuste
+            ? [
+                l.ajuste.situacao && `${l.ajuste.situacao} manualmente`,
+                l.ajuste.bolsa !== null && `bolsa ${l.ajuste.bolsa ? `${l.ajuste.bolsa}%` : 'retirada'} manualmente`,
+                l.ajuste.obs,
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : '',
         ]),
       ]),
     );
@@ -206,6 +218,26 @@ export async function POST(request: Request) {
   if (corpo.acao === 'publicar') {
     const resultado = await publicarResultado();
     return NextResponse.json({ ok: true, publicadoEm: resultado.publicadoEm });
+  }
+  if (corpo.acao === 'ajustar') {
+    // Depois de publicado, o resultado fica travado: é preciso tirar do ar para ajustar
+    if ((await resultadoPublicado())?.publicadoEm) {
+      return negar('O resultado já foi publicado. Tire do ar antes de fazer ajustes.', 409);
+    }
+    const numero = Number(corpo.numero);
+    if (!(await listarInscricoes()).some((i) => i.numero === numero && i.prova_entregue_em)) {
+      return negar('Inscrição não encontrada ou sem prova entregue.', 400);
+    }
+    const bolsa = corpo.bolsa === null || corpo.bolsa === undefined || corpo.bolsa === '' ? null : Number(corpo.bolsa);
+    if (bolsa !== null && bolsa !== 0 && !(bolsa in notaMinimaBolsa)) {
+      return negar('Faixa de bolsa inválida.', 400);
+    }
+    await ajustar(numero, {
+      situacao: corpo.situacao === 'aprovado' || corpo.situacao === 'reprovado' ? corpo.situacao : null,
+      bolsa,
+      obs: typeof corpo.obs === 'string' ? corpo.obs.trim().slice(0, 300) : '',
+    });
+    return NextResponse.json({ ok: true });
   }
   if (corpo.acao === 'despublicar') {
     await despublicarResultado();

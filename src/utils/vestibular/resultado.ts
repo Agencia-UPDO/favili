@@ -11,7 +11,20 @@ import { gravarConfig, Inscricao, lerConfig, listarInscricoes } from './inscrico
 // - bolsa de 100% para o 1º lugar geral, só se ele tiver a nota mínima dessa faixa;
 // - as parciais vão, em cada oferta (curso, modalidade e unidade), na ordem da classificação: cada um recebe a
 //   maior faixa ainda disponível no curso cuja nota mínima ele alcançou (ver src/data/bolsas.ts);
-// - aprovado sem bolsa fica com os 40% garantidos; quem não fez a prova não aparece no resultado.
+// - aprovado sem bolsa fica com os 40% garantidos; quem não fez a prova não aparece no resultado;
+// - ajustes manuais do painel (só antes de publicar) vencem as regras acima: a situação forçada decide se a
+//   pessoa entra na classificação, e a bolsa forçada é dada antes da distribuição automática, ocupando uma vaga
+//   do curso daquela faixa, se houver.
+
+export type Situacao = 'aprovado' | 'reprovado';
+
+export type Ajuste = {
+  situacao: Situacao | null; // null: pela nota
+  bolsa: number | null; // null: pela nota; 0: sem bolsa (40% garantidos)
+  obs: string;
+  em: string;
+};
+export type Ajustes = Record<string, Ajuste>;
 
 export type LinhaResultado = {
   numero: number;
@@ -21,6 +34,7 @@ export type LinhaResultado = {
   nota: number;
   notaMatematica: number;
   aprovado: boolean;
+  ajuste: Ajuste | null;
   // posições só entre os aprovados (null para reprovados)
   classificacaoGeral: number | null;
   classificacaoOferta: number | null;
@@ -34,6 +48,20 @@ export type Resultado = {
 };
 
 const chaveResultado = 'resultado-publicado';
+const chaveAjustes = 'ajustes-manuais';
+
+export const lerAjustes = async () => (await lerConfig<Ajustes>(chaveAjustes)) ?? {};
+
+// Sem situação, bolsa nem observação, o ajuste é apagado e a inscrição volta a seguir só a nota
+export const ajustar = async (numero: number, ajuste: Omit<Ajuste, 'em'>) => {
+  const ajustes = await lerAjustes();
+  if (ajuste.situacao || ajuste.bolsa !== null || ajuste.obs) {
+    ajustes[numero] = { ...ajuste, em: new Date().toISOString() };
+  } else {
+    delete ajustes[numero];
+  }
+  await gravarConfig(chaveAjustes, ajustes);
+};
 
 // "Maria da Silva Souza" → "M. S. S." (preposições ficam de fora)
 export const iniciais = (nome: string) =>
@@ -52,27 +80,59 @@ const comparar = (a: Inscricao, b: Inscricao) =>
 
 const alcanca = (nota: number, percentual: number) => nota >= (notaMinimaBolsa[percentual] ?? Infinity);
 
-export const calcularResultado = (inscricoes: Inscricao[]): Resultado => {
+export const calcularResultado = (inscricoes: Inscricao[], ajustes: Ajustes = {}): Resultado => {
   const entregues = inscricoes.filter((i) => i.prova_entregue_em).sort(comparar);
-  const aprovados = entregues.filter((i) => (i.nota ?? 0) >= notaAprovacao);
-  const reprovados = entregues.filter((i) => (i.nota ?? 0) < notaAprovacao);
+  const aprova = (i: Inscricao) => {
+    const situacao = ajustes[i.numero]?.situacao;
+    return situacao ? situacao === 'aprovado' : (i.nota ?? 0) >= notaAprovacao;
+  };
+  const aprovados = entregues.filter(aprova);
+  const reprovados = entregues.filter((i) => !aprova(i));
 
   const porOferta = new Map<string, Inscricao[]>();
   for (const i of aprovados) {
     porOferta.set(i.oferta_id, [...(porOferta.get(i.oferta_id) ?? []), i]);
   }
+  const vagas = new Map(
+    [...porOferta.keys()].map((id) => [id, [...(bolsasPorOferta[id] ?? [])].sort((a, b) => b - a)]),
+  );
 
+  // 1) bolsas forçadas no painel (ocupam uma vaga daquela faixa no curso, se houver)
   const bolsas = new Map<number, number>();
-  const primeiro = aprovados[0];
-  const integral = primeiro && alcanca(primeiro.nota ?? 0, bolsaIntegral) ? primeiro.numero : undefined;
-  if (integral) {
-    bolsas.set(integral, bolsaIntegral);
+  const definidas = new Set<number>();
+  for (const i of aprovados) {
+    const bolsa = ajustes[i.numero]?.bolsa;
+    if (bolsa === null || bolsa === undefined) {
+      continue;
+    }
+    definidas.add(i.numero);
+    if (bolsa > 0) {
+      bolsas.set(i.numero, bolsa);
+      const lista = vagas.get(i.oferta_id) ?? [];
+      if (limitarQuantidades && lista.includes(bolsa)) {
+        lista.splice(lista.indexOf(bolsa), 1);
+      }
+    }
   }
+
+  // 2) 100% para o 1º geral, se ninguém recebeu 100% manualmente (não ocupa bolsa parcial do curso)
+  const primeiro = aprovados[0];
+  if (
+    primeiro &&
+    !definidas.has(primeiro.numero) &&
+    ![...bolsas.values()].includes(bolsaIntegral) &&
+    alcanca(primeiro.nota ?? 0, bolsaIntegral)
+  ) {
+    bolsas.set(primeiro.numero, bolsaIntegral);
+    definidas.add(primeiro.numero);
+  }
+
+  // 3) parciais pela classificação em cada curso
   for (const [ofertaId, lista] of porOferta) {
-    const disponiveis = [...(bolsasPorOferta[ofertaId] ?? [])].sort((a, b) => b - a);
+    const disponiveis = vagas.get(ofertaId) ?? [];
     for (const i of lista) {
-      if (i.numero === integral) {
-        continue; // o 1º geral já tem 100% e não ocupa bolsa parcial
+      if (definidas.has(i.numero)) {
+        continue;
       }
       const idx = disponiveis.findIndex((p) => alcanca(i.nota ?? 0, p));
       if (idx === -1) {
@@ -95,11 +155,12 @@ export const calcularResultado = (inscricoes: Inscricao[]): Resultado => {
       nota: i.nota ?? 0,
       notaMatematica: i.nota_matematica ?? 0,
       aprovado,
+      ajuste: ajustes[i.numero] ?? null,
       classificacaoGeral: posicao,
       classificacaoOferta: aprovado
         ? (porOferta.get(i.oferta_id) ?? []).findIndex((x) => x.numero === i.numero) + 1
         : null,
-      bolsa: bolsas.get(i.numero) ?? null,
+      bolsa: aprovado ? (bolsas.get(i.numero) ?? null) : null,
     };
   };
 
@@ -111,7 +172,7 @@ export const calcularResultado = (inscricoes: Inscricao[]): Resultado => {
 };
 
 // Prévia com as notas de agora (para o painel conferir antes de publicar)
-export const previaResultado = async () => calcularResultado(await listarInscricoes());
+export const previaResultado = async () => calcularResultado(await listarInscricoes(), await lerAjustes());
 
 // Publicar congela o resultado: mudanças posteriores nas inscrições não alteram o que foi divulgado
 export const publicarResultado = async () => {
@@ -135,7 +196,6 @@ export const resultadoDoCandidato = async (i: Inscricao) => {
     publicado: true,
     classificado: !!linha?.aprovado,
     reprovado: linha ? !linha.aprovado : false,
-    nota: linha?.nota ?? i.nota ?? null,
     classificacaoOferta: linha?.classificacaoOferta ?? null,
     totalOferta: publicado.linhas.filter((l) => l.aprovado && l.ofertaId === i.oferta_id).length,
     bolsa: linha?.bolsa ?? null,

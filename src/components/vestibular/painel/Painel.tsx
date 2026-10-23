@@ -1,6 +1,6 @@
 'use client';
 
-import { notaAprovacao } from '@/data/bolsas';
+import { notaMinimaBolsa } from '@/data/bolsas';
 import { cn } from '@/utils/cn';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
@@ -34,6 +34,7 @@ type Dados = {
     nota: number;
     notaMatematica: number;
     aprovado: boolean;
+    ajuste: Ajuste | null;
     classificacaoGeral: number | null;
     classificacaoOferta: number | null;
     bolsa: number | null;
@@ -41,9 +42,79 @@ type Dados = {
   publicadoEm: string | null;
 };
 
+type Ajuste = { situacao: 'aprovado' | 'reprovado' | null; bolsa: number | null; obs: string; em: string };
+type Linha = Dados['previa'][number];
+
+const faixasBolsa = Object.keys(notaMinimaBolsa)
+  .map(Number)
+  .sort((a, b) => b - a);
+
+// Ajuste manual de uma linha (só antes de publicar): situação, faixa de bolsa e observação
+const AjusteLinha = ({
+  linha,
+  travado,
+  salvar,
+}: {
+  linha: Linha;
+  travado: boolean;
+  salvar: (ajuste: Omit<Ajuste, 'em'>) => void;
+}) => {
+  const atual = {
+    situacao: linha.ajuste?.situacao ?? null,
+    bolsa: linha.ajuste?.bolsa ?? null,
+    obs: linha.ajuste?.obs ?? '',
+  };
+  const [obs, setObs] = useState(atual.obs);
+  const campo = 'border-stroke-3 rounded-lg border bg-white px-2 py-1 text-[13px] disabled:opacity-60';
+  return (
+    <div className="flex min-w-[300px] flex-wrap items-center gap-1.5">
+      <select
+        value={atual.situacao ?? ''}
+        disabled={travado}
+        aria-label={`Situação da inscrição ${linha.numero}`}
+        onChange={(e) => salvar({ ...atual, obs, situacao: (e.target.value || null) as Ajuste['situacao'] })}
+        className={cn(campo, atual.situacao && 'border-vest-blue text-vest-blue font-bold')}>
+        <option value="">Situação: pela nota</option>
+        <option value="aprovado">Aprovar</option>
+        <option value="reprovado">Reprovar</option>
+      </select>
+      <select
+        value={atual.bolsa ?? ''}
+        disabled={travado || !linha.aprovado}
+        aria-label={`Bolsa da inscrição ${linha.numero}`}
+        onChange={(e) => salvar({ ...atual, obs, bolsa: e.target.value === '' ? null : Number(e.target.value) })}
+        className={cn(campo, atual.bolsa !== null && 'border-vest-blue text-vest-blue font-bold')}>
+        <option value="">Bolsa: pela nota</option>
+        {faixasBolsa.map((p) => (
+          <option key={p} value={p}>
+            {p}%
+          </option>
+        ))}
+        <option value="0">Sem bolsa (40%)</option>
+      </select>
+      <input
+        value={obs}
+        disabled={travado}
+        maxLength={300}
+        placeholder="Observação"
+        aria-label={`Observação da inscrição ${linha.numero}`}
+        onChange={(e) => setObs(e.target.value)}
+        onBlur={() => obs !== atual.obs && salvar({ ...atual, obs })}
+        className={cn(campo, 'w-[140px]')}
+      />
+      {linha.ajuste && (
+        <span
+          title={`Ajustado em ${dataHora(linha.ajuste.em)}`}
+          className="bg-vest-blue rounded-full px-2 py-0.5 text-[11px] font-bold text-white">
+          ajustado manualmente
+        </span>
+      )}
+    </div>
+  );
+};
+
 // Faixa de cada candidato no resultado
-const faixa = (l: Dados['previa'][number]) =>
-  !l.aprovado ? `Reprovado (< ${notaAprovacao})` : l.bolsa ? `Bolsa ${l.bolsa}%` : '40% garantido';
+const faixa = (l: Linha) => (!l.aprovado ? 'Reprovado' : l.bolsa ? `Bolsa ${l.bolsa}%` : '40% garantido');
 
 const dataHora = (iso: string) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const celular = (c: string) => c.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
@@ -255,7 +326,10 @@ const Painel = () => {
             )}>
             {dados.publicadoEm
               ? `Resultado publicado em ${dataHora(dados.publicadoEm)}. Os candidatos já veem em Minha inscrição e na página pública. A lista abaixo é a prévia com as notas de agora; o que foi publicado fica congelado.`
-              : 'Prévia: o resultado ainda não foi publicado. Confira a classificação e as bolsas antes de publicar.'}
+              : 'Prévia: o resultado ainda não foi publicado. Confira a classificação e as bolsas antes de publicar.'}{' '}
+            {dados.publicadoEm
+              ? 'Os ajustes manuais estão travados. Para mudar alguma coisa, tire do ar, ajuste e publique de novo.'
+              : 'Na coluna Ajuste manual dá para aprovar ou reprovar alguém, trocar a faixa de bolsa e anotar o motivo. O ajuste vale mais que a regra da nota.'}
           </div>
           <div className="flex flex-wrap gap-3">
             <button
@@ -298,17 +372,20 @@ const Painel = () => {
           {aviso && <p className="text-[14px] font-semibold text-red-600">{aviso}</p>}
           <p className="text-secondary/70 text-[14px]">
             {aprovados.length} aprovados · {contemplados.length} contemplados com bolsa ·{' '}
-            {dados.previa.length - aprovados.length} reprovados (nota abaixo de {notaAprovacao})
+            {dados.previa.length - aprovados.length} reprovados · {dados.previa.filter((l) => l.ajuste).length} com
+            ajuste manual
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-[14px]">
+            <table className="w-full min-w-[1080px] text-left text-[14px]">
               <thead className="text-secondary/60 border-stroke-2 border-b">
                 <tr>
-                  {['Geral', 'No curso', 'Nº', 'Candidato', 'Curso', 'Nota', 'Mat.', 'Faixa'].map((c) => (
-                    <th key={c} className="px-2 py-2 font-semibold">
-                      {c}
-                    </th>
-                  ))}
+                  {['Geral', 'No curso', 'Nº', 'Candidato', 'Curso', 'Nota', 'Mat.', 'Faixa', 'Ajuste manual'].map(
+                    (c) => (
+                      <th key={c} className="px-2 py-2 font-semibold">
+                        {c}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -330,6 +407,18 @@ const Painel = () => {
                     <td className="px-2 py-2">{l.nota.toFixed(1)}</td>
                     <td className="px-2 py-2">{l.notaMatematica.toFixed(1)}</td>
                     <td className="px-2 py-2 font-bold">{faixa(l)}</td>
+                    <td className="px-2 py-2">
+                      <AjusteLinha
+                        key={JSON.stringify(l.ajuste)}
+                        linha={l}
+                        travado={ocupado || !!dados.publicadoEm}
+                        salvar={async (ajuste) => {
+                          if (await acao({ acao: 'ajustar', numero: l.numero, ...ajuste })) {
+                            await carregar();
+                          }
+                        }}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>

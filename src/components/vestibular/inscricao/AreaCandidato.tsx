@@ -1,7 +1,6 @@
 'use client';
 
 import { diasProva, horaDeEntrar, horariosProva, minutosAntes, ofertas } from '@/data/inscricao';
-import { notaAprovacao } from '@/data/bolsas';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { formatarCpf, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
@@ -55,25 +54,19 @@ export type ResultadoCandidato = {
   publicado: boolean;
   classificado: boolean;
   reprovado: boolean;
-  nota: number | null;
   classificacaoOferta: number | null;
   totalOferta: number;
   bolsa: number | null;
 };
 
-const notaBr = (nota: number) => nota.toFixed(1).replace('.', ',');
-
 // Resultado publicado: bolsa conquistada (ou os 40% garantidos) e o próximo passo, a matrícula no SEI.
-// Reprovado (nota abaixo da mínima): só o aviso, sem matrícula.
+// Reprovado: só o aviso, sem matrícula. O candidato nunca vê nota nem acertos (pedido da faculdade).
 const CartaoResultado = ({ resultado }: { resultado: ResultadoCandidato }) =>
   resultado.reprovado ? (
     <div className="bg-primary-50 space-y-2 rounded-[22px] p-6 text-center">
       <p className="text-vest-blue text-[12px] font-bold tracking-[0.2em] uppercase">Seu resultado</p>
       <p className="text-vest-navy text-[20px] font-bold">Não foi desta vez</p>
-      <p className="text-[15px]">
-        Você não atingiu a nota mínima de {notaBr(notaAprovacao)} para aprovação no Vestibular Conquista Vidal 2027.1
-        {resultado.nota !== null && <> (sua nota: {notaBr(resultado.nota)})</>}.
-      </p>
+      <p className="text-[15px]">Você não foi aprovado(a) no Vestibular Conquista Vidal 2027.1.</p>
       <p className="text-[15px]">
         Se quiser conversar sobre outras formas de ingresso, fale com a Faculdade Vidal pelo {instituicao.telefone}.
       </p>
@@ -93,10 +86,8 @@ const CartaoResultado = ({ resultado }: { resultado: ResultadoCandidato }) =>
           <p className="text-[15px] text-white">de desconto nas mensalidades.</p>
         </>
       )}
-      {resultado.classificado && resultado.nota !== null && (
-        <p className="text-[14px] text-white/85">
-          Nota {notaBr(resultado.nota)} · {resultado.classificacaoOferta}º lugar no seu curso
-        </p>
+      {resultado.classificado && resultado.classificacaoOferta && (
+        <p className="text-[14px] text-white/85">{resultado.classificacaoOferta}º lugar no seu curso</p>
       )}
       <div className="rounded-2xl bg-white/10 p-4 text-left text-[14px] text-white">
         <p className="font-bold text-white">Próximo passo: matrícula de {vestibular.matricula}</p>

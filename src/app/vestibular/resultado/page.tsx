@@ -73,7 +73,7 @@ const page = async () => {
                   </p>
                 )}
                 <p>
-                  Para ver sua nota e sua classificação, entre em{' '}
+                  Para ver seu resultado e sua classificação, entre em{' '}
                   <a href={rotaAreaCandidato} className="text-vest-blue font-semibold underline">
                     Minha inscrição
                   </a>{' '}
