@@ -33,9 +33,14 @@ const Header = () => (
           ))}
         </ul>
       </nav>
-      <BotaoInscricao className="px-5 py-2.5 text-[15px] md:px-7 md:py-3">
-        Inscreva-se
-      </BotaoInscricao>
+      <div className="flex items-center gap-4">
+        <a href="/vestibular/minha-inscricao" className="text-vest-blue hidden text-[15px] font-semibold hover:underline sm:block">
+          Já me inscrevi
+        </a>
+        <BotaoInscricao className="px-5 py-2.5 text-[15px] md:px-7 md:py-3">
+          Inscreva-se
+        </BotaoInscricao>
+      </div>
     </div>
   </header>
 );

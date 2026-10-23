@@ -2,8 +2,10 @@
 
 import { diasProva, documentoPorForma, nomeOferta, ofertas } from '@/data/inscricao';
 import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Check } from '../ui';
+
+export const rotaAreaCandidato = '/vestibular/minha-inscricao';
 
 export type InscricaoConfirmada = {
   numero: number;
@@ -17,8 +19,17 @@ export type InscricaoConfirmada = {
   horaProva: string | null;
 };
 
-// Tela que substitui o formulário depois da inscrição: é o comprovante, com o número e o código de acesso
-const Confirmacao = ({ inscricao }: { inscricao: InscricaoConfirmada }) => {
+// Comprovante da inscrição, com o número e o código de acesso. Aparece logo depois da inscrição (modo "nova")
+// e na área do candidato (modo "area"), que encaixa o status da prova em `extra`.
+const Confirmacao = ({
+  inscricao,
+  modo = 'nova',
+  extra,
+}: {
+  inscricao: InscricaoConfirmada;
+  modo?: 'nova' | 'area';
+  extra?: ReactNode;
+}) => {
   const [copiado, setCopiado] = useState(false);
   const oferta = ofertas.find((o) => o.id === inscricao.ofertaId);
   const forma = formas.find((f) => f.id === inscricao.forma);
@@ -38,15 +49,26 @@ const Confirmacao = ({ inscricao }: { inscricao: InscricaoConfirmada }) => {
 
   return (
     <div className="space-y-7" aria-live="polite">
-      <div className="space-y-3 text-center">
-        <span className="bg-vest-blue mx-auto flex size-14 items-center justify-center rounded-full text-white">
-          <Check className="size-7" />
-        </span>
-        <h2 className="font-chamada text-vest-navy text-[36px] md:text-[44px]">Inscrição confirmada!</h2>
-        <p className="text-[16px] md:text-lg">
-          {primeiroNome}, você está no {vestibular.nome}. Guarde o seu código: é com ele que você entra na prova.
-        </p>
-      </div>
+      {modo === 'nova' ? (
+        <div className="space-y-3 text-center">
+          <span className="bg-vest-blue mx-auto flex size-14 items-center justify-center rounded-full text-white">
+            <Check className="size-7" />
+          </span>
+          <h2 className="font-chamada text-vest-navy text-[36px] md:text-[44px]">Inscrição confirmada!</h2>
+          <p className="text-[16px] md:text-lg">
+            {primeiroNome}, você está no {vestibular.nome}. Guarde este código: com ele e o seu CPF você entra em{' '}
+            <a href={rotaAreaCandidato} className="text-vest-blue font-semibold underline">
+              Minha inscrição
+            </a>{' '}
+            para ver sua inscrição e fazer a prova.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2 text-center">
+          <h2 className="font-chamada text-vest-navy text-[36px] md:text-[44px]">Olá, {primeiroNome}!</h2>
+          <p className="text-[16px] md:text-lg">Esta é a sua inscrição no {vestibular.nome}.</p>
+        </div>
+      )}
 
       <div className="bg-vest relative overflow-hidden rounded-[28px] p-6 text-center text-white md:p-8">
         <p className="text-vest-cyan text-[12px] font-bold tracking-[0.24em] uppercase">Código de acesso</p>
@@ -78,6 +100,8 @@ const Confirmacao = ({ inscricao }: { inscricao: InscricaoConfirmada }) => {
           ))}
       </dl>
 
+      {extra}
+
       <div className="space-y-3">
         <p className="font-chamada text-vest-navy text-[24px]">Próximos passos</p>
         <ol className="space-y-3 text-[15px]">
@@ -93,8 +117,11 @@ const Confirmacao = ({ inscricao }: { inscricao: InscricaoConfirmada }) => {
               <li className="flex gap-3">
                 <span className="text-vest-blue font-bold">2.</span>
                 <span>
-                  No dia e horário escolhidos, entre com seu CPF e o código acima. Você tem até{' '}
-                  {vestibular.duracaoHoras} horas.
+                  No dia e horário escolhidos, entre em{' '}
+                  <a href={rotaAreaCandidato} className="text-vest-blue font-semibold underline">
+                    Minha inscrição
+                  </a>{' '}
+                  com seu CPF e o código acima. Você tem até {vestibular.duracaoHoras} horas.
                 </span>
               </li>
               <li className="flex gap-3">

@@ -3,12 +3,13 @@
 import { formatPhone } from '@/components/empreend/formStyles';
 import { diasProva, horariosProva, nomeOferta, Oferta, ofertas } from '@/data/inscricao';
 import { FormaId, formas, vestibular } from '@/data/vestibular';
-import { celularValido, cpfValido, emailValido, formatarCpf, idadeEm } from '@/utils/vestibular/validacao';
+import { celularValido, cpfValido, emailValido, formatarCpf, idadeEm, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
 import { FormEvent, ReactNode, useMemo, useState } from 'react';
 import IconeForma from '../Icones';
 import { Seta } from '../ui';
-import Confirmacao, { InscricaoConfirmada } from './Confirmacao';
+import { chaveCpf } from './AreaCandidato';
+import Confirmacao, { InscricaoConfirmada, rotaAreaCandidato } from './Confirmacao';
 import { campoClass, opcaoAtiva, opcaoClass, rotuloClass } from './estilos';
 
 type Campos = {
@@ -78,6 +79,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
   const [erros, setErros] = useState<Partial<Record<string, string>>>({});
   const [status, setStatus] = useState<'idle' | 'enviando'>('idle');
   const [aviso, setAviso] = useState('');
+  const [jaInscrito, setJaInscrito] = useState(false);
   const [confirmada, setConfirmada] = useState<InscricaoConfirmada | null>(null);
 
   const disponiveis = useMemo(() => ofertas.filter((o) => o.formas.includes(forma)), [forma]);
@@ -175,6 +177,15 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
       }
       if (resposta.campo) {
         setErros({ [resposta.campo]: resposta.mensagem });
+      }
+      // CPF já inscrito: guarda o CPF nesta aba para a área do candidato abrir com ele preenchido
+      setJaInscrito(!!resposta.jaInscrito);
+      if (resposta.jaInscrito) {
+        try {
+          sessionStorage.setItem(chaveCpf, soDigitos(campos.cpf));
+        } catch {
+          // Sem armazenamento: o candidato digita o CPF de novo
+        }
       }
       setAviso(resposta.mensagem ?? 'Não conseguimos concluir sua inscrição. Tente de novo.');
     } catch {
@@ -466,9 +477,16 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
       </div>
 
       {aviso && (
-        <p role="alert" className="rounded-2xl bg-red-50 p-4 text-[15px] font-semibold text-red-700">
-          {aviso}
-        </p>
+        <div role="alert" className="space-y-3 rounded-2xl bg-red-50 p-4 text-[15px] font-semibold text-red-700">
+          <p>{aviso}</p>
+          {jaInscrito && (
+            <a
+              href={rotaAreaCandidato}
+              className="bg-vest-blue hover:bg-vest-navy inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-white transition-colors">
+              Entrar na minha inscrição <Seta />
+            </a>
+          )}
+        </div>
       )}
 
       <button

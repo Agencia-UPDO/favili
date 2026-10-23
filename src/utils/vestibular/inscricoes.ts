@@ -130,3 +130,46 @@ export const criarInscricao = async (dados: NovaInscricao): Promise<Inscricao> =
   const [inscricao] = (await res.json()) as Inscricao[];
   return inscricao;
 };
+
+// Entrada na área do candidato: CPF e código precisam bater (o código é comparado sem diferenciar maiúsculas)
+export const entrar = async (cpf: string, codigo: string): Promise<Inscricao | null> => {
+  const inscricao = await buscarPorCpf(cpf);
+  const normalizado = codigo
+    .trim()
+    .toUpperCase()
+    .replace(/^(VIDAL)?-?/, 'VIDAL-');
+  return inscricao && inscricao.codigo === normalizado ? inscricao : null;
+};
+
+export const trocarHorario = async (inscricao: Inscricao, dia: string, hora: string): Promise<Inscricao> => {
+  const sb = supabase();
+  if (!sb) {
+    const lista = await lerLocal();
+    const atualizada = { ...inscricao, dia_prova: dia, hora_prova: hora };
+    await gravarLocal(lista.map((i) => (i.numero === inscricao.numero ? atualizada : i)));
+    return atualizada;
+  }
+  const res = await fetch(`${sb.url}?numero=eq.${inscricao.numero}`, {
+    method: 'PATCH',
+    headers: { ...sb.headers, Prefer: 'return=representation' },
+    body: JSON.stringify({ dia_prova: dia, hora_prova: hora }),
+  });
+  if (!res.ok) {
+    throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
+  }
+  const [atualizada] = (await res.json()) as Inscricao[];
+  return atualizada;
+};
+
+// O que o candidato vê da própria inscrição (sem CPF, celular nem dados internos)
+export const visaoCandidato = (i: Inscricao) => ({
+  numero: i.numero,
+  codigo: i.codigo,
+  nome: i.nome,
+  email: i.email,
+  forma: i.forma,
+  ofertaId: i.oferta_id,
+  fazProva: i.faz_prova,
+  diaProva: i.dia_prova,
+  horaProva: i.hora_prova?.slice(0, 5) ?? null,
+});
