@@ -43,10 +43,16 @@ export class CpfJaInscrito extends Error {
   }
 }
 
-// Código de acesso à prova: VIDAL- + 6 caracteres sem os que confundem (0/O, 1/I/L)
+// Código de acesso à prova: 6 caracteres sem os que confundem (0/O, 1/I/L)
 const alfabeto = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-export const gerarCodigo = () =>
-  `VIDAL-${Array.from({ length: 6 }, () => alfabeto[randomInt(alfabeto.length)]).join('')}`;
+export const gerarCodigo = () => Array.from({ length: 6 }, () => alfabeto[randomInt(alfabeto.length)]).join('');
+
+// Aceita o código com ou sem o antigo prefixo "VIDAL-", em maiúsculas ou minúsculas
+const normalizarCodigo = (codigo: string) =>
+  codigo
+    .trim()
+    .toUpperCase()
+    .replace(/^VIDAL-?/, '');
 
 const supabase = () => {
   const url = process.env.SUPABASE_URL;
@@ -134,11 +140,7 @@ export const criarInscricao = async (dados: NovaInscricao): Promise<Inscricao> =
 // Entrada na área do candidato: CPF e código precisam bater (o código é comparado sem diferenciar maiúsculas)
 export const entrar = async (cpf: string, codigo: string): Promise<Inscricao | null> => {
   const inscricao = await buscarPorCpf(cpf);
-  const normalizado = codigo
-    .trim()
-    .toUpperCase()
-    .replace(/^(VIDAL)?-?/, 'VIDAL-');
-  return inscricao && inscricao.codigo === normalizado ? inscricao : null;
+  return inscricao && normalizarCodigo(inscricao.codigo) === normalizarCodigo(codigo) ? inscricao : null;
 };
 
 export const trocarHorario = async (inscricao: Inscricao, dia: string, hora: string): Promise<Inscricao> => {
@@ -164,7 +166,7 @@ export const trocarHorario = async (inscricao: Inscricao, dia: string, hora: str
 // O que o candidato vê da própria inscrição (sem CPF nem dados internos)
 export const visaoCandidato = (i: Inscricao) => ({
   numero: i.numero,
-  codigo: i.codigo,
+  codigo: normalizarCodigo(i.codigo),
   nome: i.nome,
   email: i.email,
   celular: i.celular,

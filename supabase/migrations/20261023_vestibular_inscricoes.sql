@@ -3,7 +3,7 @@ create sequence if not exists vestibular_inscricao_numero start 2027100001;
 
 create table if not exists vestibular_inscricoes (
   numero bigint primary key default nextval('vestibular_inscricao_numero'),
-  codigo text not null unique,
+  codigo text not null unique check (codigo ~ '^[A-Z2-9]{6}$'),
   criado_em timestamptz not null default now(),
   cpf text not null unique check (cpf ~ '^\d{11}$'),
   nome text not null,

@@ -307,7 +307,7 @@ const AreaCandidato = () => {
           inscricao={inscricao}
           modo="area"
           extra={
-            <div className="space-y-4">
+            <div className="space-y-4 print:hidden">
               <StatusProva inscricao={inscricao} agora={agora} />
               {podeTrocar && (
                 <TrocarHorario inscricao={inscricao} cpf={cpf} codigo={inscricao.codigo} aoTrocar={setInscricao} />
@@ -357,7 +357,7 @@ const AreaCandidato = () => {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          placeholder="VIDAL-XXXXXX"
+          placeholder="Ex.: 7K3PQX"
           required
           className={cn(campoClass, 'mt-2 tracking-[0.08em] uppercase')}
         />
