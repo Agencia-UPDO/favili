@@ -9,7 +9,7 @@ export const vestibular = {
   fimInscricoes: '2026-11-20T18:00:00-03:00',
   inscricoes: '14/10 a 20/11/2026',
   dias: ['21 de novembro', '22 de novembro'],
-  diasCurto: '21 e 22 de novembro',
+  diasCurto: '21 ou 22 de novembro',
   // Até 2 horas de prova, sem passar das 20h (Arts. 9º e 10)
   duracaoHoras: 2,
   resultado: '24 de novembro',
@@ -329,7 +329,7 @@ export const faq = [
   {
     pergunta: 'Se eu não ganhar bolsa, fico sem desconto?',
     resposta:
-      'Não. Todo mundo que entra na Vidal em 2027.1 tem 40% de desconto garantido nas mensalidades, mesmo sem fazer o vestibular de 21 e 22 de novembro ou ficando fora das bolsas. O vestibular serve para conquistar um desconto maior, de 50% a 100%.',
+      'Não. Todo mundo que entra na Vidal em 2027.1 tem 40% de desconto garantido nas mensalidades, mesmo sem fazer o vestibular de 21 ou 22 de novembro ou ficando fora das bolsas. O vestibular serve para conquistar um desconto maior, de 50% a 100%.',
   },
   {
     pergunta: 'Não posso fazer a prova em 21 ou 22 de novembro. E agora?',

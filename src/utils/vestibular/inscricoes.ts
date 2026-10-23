@@ -161,12 +161,13 @@ export const trocarHorario = async (inscricao: Inscricao, dia: string, hora: str
   return atualizada;
 };
 
-// O que o candidato vê da própria inscrição (sem CPF, celular nem dados internos)
+// O que o candidato vê da própria inscrição (sem CPF nem dados internos)
 export const visaoCandidato = (i: Inscricao) => ({
   numero: i.numero,
   codigo: i.codigo,
   nome: i.nome,
   email: i.email,
+  celular: i.celular,
   forma: i.forma,
   ofertaId: i.oferta_id,
   fazProva: i.faz_prova,

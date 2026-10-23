@@ -14,7 +14,7 @@ const page = () => (
     <Cabecalho link="inscricao" />
     <main className="bg-background-3 min-h-[calc(100vh-68px)] py-10 md:py-14">
       <div className="mx-auto w-full max-w-[720px] px-4">
-        <div className="mb-6 text-center">
+        <div className="mb-6 text-center print:hidden">
           <Rotulo>Área do candidato</Rotulo>
         </div>
         <div className="rounded-[28px] bg-white p-5 shadow-[0_30px_60px_-30px_rgba(6,46,114,0.35)] md:p-9">

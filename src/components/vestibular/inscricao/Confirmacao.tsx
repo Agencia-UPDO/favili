@@ -4,6 +4,7 @@ import { diasProva, documentoPorForma, nomeOferta, ofertas } from '@/data/inscri
 import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
 import { ReactNode, useState } from 'react';
 import { Check } from '../ui';
+import SalvarInscricao from './SalvarInscricao';
 
 export const rotaAreaCandidato = '/vestibular/minha-inscricao';
 
@@ -12,6 +13,7 @@ export type InscricaoConfirmada = {
   codigo: string;
   nome: string;
   email: string;
+  celular: string;
   forma: FormaId;
   ofertaId: string;
   fazProva: boolean;
@@ -70,18 +72,18 @@ const Confirmacao = ({
         </div>
       )}
 
-      <div className="bg-vest relative overflow-hidden rounded-[28px] p-6 text-center text-white md:p-8">
+      <div className="bg-vest print:border-vest-navy print:text-vest-navy relative overflow-hidden rounded-[28px] p-6 text-center text-white md:p-8 print:border-2 print:bg-none">
         <p className="text-vest-cyan text-[12px] font-bold tracking-[0.24em] uppercase">Código de acesso</p>
-        <p className="font-condensada mt-2 text-[44px] leading-none font-bold tracking-[0.06em] text-white md:text-[56px]">
+        <p className="font-condensada print:text-vest-navy mt-2 text-[44px] leading-none font-bold tracking-[0.06em] text-white md:text-[56px]">
           {inscricao.codigo}
         </p>
         <button
           type="button"
           onClick={copiar}
-          className="hover:text-vest-navy mt-4 inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/60 px-5 py-2 text-[14px] font-bold transition-colors hover:bg-white">
+          className="hover:text-vest-navy mt-4 inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/60 px-5 py-2 text-[14px] font-bold transition-colors hover:bg-white print:hidden">
           {copiado ? 'Copiado!' : 'Copiar código'}
         </button>
-        <p className="mt-4 text-[14px] text-white/80">Inscrição nº {inscricao.numero}</p>
+        <p className="print:text-vest-navy mt-4 text-[14px] text-white/80">Inscrição nº {inscricao.numero}</p>
       </div>
 
       <dl className="divide-stroke-2 border-stroke-2 divide-y rounded-[22px] border bg-white text-[15px]">
@@ -99,6 +101,8 @@ const Confirmacao = ({
             </div>
           ))}
       </dl>
+
+      <SalvarInscricao inscricao={inscricao} />
 
       {extra}
 
@@ -151,7 +155,7 @@ const Confirmacao = ({
 
       <a
         href="/vestibular"
-        className="text-vest-blue block text-center text-[15px] font-semibold underline-offset-4 hover:underline">
+        className="text-vest-blue block text-center text-[15px] font-semibold underline-offset-4 hover:underline print:hidden">
         Voltar para a página do vestibular
       </a>
     </div>

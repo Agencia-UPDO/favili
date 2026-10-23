@@ -1,6 +1,6 @@
 import { horariosProva, diasProva, ofertas } from '@/data/inscricao';
 import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
-import { CpfJaInscrito, criarInscricao } from '@/utils/vestibular/inscricoes';
+import { CpfJaInscrito, criarInscricao, visaoCandidato } from '@/utils/vestibular/inscricoes';
 import { celularValido, cpfValido, emailValido, idadeEm, soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
 
@@ -129,17 +129,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      inscricao: {
-        numero: inscricao.numero,
-        codigo: inscricao.codigo,
-        nome: inscricao.nome,
-        email: inscricao.email,
-        forma: inscricao.forma,
-        ofertaId: inscricao.oferta_id,
-        fazProva: inscricao.faz_prova,
-        diaProva: inscricao.dia_prova,
-        horaProva: inscricao.hora_prova?.slice(0, 5) ?? null,
-      },
+      inscricao: visaoCandidato(inscricao),
     });
   } catch (e) {
     if (e instanceof CpfJaInscrito) {

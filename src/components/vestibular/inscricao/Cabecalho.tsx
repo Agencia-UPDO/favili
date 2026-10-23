@@ -4,7 +4,7 @@ import { rotaAreaCandidato } from './Confirmacao';
 
 // Topo das páginas de inscrição e da área do candidato
 const Cabecalho = ({ link }: { link: 'inscricao' | 'area' }) => (
-  <header className="border-stroke-2/70 border-b bg-white">
+  <header className="border-stroke-2/70 border-b bg-white print:hidden">
     <div className="main-container flex h-[68px] items-center justify-between gap-4">
       <a href="/vestibular" className="flex items-center gap-3">
         <Image src={logo} alt="Faculdade Vidal" className="h-10 w-auto" priority />

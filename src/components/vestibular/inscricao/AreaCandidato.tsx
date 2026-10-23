@@ -143,7 +143,7 @@ const TrocarHorario = ({
 
   if (!aberto) {
     return (
-      <div className="text-center">
+      <div className="text-center print:hidden">
         {status === 'salvo' && <p className="text-vest-blue mb-2 text-[14px] font-semibold">Horário atualizado.</p>}
         <button
           type="button"
@@ -285,7 +285,7 @@ const AreaCandidato = () => {
         <button
           type="button"
           onClick={sair}
-          className="text-secondary/60 mx-auto block cursor-pointer text-[14px] font-semibold hover:underline">
+          className="text-secondary/60 mx-auto block cursor-pointer text-[14px] font-semibold hover:underline print:hidden">
           Sair
         </button>
       </div>

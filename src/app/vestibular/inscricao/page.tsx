@@ -7,7 +7,8 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Inscrição · Vestibular Conquista Vidal 2027.1 | Faculdade Vidal',
-  description: 'Inscreva-se grátis no Vestibular Conquista Vidal 2027.1: prova on-line em 21 e 22 de novembro.',
+  description:
+    'Inscreva-se grátis no Vestibular Conquista Vidal 2027.1: prova on-line em 21 ou 22 de novembro, no dia e horário que você escolher.',
   alternates: { canonical: '/vestibular/inscricao' },
 };
 
@@ -24,12 +25,13 @@ const page = async ({ searchParams }: { searchParams: Promise<Record<string, str
 
       <main className="bg-background-3 min-h-[calc(100vh-68px)] py-10 md:py-14">
         <div className="mx-auto w-full max-w-[720px] px-4">
-          <div className="mb-8 space-y-3 text-center">
+          <div className="mb-8 space-y-3 text-center print:hidden">
             <Rotulo>Inscrição grátis</Rotulo>
             <h1 className="font-chamada text-vest-navy text-[44px] md:text-[56px]">Garanta sua vaga</h1>
             <p className="text-[16px] md:text-lg">
-              {vestibular.descontoGarantido} de desconto garantido para todos. Faça a prova em {vestibular.diasCurto} e
-              concorra a bolsas de até 100%. Inscrições até {vestibular.inscricoes.split(' a ')[1]}, às 18h.
+              {vestibular.descontoGarantido} de desconto garantido para todos. Faça a prova em {vestibular.diasCurto},
+              no dia e horário que escolher, e concorra a bolsas de até 100%. Inscrições até{' '}
+              {vestibular.inscricoes.split(' a ')[1]}, às 18h.
             </p>
           </div>
 

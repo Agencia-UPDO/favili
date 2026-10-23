@@ -172,6 +172,18 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
       const resposta = await res.json().catch(() => ({}));
       if (res.ok && resposta.ok) {
         setConfirmada(resposta.inscricao);
+        // Conversão para o GTM (GTM-W6VKJFX6), sem dados pessoais
+        const w = window as typeof window & { dataLayer?: Record<string, unknown>[] };
+        w.dataLayer = w.dataLayer || [];
+        w.dataLayer.push({
+          event: 'generate_lead',
+          form_id: 'vestibular-inscricao',
+          forma_ingresso: forma,
+          curso: oferta?.curso,
+          modalidade: oferta?.modalidade,
+          unidade: oferta?.unidade,
+          faz_prova: fazProva,
+        });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
