@@ -21,6 +21,9 @@ const storage = () => {
   const url = process.env.SUPABASE_URL;
   const chave = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !chave) {
+    if (process.env.VERCEL) {
+      throw new Error('Supabase não configurado (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY)');
+    }
     return null;
   }
   return {

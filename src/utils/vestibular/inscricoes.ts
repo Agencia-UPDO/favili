@@ -93,10 +93,22 @@ const normalizarCodigo = (codigo: string) =>
     .toUpperCase()
     .replace(/^VIDAL-?/, '');
 
+// Na Vercel não existe arquivo local: sem as variáveis do Supabase, tudo dá erro claro (nada é gravado em lugar
+// nenhum por engano). O arquivo em .data/ só vale no computador de desenvolvimento.
+export class SupabaseNaoConfigurado extends Error {
+  constructor() {
+    super('Supabase não configurado (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY)');
+  }
+}
+
 const supabase = () => {
   const url = process.env.SUPABASE_URL;
   const chave = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !chave) {
+    if (process.env.VERCEL) {
+      console.error('[vestibular] SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não definida neste ambiente da Vercel');
+      throw new SupabaseNaoConfigurado();
+    }
     return null;
   }
   return {
@@ -143,9 +155,6 @@ export const criarInscricao = async (dados: NovaInscricao): Promise<Inscricao> =
 
   const sb = supabase();
   if (!sb) {
-    if (process.env.VERCEL) {
-      throw new Error('Supabase não configurado (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY)');
-    }
     const lista = await lerLocal();
     const inscricao: Inscricao = {
       ...dados,
