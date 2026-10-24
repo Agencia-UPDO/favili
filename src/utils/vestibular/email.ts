@@ -1,6 +1,14 @@
 import 'server-only';
 
-import { avisoEntrada, avisoFim, diasProva, linkAreaCandidato, nomeOferta, ofertas } from '@/data/inscricao';
+import {
+  avisoEntrada,
+  avisoFim,
+  diasProva,
+  fusoHorario,
+  linkAreaCandidato,
+  nomeOferta,
+  ofertas,
+} from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { Inscricao } from './inscricoes';
 
@@ -52,7 +60,7 @@ const detalhes = (i: Inscricao) => {
   return [
     oferta ? `Curso: ${nomeOferta(oferta)}` : '',
     `Inscrição nº ${i.numero}`,
-    i.faz_prova && dia && hora ? `Prova: ${dia}, às ${hora.replace(':00', 'h')}` : '',
+    i.faz_prova && dia && hora ? `Prova: ${dia}, às ${hora.replace(':00', 'h')} (${fusoHorario})` : '',
     i.faz_prova && hora ? avisoEntrada(hora) : '',
     i.faz_prova && hora ? avisoFim(hora) : '',
   ].filter(Boolean);

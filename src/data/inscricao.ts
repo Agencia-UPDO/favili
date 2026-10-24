@@ -156,10 +156,13 @@ export const horaDeEntrar = (hora: string) => {
 };
 
 // "18:00" → "20h": fim da janela de quem escolheu esse horário
+// Todos os horários são de Brasília (Limoeiro do Norte/CE, UTC-3)
+export const fusoHorario = 'horário de Brasília';
+
 export const horaFim = (hora: string) => `${Number(hora.slice(0, 2)) + 2}h`;
 
 export const avisoFim = (hora: string) =>
   `A prova termina às ${horaFim(hora)}, mesmo que você comece depois das ${hora.slice(0, 5).replace(':00', 'h')}.`;
 
 export const avisoEntrada = (hora: string) =>
-  `No dia da prova, entre em ${linkAreaCandidatoCurto} com seu CPF e código pelo menos ${minutosAntes} minutos antes do seu horário (às ${horaDeEntrar(hora)} para a prova das ${hora.replace(':00', 'h')}) para liberar a prova.`;
+  `No dia da prova, entre em ${linkAreaCandidatoCurto} com seu CPF e código pelo menos ${minutosAntes} minutos antes do seu horário (às ${horaDeEntrar(hora)} para a prova das ${hora.replace(':00', 'h')}, ${fusoHorario}) para liberar a prova.`;

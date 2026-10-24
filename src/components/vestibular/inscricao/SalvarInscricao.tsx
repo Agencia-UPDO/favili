@@ -1,6 +1,6 @@
 'use client';
 
-import { avisoEntrada, avisoFim, diasProva, linkAreaCandidato, minutosAntes } from '@/data/inscricao';
+import { avisoEntrada, avisoFim, diasProva, fusoHorario, linkAreaCandidato, minutosAntes } from '@/data/inscricao';
 import { vestibular } from '@/data/vestibular';
 import { InscricaoConfirmada } from './Confirmacao';
 
@@ -24,7 +24,7 @@ const utc = (d: Date) =>
 
 const textoProva = (i: InscricaoConfirmada) => {
   const dia = diasProva.find((d) => d.id === i.diaProva);
-  return dia && i.horaProva ? `${dia.rotulo}, às ${i.horaProva.replace(':00', 'h')}` : null;
+  return dia && i.horaProva ? `${dia.rotulo}, às ${i.horaProva.replace(':00', 'h')} (${fusoHorario})` : null;
 };
 
 const mensagem = (i: InscricaoConfirmada) =>

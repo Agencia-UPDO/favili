@@ -1,6 +1,15 @@
 'use client';
 
-import { avisoFim, diasProva, horaDeEntrar, horaFim, horariosProva, minutosAntes, ofertas } from '@/data/inscricao';
+import {
+  avisoFim,
+  diasProva,
+  fusoHorario,
+  horaDeEntrar,
+  horaFim,
+  horariosProva,
+  minutosAntes,
+  ofertas,
+} from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { formatarCpf, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
@@ -202,6 +211,9 @@ const StatusProva = ({
         <p className="text-vest-cyan text-[12px] font-bold tracking-[0.2em] uppercase">Sua prova</p>
         <p className="font-chamada mt-1 text-[30px] leading-tight text-white md:text-[36px]">
           {diasProva.find((d) => d.id === inscricao.diaProva)?.rotulo}, às {inscricao.horaProva?.replace(':00', 'h')}
+          <span className="mt-1 block font-sans text-[13px] font-normal tracking-normal text-white/70 normal-case">
+            {fusoHorario}
+          </span>
         </p>
         <p className="text-vest-yellow mt-2 text-[16px] font-bold">
           Entre aqui às {horaDeEntrar(inscricao.horaProva ?? '00:00')} ({minutosAntes} minutos antes) para liberar a

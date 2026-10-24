@@ -3,6 +3,7 @@
 import {
   avisoEntrada,
   avisoFim,
+  fusoHorario,
   diasProva,
   documentoPorForma,
   linkAreaCandidatoCurto,
@@ -114,7 +115,12 @@ const Confirmacao = ({
         {[
           ['Forma de ingresso', forma?.rotulo],
           ['Curso', oferta ? nomeOferta(oferta) : ''],
-          ['Prova', inscricao.fazProva && dia ? `${dia.rotulo}, às ${inscricao.horaProva?.replace(':00', 'h')}` : null],
+          [
+            'Prova',
+            inscricao.fazProva && dia
+              ? `${dia.rotulo}, às ${inscricao.horaProva?.replace(':00', 'h')} (${fusoHorario})`
+              : null,
+          ],
           ['E-mail', inscricao.email],
         ]
           .filter(([, valor]) => valor)

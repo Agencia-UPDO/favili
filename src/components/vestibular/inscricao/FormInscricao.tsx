@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPhone } from '@/components/empreend/formStyles';
-import { diasProva, horariosProva, nomeOferta, Oferta, ofertas } from '@/data/inscricao';
+import { diasProva, fusoHorario, horariosProva, nomeOferta, Oferta, ofertas } from '@/data/inscricao';
 import { FormaId, formas, vestibular } from '@/data/vestibular';
 import { celularValido, cpfValido, emailValido, formatarCpf, idadeEm, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
@@ -398,7 +398,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
           </div>
           <div id="grupo-hora" tabIndex={-1} className="scroll-mt-24 outline-none">
             <span className={rotuloClass} id="horaProva-rotulo">
-              Horário de início
+              Horário de início <span className="text-secondary/60 font-normal">({fusoHorario})</span>
             </span>
             <div
               role="radiogroup"
