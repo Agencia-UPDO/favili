@@ -254,7 +254,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
   ) => {
     const { formatar, className, ...resto } = props;
     return (
-      <div className={className}>
+      <div className={cn('min-w-0', className)}>
         <label htmlFor={id} className={rotuloClass}>
           {rotulo}
         </label>
@@ -265,7 +265,13 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
           onChange={(e) => set(id, formatar ? formatar(e.target.value) : e.target.value)}
           aria-invalid={!!erros[id]}
           aria-describedby={erros[id] ? `${id}-erro` : undefined}
-          className={cn(campoClass, 'mt-2')}
+          className={cn(
+            campoClass,
+            'mt-2',
+            // iPhone: o campo de data tem largura mínima própria e vazava do formulário
+            resto.type === 'date' &&
+              'block min-w-0 appearance-none text-left [&::-webkit-date-and-time-value]:text-left',
+          )}
           {...resto}
         />
         <Erro id={`${id}-erro`}>{erros[id]}</Erro>
