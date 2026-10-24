@@ -1,5 +1,4 @@
 import { bolsasResumo, degraus, regrasBolsa, vestibular } from '@/data/vestibular';
-import RevealAnimation from '../animation/Revelar';
 import { Check, Marca, Rotulo } from './ui';
 
 const Bolsas = () => (
@@ -20,23 +19,22 @@ const Bolsas = () => (
       {/* Escada: 40% para todos → bolsa do vestibular → 100% do 1º lugar */}
       <ol className="grid items-end gap-3 md:grid-cols-3">
         {degraus.map((d, i) => (
-          <RevealAnimation key={d.titulo} delay={0.1 + i * 0.1}>
-            <li
-              className={
-                i === 2
-                  ? 'bg-vest-yellow text-vest-navy rounded-[24px] p-6 md:min-h-[300px]'
-                  : i === 1
-                    ? 'bg-vest rounded-[24px] p-6 text-white md:min-h-[250px]'
-                    : 'bg-primary-50 text-vest-navy rounded-[24px] p-6 md:min-h-[200px]'
-              }>
-              <span className="text-[12px] font-bold tracking-[0.2em] uppercase opacity-70">Degrau {i + 1}</span>
-              <span className="font-chamada mt-1 block text-[48px] leading-none md:text-[56px]">{d.percentual}</span>
-              <span className="mt-2 block text-[17px] font-bold">{d.titulo}</span>
-              <span className={i === 1 ? 'text-tagline-2 mt-1 block text-white/80' : 'text-tagline-2 mt-1 block opacity-80'}>
-                {d.texto}
-              </span>
-            </li>
-          </RevealAnimation>
+          <li
+            className={
+              i === 2
+                ? 'bg-vest-yellow text-vest-navy rounded-[24px] p-6 md:min-h-[300px]'
+                : i === 1
+                  ? 'bg-vest rounded-[24px] p-6 text-white md:min-h-[250px]'
+                  : 'bg-primary-50 text-vest-navy rounded-[24px] p-6 md:min-h-[200px]'
+            }>
+            <span className="text-[12px] font-bold tracking-[0.2em] uppercase opacity-70">Degrau {i + 1}</span>
+            <span className="font-chamada mt-1 block text-[48px] leading-none md:text-[56px]">{d.percentual}</span>
+            <span className="mt-2 block text-[17px] font-bold">{d.titulo}</span>
+            <span
+              className={i === 1 ? 'text-tagline-2 mt-1 block text-white/80' : 'text-tagline-2 mt-1 block opacity-80'}>
+              {d.texto}
+            </span>
+          </li>
         ))}
       </ol>
 
@@ -46,22 +44,20 @@ const Bolsas = () => (
 
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {bolsasResumo.map((b, i) => (
-          <RevealAnimation key={b.percentual} delay={0.1 + i * 0.08}>
-            <li
-              className={
-                i === 0
-                  ? 'bg-vest-yellow text-vest-navy col-span-2 rounded-[22px] p-5 md:col-span-1'
-                  : 'bg-vest rounded-[22px] p-5 text-white'
-              }>
-              <span className="font-chamada block text-[52px] leading-none">{b.percentual}</span>
-              <span className="mt-2 block text-[15px] font-bold">
-                {b.quantidade} {b.quantidade === 1 ? 'bolsa' : 'bolsas'}
-              </span>
-              <span className={i === 0 ? 'text-tagline-2 text-vest-navy/80' : 'text-tagline-2 text-white/75'}>
-                {b.texto}
-              </span>
-            </li>
-          </RevealAnimation>
+          <li
+            className={
+              i === 0
+                ? 'bg-vest-yellow text-vest-navy col-span-2 rounded-[22px] p-5 md:col-span-1'
+                : 'bg-vest rounded-[22px] p-5 text-white'
+            }>
+            <span className="font-chamada block text-[52px] leading-none">{b.percentual}</span>
+            <span className="mt-2 block text-[15px] font-bold">
+              {b.quantidade} {b.quantidade === 1 ? 'bolsa' : 'bolsas'}
+            </span>
+            <span className={i === 0 ? 'text-tagline-2 text-vest-navy/80' : 'text-tagline-2 text-white/75'}>
+              {b.texto}
+            </span>
+          </li>
         ))}
       </ul>
 

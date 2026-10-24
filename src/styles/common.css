@@ -419,30 +419,6 @@ Common Styles all over the sites
   transition: none !important;
 }
 
-/* Revelação leve (componente Revelar): só para o que estava abaixo da tela ao carregar */
-[data-revelar] {
-  opacity: 0;
-  transition:
-    opacity 0.5s ease-out,
-    transform 0.5s ease-out;
-}
-[data-revelar='down'] {
-  transform: translateY(24px);
-}
-[data-revelar='up'] {
-  transform: translateY(-24px);
-}
-[data-revelar='left'] {
-  transform: translateX(-24px);
-}
-[data-revelar='right'] {
-  transform: translateX(24px);
-}
-[data-revelar][data-revelado] {
-  opacity: 1;
-  transform: none;
-}
-
 /* Rolagem suave nativa para âncoras (onde o Lenis não está ligado) */
 @media (prefers-reduced-motion: no-preference) {
   html:not(.lenis) {

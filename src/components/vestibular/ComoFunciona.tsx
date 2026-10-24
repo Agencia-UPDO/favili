@@ -1,7 +1,6 @@
 import { cronograma, prova, vestibular } from '@/data/vestibular';
 import aluno from '@public/images/vestibular/aluno-mochila.jpg';
 import Image from 'next/image';
-import RevealAnimation from '../animation/Revelar';
 import { BotaoInscricao, Rotulo } from './ui';
 
 const ComoFunciona = () => (
@@ -29,14 +28,12 @@ const ComoFunciona = () => (
       {/* Passo a passo com as datas do cronograma oficial */}
       <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {cronograma.map((c, i) => (
-          <RevealAnimation key={c.etapa} delay={0.1 + i * 0.08}>
-            <li className="relative h-full overflow-hidden rounded-[22px] bg-white p-5">
-              <span className="font-chamada text-primary-100 absolute -top-1 right-3 text-[56px]">{i + 1}</span>
-              <span className="font-chamada text-vest-blue relative block pr-8 text-[26px]">{c.data}</span>
-              <span className="text-vest-navy relative mt-1 block text-[16px] font-bold">{c.etapa}</span>
-              <span className="text-tagline-2 text-secondary/60 relative mt-1 block">{c.extra}</span>
-            </li>
-          </RevealAnimation>
+          <li className="relative h-full overflow-hidden rounded-[22px] bg-white p-5">
+            <span className="font-chamada text-primary-100 absolute -top-1 right-3 text-[56px]">{i + 1}</span>
+            <span className="font-chamada text-vest-blue relative block pr-8 text-[26px]">{c.data}</span>
+            <span className="text-vest-navy relative mt-1 block text-[16px] font-bold">{c.etapa}</span>
+            <span className="text-tagline-2 text-secondary/60 relative mt-1 block">{c.extra}</span>
+          </li>
         ))}
       </ol>
 
