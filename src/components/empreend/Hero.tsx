@@ -22,6 +22,8 @@ const Hero = () => {
           alt=""
           fill
           priority
+          // Fica a 16% de opacidade: qualidade 50 é indistinguível e o arquivo cai pela metade
+          quality={50}
           sizes="100vw"
           className="object-cover opacity-[0.16] mix-blend-luminosity"
         />
