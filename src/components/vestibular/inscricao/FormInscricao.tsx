@@ -368,7 +368,8 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
       {fazProva && (
         <Bloco id="passo-prova" numero={++n} titulo="Dia e horário da prova">
           <p className="-mt-1 text-[15px]">
-            A prova é on-line e dura até {vestibular.duracaoHoras} horas. Escolha quando vai começar.
+            A prova é on-line e dura {vestibular.duracaoHoras} horas, contadas a partir do horário que você escolher
+            (quem começa atrasado perde o atraso).
           </p>
           <div>
             <span className={rotuloClass} id="diaProva-rotulo">

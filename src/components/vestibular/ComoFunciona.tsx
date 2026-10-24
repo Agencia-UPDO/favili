@@ -5,7 +5,10 @@ import RevealAnimation from '../animation/Revelar';
 import { BotaoInscricao, Rotulo } from './ui';
 
 const ComoFunciona = () => (
-  <section id="como-funciona" className="bg-background-3 scroll-mt-20 py-16 md:py-20 lg:py-24" aria-labelledby="como-titulo">
+  <section
+    id="como-funciona"
+    className="bg-background-3 scroll-mt-20 py-16 md:py-20 lg:py-24"
+    aria-labelledby="como-titulo">
     <div className="main-container space-y-10 md:space-y-14">
       <div className="grid grid-cols-12 items-end gap-6">
         <div className="col-span-12 space-y-4 text-center lg:col-span-7 lg:text-left">
@@ -62,8 +65,10 @@ const ComoFunciona = () => (
                 ))}
               </ul>
               <ul className="space-y-1.5 text-[15px] text-white/85">
-                <li>Cada questão vale {prova.valorQuestao}: nota máxima {prova.notaMaxima}.</li>
-                <li>Até {vestibular.duracaoHoras} horas para terminar, a partir do início.</li>
+                <li>
+                  Cada questão vale {prova.valorQuestao}: nota máxima {prova.notaMaxima}.
+                </li>
+                <li>{vestibular.duracaoHoras} horas a partir do horário escolhido (quem atrasa perde o atraso).</li>
                 <li>Uma única tentativa, sem segunda chamada.</li>
               </ul>
             </div>

@@ -10,7 +10,7 @@ export const vestibular = {
   inscricoes: '14/10 a 20/11/2026',
   dias: ['21 de novembro', '22 de novembro'],
   diasCurto: '21 ou 22 de novembro',
-  // Até 2 horas de prova, sem passar das 20h (Arts. 9º e 10)
+  // 2 horas de prova a partir do horário escolhido; quem começa atrasado perde o atraso (Arts. 9º e 10)
   duracaoHoras: 2,
   resultado: '24 de novembro',
   matricula: '24/11 a 04/12/2026',
@@ -45,7 +45,7 @@ export const cronograma = [
   {
     etapa: 'Escolha o dia e o horário',
     data: '21 ou 22/11',
-    extra: 'Escolha quando vai fazer a prova, entre 8h e 20h.',
+    extra: 'Escolha o dia e o horário de início: 8h, 10h, 12h, 14h, 16h ou 18h.',
   },
   {
     etapa: 'Receba seu acesso por e-mail',
@@ -119,7 +119,7 @@ export const formas: Forma[] = [
       },
       {
         titulo: 'Escolha o dia e o horário',
-        texto: 'Faça a prova em 21 ou 22 de novembro, quando preferir, entre 8h e 20h.',
+        texto: 'Faça a prova em 21 ou 22 de novembro, no horário que você escolher: 8h, 10h, 12h, 14h, 16h ou 18h.',
       },
       {
         titulo: 'Receba seu acesso por e-mail',
@@ -404,7 +404,7 @@ export const faq = [
   {
     pergunta: 'Onde e como eu faço a prova?',
     resposta:
-      'A prova é 100% on-line. Um dia antes da prova, você recebe por e-mail o link com o seu login e senha. É só acessar em um dos dias (21 ou 22 de novembro) e começar quando quiser, entre 8h e 20h.',
+      'A prova é 100% on-line. Um dia antes da prova, você recebe por e-mail o link com o seu login e senha. Você entra no dia e no horário que escolheu na inscrição (21 ou 22 de novembro; 8h, 10h, 12h, 14h, 16h ou 18h).',
   },
   {
     pergunta: 'Não recebi o e-mail com login e senha. O que eu faço?',
@@ -414,7 +414,7 @@ export const faq = [
   {
     pergunta: 'Quanto tempo eu tenho para fazer a prova?',
     resposta:
-      'Até 2 horas a partir do momento em que você começa, sem passar das 20h. Quem começa às 17h tem até as 19h; quem começa às 19h tem só até as 20h. Para usar as 2 horas inteiras, comece até as 18h.',
+      '2 horas, contadas a partir do horário que você escolheu. A prova termina 2 horas depois desse horário, mesmo que você comece atrasado: quem escolheu 18h e entra às 19h tem só até as 20h. Para usar as 2 horas inteiras, entre 15 minutos antes do seu horário.',
   },
   {
     pergunta: 'O que cai na prova?',

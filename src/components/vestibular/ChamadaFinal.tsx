@@ -15,7 +15,8 @@ const ChamadaFinal = () => (
             </span>
           </h2>
           <p className="text-accent/80 max-w-[560px] md:text-lg">
-            Inscrições até 20 de novembro, às 18h. Prova on-line em {vestibular.diasCurto}, no dia e horário que você escolher, das 8h às 20h.
+            Inscrições até 20 de novembro, às 18h. Prova on-line em {vestibular.diasCurto}, no dia e horário que você
+            escolher (8h, 10h, 12h, 14h, 16h ou 18h).
           </p>
           <BotaoInscricao className="mt-2">Quero me inscrever</BotaoInscricao>
         </div>

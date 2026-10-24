@@ -10,6 +10,7 @@ import {
   visaoProva,
 } from '@/utils/vestibular/prova';
 import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
+import { horaFim } from '@/data/inscricao';
 import { soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
 
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
     } else if (s === 'aguardando') {
       return negar('A prova ainda não foi liberada. Ela abre no horário que você escolheu.', 403);
     } else if (s === 'perdida') {
-      return negar('O prazo para fazer a prova terminou.', 403);
+      return negar(`Seu horário de prova terminou às ${horaFim(inscricao.hora_prova ?? '')}.`, 403);
     }
     return resposta(inscricao);
   }

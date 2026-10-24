@@ -1,6 +1,6 @@
 'use client';
 
-import { diasProva, horaDeEntrar, horariosProva, minutosAntes, ofertas } from '@/data/inscricao';
+import { avisoFim, diasProva, horaDeEntrar, horaFim, horariosProva, minutosAntes, ofertas } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { formatarCpf, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
@@ -130,7 +130,8 @@ const StatusProva = ({
   }
 
   const ms = inicio.getTime() - agora;
-  const fimDoDia = new Date(`${inscricao.diaProva}T20:00:00-03:00`).getTime();
+  // Janela do candidato: do horário dele até 2 horas depois (atraso é descontado)
+  const fimDoDia = inicio.getTime() + vestibular.duracaoHoras * 60 * 60 * 1000;
   const liberada = !inscricao.provaEntregue && (inscricao.provaIniciada || (ms <= 0 && agora < fimDoDia));
 
   if (inscricao.provaEntregue) {
@@ -178,7 +179,7 @@ const StatusProva = ({
         </div>
         <ul className="space-y-2 rounded-2xl bg-white/10 p-4 text-[14px] text-white">
           {[
-            `São ${vestibular.duracaoHoras} horas para responder as 20 questões, contadas a partir do início.`,
+            `São 20 questões. ${avisoFim(inscricao.horaProva ?? '00:00')}`,
             'Use um lugar tranquilo e confira a internet e a bateria do aparelho.',
             'Suas respostas ficam salvas a cada questão; se a conexão cair, entre de novo com CPF e código.',
             'Cada candidato faz a prova uma única vez.',
@@ -215,7 +216,9 @@ const StatusProva = ({
   return (
     <div className="bg-primary-50 rounded-[22px] p-5 text-center text-[15px]">
       <p className="text-vest-navy font-bold">
-        {agora < dataResultado.getTime() ? 'Prova encerrada' : 'Resultado disponível'}
+        {agora < dataResultado.getTime()
+          ? `Prova encerrada: seu horário terminou às ${horaFim(inscricao.horaProva ?? '00:00')}`
+          : 'Resultado disponível'}
       </p>
       <p className="mt-1">
         {agora < dataResultado.getTime()

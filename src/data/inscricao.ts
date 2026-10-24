@@ -93,7 +93,8 @@ export const ofertas: Oferta[] = [
 
 export const nomeOferta = (o: Oferta) => `${o.curso} · ${o.modalidade} · ${o.unidade}`;
 
-// Dias e horários de início da prova cadastrados no SEI (2 horas cada, a última termina às 20h)
+// Dias e horários de início da prova cadastrados no SEI (2 horas cada, a última termina às 20h).
+// A prova termina 2 horas depois do horário escolhido, mesmo que o candidato comece atrasado.
 export const diasProva = [
   { id: '2026-11-21', rotulo: 'Sábado, 21 de novembro' },
   { id: '2026-11-22', rotulo: 'Domingo, 22 de novembro' },
@@ -153,6 +154,12 @@ export const horaDeEntrar = (hora: string) => {
   const mm = total % 60;
   return mm ? `${hh}h${String(mm).padStart(2, '0')}` : `${hh}h`;
 };
+
+// "18:00" → "20h": fim da janela de quem escolheu esse horário
+export const horaFim = (hora: string) => `${Number(hora.slice(0, 2)) + 2}h`;
+
+export const avisoFim = (hora: string) =>
+  `A prova termina às ${horaFim(hora)}, mesmo que você comece depois das ${hora.slice(0, 5).replace(':00', 'h')}.`;
 
 export const avisoEntrada = (hora: string) =>
   `No dia da prova, entre em ${linkAreaCandidatoCurto} com seu CPF e código pelo menos ${minutosAntes} minutos antes do seu horário (às ${horaDeEntrar(hora)} para a prova das ${hora.replace(':00', 'h')}) para liberar a prova.`;

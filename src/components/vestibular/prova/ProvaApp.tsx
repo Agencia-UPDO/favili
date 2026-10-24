@@ -272,7 +272,7 @@ const ProvaApp = () => {
       <Aviso titulo="Prova indisponível">
         <p>
           {estado.situacao === 'perdida'
-            ? 'O prazo para fazer a prova terminou.'
+            ? 'O seu horário de prova terminou (a prova vai até 2 horas depois do horário que você escolheu).'
             : 'Sua inscrição não tem prova agendada.'}
         </p>
       </Aviso>
@@ -291,7 +291,7 @@ const ProvaApp = () => {
         <ul className="space-y-2 text-[15px]">
           {[
             `${estado.totalQuestoes} questões objetivas: metade de Linguagens e Códigos, metade de Matemática.`,
-            `Você tem até ${vestibular.duracaoHoras} horas a partir de agora, sem passar das 20h.`,
+            'O tempo vai até 2 horas depois do horário que você escolheu, mesmo que tenha começado depois. O cronômetro mostra quanto falta.',
             'Cada resposta é salva na hora. Se a internet cair, entre de novo com CPF e código: o tempo continua correndo.',
             'Você pode voltar às questões e trocar a resposta até entregar.',
             'A prova é feita uma única vez.',

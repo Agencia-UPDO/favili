@@ -43,8 +43,9 @@ const duracaoMs = 2 * 60 * 60 * 1000;
 export const modoTeste = process.env.VESTIBULAR_MODO_TESTE === '1' && process.env.NODE_ENV !== 'production';
 
 const inicioHorario = (i: Inscricao) => new Date(`${i.dia_prova}T${i.hora_prova?.slice(0, 5)}:00-03:00`);
-// Ninguém faz prova depois das 20h do dia escolhido
-const limiteDoDia = (i: Inscricao) => new Date(`${i.dia_prova}T20:00:00-03:00`);
+// A janela de cada candidato vai do horário agendado até 2 horas depois. Quem chega atrasado perde o atraso e,
+// depois do fim da janela, não começa mais (fuso de Fortaleza explícito, nunca o do servidor)
+export const fimDaJanela = (i: Inscricao) => new Date(inicioHorario(i).getTime() + duracaoMs);
 
 // Embaralhamento com semente fixa: o mesmo resultado sempre que for refeito com a mesma semente
 const embaralhar = <T>(lista: T[], semente: string) => {
@@ -119,7 +120,7 @@ export const situacao = (i: Inscricao, agora = Date.now()): Situacao => {
   if (agora < inicioHorario(i).getTime()) {
     return 'aguardando';
   }
-  return agora < limiteDoDia(i).getTime() ? 'liberada' : 'perdida';
+  return agora < fimDaJanela(i).getTime() ? 'liberada' : 'perdida';
 };
 
 const corrigir = (i: Inscricao) => {
@@ -152,8 +153,11 @@ export const entregarSeVenceu = async (i: Inscricao, agora = Date.now()) => {
   return i;
 };
 
+// Fim da prova de quem começa agora: o fim da janela, mesmo começando depois (separado para os testes)
+export const fimDaProva = (i: Inscricao, agora: number) => (modoTeste ? agora + duracaoMs : fimDaJanela(i).getTime());
+
 export const iniciar = async (i: Inscricao, agora = Date.now()) => {
-  const fim = Math.min(agora + duracaoMs, modoTeste ? Infinity : limiteDoDia(i).getTime());
+  const fim = fimDaProva(i, agora);
   return atualizar(i, {
     prova_inicio: new Date(agora).toISOString(),
     prova_fim: new Date(fim).toISOString(),

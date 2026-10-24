@@ -6,16 +6,16 @@ import RevealAnimation from '../animation/Revelar';
 import Contagem from './Contagem';
 import { BotaoInscricao, Marca, Pilula } from './ui';
 
-// A retícula do fundo é o maior elemento da primeira dobra: o navegador começa a baixar junto com o HTML
+// A retícula do fundo começa a baixar junto com o HTML
 const Hero = () => {
   preload('/images/vestibular/reticula.webp', { as: 'image', fetchPriority: 'high' });
   return (
     <section id="topo" className="px-3 pt-[76px] md:px-5 lg:pt-[88px]">
       <div className="bg-vest relative overflow-hidden rounded-[28px] md:rounded-[40px]">
-        {/* Retícula em ondas, como nas artes da campanha */}
+        {/* Retícula feita como máscara, não como imagem de fundo: fica idêntica, mas não vira o "maior elemento" que o Google mede (passa a ser o título, pronto no HTML) */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-[url(/images/vestibular/reticula.webp)] bg-cover bg-center opacity-[0.08]"
+          className="absolute inset-0 bg-white [mask-image:url(/images/vestibular/reticula.webp)] [mask-size:cover] [mask-position:center] opacity-[0.08]"
         />
 
         <div className="main-container relative grid grid-cols-12 items-center gap-y-8 pt-10 md:pt-14 lg:gap-x-8 lg:pt-16">

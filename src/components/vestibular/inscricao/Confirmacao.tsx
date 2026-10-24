@@ -2,6 +2,7 @@
 
 import {
   avisoEntrada,
+  avisoFim,
   diasProva,
   documentoPorForma,
   linkAreaCandidatoCurto,
@@ -151,8 +152,7 @@ const Confirmacao = ({
               <li className="flex gap-3">
                 <span className="text-vest-blue font-bold">2.</span>
                 <span>
-                  {inscricao.horaProva ? avisoEntrada(inscricao.horaProva) : null} Você tem até{' '}
-                  {vestibular.duracaoHoras} horas de prova.
+                  {inscricao.horaProva ? `${avisoEntrada(inscricao.horaProva)} ${avisoFim(inscricao.horaProva)}` : null}
                 </span>
               </li>
               <li className="flex gap-3">

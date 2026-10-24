@@ -9,7 +9,8 @@ import { cookies } from 'next/headers';
 const nomeCookie = 'vestibular_painel';
 const validadeMs = 8 * 60 * 60 * 1000;
 
-const senhaConfigurada = () => process.env.VESTIBULAR_PAINEL_SENHA ?? '';
+// Lida em tempo de execução (rota dinâmica); espaços nas pontas, comuns ao colar na Vercel, são ignorados
+const senhaConfigurada = () => (process.env.VESTIBULAR_PAINEL_SENHA ?? '').trim();
 
 const assinar = (expira: number) =>
   createHmac('sha256', senhaConfigurada()).update(`painel-vestibular:${expira}`).digest('hex');

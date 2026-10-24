@@ -1,6 +1,6 @@
 'use client';
 
-import { avisoEntrada, diasProva, linkAreaCandidato, minutosAntes } from '@/data/inscricao';
+import { avisoEntrada, avisoFim, diasProva, linkAreaCandidato, minutosAntes } from '@/data/inscricao';
 import { vestibular } from '@/data/vestibular';
 import { InscricaoConfirmada } from './Confirmacao';
 
@@ -44,7 +44,7 @@ const detalhesAgenda = (i: InscricaoConfirmada) =>
     `Inscrição nº ${i.numero}`,
     i.horaProva ? avisoEntrada(i.horaProva) : `Entre com seu CPF e o código em ${linkAreaCandidato}`,
     `Link: ${linkAreaCandidato}`,
-    `Você tem até ${vestibular.duracaoHoras} horas de prova.`,
+    i.horaProva ? avisoFim(i.horaProva) : `Você tem até ${vestibular.duracaoHoras} horas de prova.`,
   ].join('\n');
 
 const baixarIcs = (i: InscricaoConfirmada) => {
