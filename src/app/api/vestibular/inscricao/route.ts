@@ -2,6 +2,7 @@ import { horariosProva, diasProva, ofertas } from '@/data/inscricao';
 import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
 import { CpfJaInscrito, criarInscricao, visaoCandidato } from '@/utils/vestibular/inscricoes';
 import { celularValido, cpfValido, emailValido, idadeEm, soDigitos } from '@/utils/vestibular/validacao';
+import { confirmacaoLigada, enviarConfirmacao } from '@/utils/vestibular/email';
 import { NextResponse } from 'next/server';
 
 // Recebe a inscrição do formulário de /vestibular/inscricao, valida tudo de novo e grava.
@@ -116,6 +117,11 @@ export async function POST(request: Request) {
       atendimento_especial: texto(corpo.atendimentoEspecial, 500) || null,
       origem: texto(corpo.origem, 300) || null,
     });
+
+    if (confirmacaoLigada()) {
+      // Não atrapalha a inscrição se o e-mail falhar
+      await enviarConfirmacao(inscricao).catch(() => false);
+    }
 
     return NextResponse.json({
       ok: true,

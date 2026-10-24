@@ -8,7 +8,13 @@ import {
   linkDeLeitura,
   revisarDocumentos,
 } from '@/utils/vestibular/documentos';
-import { listarInscricoes, statusDocumento } from '@/utils/vestibular/inscricoes';
+import {
+  historicoCodigo,
+  listarInscricoes,
+  registrarCodigo,
+  statusDocumento,
+  trocarCodigo,
+} from '@/utils/vestibular/inscricoes';
 import { bloqueado, ipDe, limites, mensagemBloqueio, registrarErro } from '@/utils/vestibular/limite';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
 import {
@@ -335,6 +341,24 @@ export async function POST(request: Request) {
       throw e;
     }
     return NextResponse.json({ ok: true });
+  }
+  if (corpo.acao === 'ver-codigo' || corpo.acao === 'novo-codigo') {
+    if (!por) {
+      return negar('Digite seu nome no topo do painel: fica registrado quem viu ou trocou o código.', 400);
+    }
+    let inscricao = (await listarInscricoes()).find((i) => i.numero === Number(corpo.numero));
+    if (!inscricao) {
+      return negar('Inscrição não encontrada.', 404);
+    }
+    if (corpo.acao === 'novo-codigo') {
+      inscricao = await trocarCodigo(inscricao);
+    }
+    await registrarCodigo(inscricao.numero, corpo.acao === 'novo-codigo' ? 'gerar' : 'ver', por);
+    return NextResponse.json({
+      ok: true,
+      codigo: inscricao.codigo,
+      historico: await historicoCodigo(inscricao.numero),
+    });
   }
   if (corpo.acao === 'publicar') {
     const resultado = await publicarResultado();

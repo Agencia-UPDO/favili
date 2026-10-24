@@ -218,6 +218,24 @@ export const atualizar = async (inscricao: Inscricao, campos: Partial<Inscricao>
   return atualizada;
 };
 
+// Novo código de acesso (o anterior deixa de valer). Se colidir com outro (raríssimo), tenta de novo.
+export const trocarCodigo = async (inscricao: Inscricao): Promise<Inscricao> => {
+  try {
+    return await atualizar(inscricao, { codigo: gerarCodigo() });
+  } catch {
+    return atualizar(inscricao, { codigo: gerarCodigo() });
+  }
+};
+
+// Registro de quem viu ou trocou o código pelo painel (últimos 2000)
+type RegistroCodigo = { numero: number; acao: 'ver' | 'gerar'; por: string; em: string };
+export const registrarCodigo = async (numero: number, acao: RegistroCodigo['acao'], por: string) => {
+  const atual = (await lerConfig<RegistroCodigo[]>('log-codigos')) ?? [];
+  await gravarConfig('log-codigos', [...atual, { numero, acao, por, em: new Date().toISOString() }].slice(-2000));
+};
+export const historicoCodigo = async (numero: number) =>
+  ((await lerConfig<RegistroCodigo[]>('log-codigos')) ?? []).filter((r) => r.numero === numero).slice(-5);
+
 export const trocarHorario = (inscricao: Inscricao, dia: string, hora: string) =>
   atualizar(inscricao, { dia_prova: dia, hora_prova: hora });
 

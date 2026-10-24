@@ -13,7 +13,11 @@ export const limites = {
   cpf: 5, // erros por CPF em 15 minutos
   ipCandidato: 20, // por IP (escolas e famílias dividem o mesmo IP)
   ipPainel: 5, // senha do painel, por IP
+  recuperarCpf: 3, // pedidos de "esqueci meu código" por CPF em 1 hora
+  recuperarIp: 10, // e por IP em 1 hora
 };
+
+export const umaHora = 60 * 60 * 1000;
 
 const tabela = () => {
   const url = process.env.SUPABASE_URL;
@@ -35,8 +39,8 @@ export const ipDe = (request: Request) =>
   request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'sem-ip';
 
 // Quantos erros cada chave teve na janela
-const contar = async (chaves: string[]): Promise<Record<string, number>> => {
-  const desde = Date.now() - janelaMs;
+const contar = async (chaves: string[], janela: number): Promise<Record<string, number>> => {
+  const desde = Date.now() - janela;
   const t = tabela();
   if (!t) {
     return Object.fromEntries(chaves.map((c) => [c, (memoria.get(c) ?? []).filter((em) => em > desde).length]));
@@ -57,8 +61,8 @@ const contar = async (chaves: string[]): Promise<Record<string, number>> => {
   }
 };
 
-export const bloqueado = async (limitesPorChave: Record<string, number>) => {
-  const contagem = await contar(Object.keys(limitesPorChave));
+export const bloqueado = async (limitesPorChave: Record<string, number>, janela = janelaMs) => {
+  const contagem = await contar(Object.keys(limitesPorChave), janela);
   return Object.entries(limitesPorChave).some(([chave, limite]) => (contagem[chave] ?? 0) >= limite);
 };
 

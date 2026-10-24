@@ -224,6 +224,73 @@ const Detalhe = ({ rotulo, children }: { rotulo: string; children: ReactNode }) 
   ) : null;
 
 // Situação dos documentos e as ações do dia (aprovar, pedir outro, conferir notas do Enem)
+// Código de acesso do candidato: ver ou gerar um novo (o anterior deixa de valer). Fica registrado quem e quando.
+const CodigoAcesso = ({ numero, revisor }: { numero: number; revisor: string }) => {
+  const [codigo, setCodigo] = useState('');
+  const [historico, setHistorico] = useState<{ acao: string; por: string; em: string }[]>([]);
+  const [aviso, setAviso] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+
+  const pedir = async (acao: 'ver-codigo' | 'novo-codigo') => {
+    if (
+      acao === 'novo-codigo' &&
+      !window.confirm('Gerar um código novo? O código antigo deixa de funcionar e o candidato precisa receber o novo.')
+    ) {
+      return;
+    }
+    setOcupado(true);
+    setAviso('');
+    const res = await fetch('/api/vestibular/painel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao, numero, por: revisor }),
+    }).catch(() => null);
+    const json = res ? await res.json().catch(() => ({})) : {};
+    setOcupado(false);
+    if (!res?.ok) {
+      setAviso(json.mensagem ?? 'Não deu certo. Tente de novo.');
+      return;
+    }
+    setCodigo(json.codigo);
+    setHistorico(json.historico ?? []);
+  };
+
+  return (
+    <div className="space-y-1.5 text-[13px]">
+      <p className="text-secondary/60">Código de acesso</p>
+      {codigo ? <p className="text-vest-navy font-mono text-[18px] font-bold tracking-[0.15em]">{codigo}</p> : null}
+      <div className="flex flex-wrap gap-1.5">
+        {!codigo && (
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => pedir('ver-codigo')}
+            className="border-stroke-3 cursor-pointer rounded-full border px-2.5 py-1 text-[12px] font-bold">
+            Ver código
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => pedir('novo-codigo')}
+          className="border-stroke-3 cursor-pointer rounded-full border px-2.5 py-1 text-[12px] font-bold">
+          Gerar novo código
+        </button>
+      </div>
+      {aviso && <p className="text-[12px] font-semibold text-red-700">{aviso}</p>}
+      {historico.length > 0 && (
+        <ul className="text-secondary/60 text-[11px]">
+          {historico.map((h) => (
+            <li key={h.em}>
+              {h.acao === 'gerar' ? 'Gerado' : 'Visto'} por {h.por} em {dataHora(h.em)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const CelulaDocumentos = ({
   inscricao: i,
   ocupado,
@@ -634,6 +701,9 @@ const Painel = () => {
                                 </Detalhe>
                                 <Detalhe rotulo="Origem acadêmica">{i.origemAcademica}</Detalhe>
                                 <Detalhe rotulo="Atendimento especial">{i.atendimentoEspecial}</Detalhe>
+                                <div className="pt-2">
+                                  <CodigoAcesso numero={i.numero} revisor={revisor} />
+                                </div>
                               </dl>
                               <div className="space-y-1 text-[13px]">
                                 {i.documentos.map((d) => (

@@ -326,6 +326,63 @@ const TrocarHorario = ({
   );
 };
 
+// "Esqueci meu código": manda o código para o e-mail da inscrição (nunca por WhatsApp). Sem e-mail configurado no
+// servidor, mostra o telefone da secretaria.
+const EsqueciCodigo = ({ cpf }: { cpf: string }) => {
+  const [estado, setEstado] = useState<'idle' | 'enviando' | 'pronto'>('idle');
+  const [mensagem, setMensagem] = useState('');
+  const [semEmail, setSemEmail] = useState(false);
+
+  const pedir = async () => {
+    if (soDigitos(cpf).length !== 11) {
+      setMensagem('Digite seu CPF no campo acima e toque de novo.');
+      return;
+    }
+    setEstado('enviando');
+    const res = await fetch('/api/vestibular/recuperar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cpf }),
+    }).catch(() => null);
+    const resposta = res ? await res.json().catch(() => ({})) : {};
+    setSemEmail(!!resposta.semEmail);
+    setMensagem(resposta.mensagem ?? 'Sem conexão. Tente de novo.');
+    setEstado(res?.ok ? 'pronto' : 'idle');
+  };
+
+  return (
+    <div className="bg-primary-50 mt-3 space-y-3 rounded-2xl p-4 text-left text-[14px]">
+      {semEmail ? (
+        <p>
+          Fale com a Faculdade Vidal pelo{' '}
+          <a href={instituicao.telefoneLink} className="text-vest-blue font-semibold">
+            {instituicao.telefone}
+          </a>{' '}
+          com o seu CPF em mãos.
+        </p>
+      ) : (
+        <>
+          <p>Enviamos o código para o e-mail que você usou na inscrição. Confira o CPF acima e toque no botão.</p>
+          {estado !== 'pronto' && (
+            <button
+              type="button"
+              onClick={pedir}
+              disabled={estado === 'enviando'}
+              className="bg-vest-blue min-h-11 cursor-pointer rounded-full px-5 py-2.5 font-bold text-white disabled:opacity-60">
+              {estado === 'enviando' ? 'Enviando…' : 'Enviar meu código por e-mail'}
+            </button>
+          )}
+          {mensagem && (
+            <p role="status" className={cn('font-semibold', estado === 'pronto' ? 'text-vest-navy' : 'text-red-700')}>
+              {mensagem}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
 const AreaCandidato = () => {
   const [cpf, setCpf] = useState('');
   const [codigo, setCodigo] = useState('');
@@ -519,15 +576,7 @@ const AreaCandidato = () => {
           className="text-vest-blue cursor-pointer font-semibold underline-offset-4 hover:underline">
           Esqueci meu código
         </button>
-        {esqueci && (
-          <p className="mt-2">
-            Fale com a Faculdade Vidal pelo{' '}
-            <a href={instituicao.telefoneLink} className="text-vest-blue font-semibold">
-              {instituicao.telefone}
-            </a>{' '}
-            com o seu CPF em mãos.
-          </p>
-        )}
+        {esqueci && <EsqueciCodigo cpf={cpf} />}
         <p className="text-secondary/60 mt-4">
           Ainda não se inscreveu?{' '}
           <a href={vestibular.inscricao} className="text-vest-blue font-semibold">
