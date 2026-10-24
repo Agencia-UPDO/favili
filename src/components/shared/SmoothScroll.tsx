@@ -51,12 +51,6 @@ const SmoothScrollProvider = ({ children }: Readonly<SmoothScrollingProps>) => {
     };
   }, [lenis, pathname]);
 
-  // Páginas de campanha (home do evento e vestibular): rolagem nativa do navegador, mais leve no celular e sem
-  // atrapalhar o formulário e o teclado
-  if (pathname === '/' || pathname.startsWith('/vestibular')) {
-    return children;
-  }
-
   return (
     <ReactLenis root options={{ duration: 1.1 }}>
       {children}

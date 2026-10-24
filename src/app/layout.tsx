@@ -1,6 +1,4 @@
-import SmoothScrollProvider from '@/components/shared/SmoothScroll';
-import { ThemeProvider } from '@/components/shared/ThemeProvider';
-import { AppContextProvider } from '@/context/AppContext';
+import Provedores from '@/components/shared/Provedores';
 import { interTight, montserrat } from '@/utils/font';
 import { Metadata } from 'next';
 import Script from 'next/script';
@@ -58,11 +56,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_ID}');`}
         </Script>
-        <AppContextProvider>
-          <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
-            <SmoothScrollProvider>{children}</SmoothScrollProvider>
-          </ThemeProvider>
-        </AppContextProvider>
+        <Provedores>{children}</Provedores>
       </body>
     </html>
   );

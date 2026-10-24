@@ -393,7 +393,10 @@ const AreaCandidato = () => {
   const [modoTeste, setModoTeste] = useState(false);
   const [detalhes, setDetalhes] = useState(false);
   const [resultado, setResultado] = useState<ResultadoCandidato | null>(null);
-  const [agora, setAgora] = useState(() => Date.now());
+  const [relogio, setRelogio] = useState(() => Date.now());
+  // Diferença entre o relógio do servidor e o do aparelho: contagem, sala de espera e botão "Começar" seguem o servidor
+  const [diferenca, setDiferenca] = useState(0);
+  const agora = relogio + diferenca;
 
   const entrar = async (cpfEntrada: string, codigoEntrada: string, silencioso = false) => {
     setStatus('entrando');
@@ -407,6 +410,9 @@ const AreaCandidato = () => {
     setStatus('idle');
     if (res?.ok && resposta.ok) {
       setInscricao(resposta.inscricao);
+      if (typeof resposta.agora === 'number') {
+        setDiferenca(resposta.agora - Date.now());
+      }
       setModoTeste(!!resposta.modoTeste);
       setResultado(resposta.resultado ?? null);
       gravar(chaveSessao, JSON.stringify({ cpf: soDigitos(cpfEntrada), codigo: resposta.inscricao.codigo }));
@@ -430,7 +436,7 @@ const AreaCandidato = () => {
       setCpf(formatarCpf(ler(chaveCpf) ?? ''));
       setStatus('idle');
     }
-    const timer = setInterval(() => setAgora(Date.now()), 1000);
+    const timer = setInterval(() => setRelogio(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 

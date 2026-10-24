@@ -45,6 +45,8 @@ export async function POST(request: Request) {
     inscricao: visaoCandidato(atual),
     modoTeste,
     resultado: atual.faz_prova ? await resultadoDoCandidato(atual) : null,
+    // Hora do servidor: a tela segue ela, não o relógio do celular (que pode estar errado ou em outro fuso)
+    agora: Date.now(),
   });
 }
 
