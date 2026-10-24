@@ -1,5 +1,5 @@
 import { bolsasResumo, degraus, regrasBolsa, vestibular } from '@/data/vestibular';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import { Check, Marca, Rotulo } from './ui';
 
 const Bolsas = () => (

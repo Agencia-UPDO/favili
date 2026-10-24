@@ -1,5 +1,5 @@
 import { vestibular } from '@/data/vestibular';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import { BotaoInscricao, Marca } from './ui';
 
 const ChamadaFinal = () => (

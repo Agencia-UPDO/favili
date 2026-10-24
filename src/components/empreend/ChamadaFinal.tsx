@@ -1,7 +1,7 @@
 import { evento } from '@/data/empreend';
 import turma from '@public/images/empreend/fotos/turma.jpg';
 import Image from 'next/image';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import LinhasCrescimento from './LinhasCrescimento';
 
 // Fechamento com um único CTA; o "Anote na agenda" aparece só depois da inscrição (página de obrigado)

@@ -1,7 +1,7 @@
 import { evento } from '@/data/empreend';
 import portico from '@public/images/empreend/fotos/portico.jpg';
 import Image from 'next/image';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import Contagem from './Contagem';
 import InscricaoForm from './InscricaoForm';
 import Kicker from './Kicker';

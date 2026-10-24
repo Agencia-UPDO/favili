@@ -2,7 +2,7 @@ import { pilares, publico, sobre } from '@/data/empreend';
 import estandes from '@public/images/empreend/fotos/estandes.jpg';
 import otica from '@public/images/empreend/fotos/otica-silva.jpg';
 import Image from 'next/image';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import Kicker from './Kicker';
 import LinhasCrescimento from './LinhasCrescimento';
 

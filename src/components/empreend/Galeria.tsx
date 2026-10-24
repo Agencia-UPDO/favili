@@ -9,7 +9,7 @@ import publico from '@public/images/empreend/fotos/publico.jpg';
 import risadas from '@public/images/empreend/fotos/risadas.jpg';
 import rodaDeConversa from '@public/images/empreend/fotos/roda-de-conversa.jpg';
 import Image, { StaticImageData } from 'next/image';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import Kicker from './Kicker';
 
 // Mosaico de 16 células (4 colunas × 4 linhas no computador); grid-flow-dense encaixa as peças

@@ -1,7 +1,7 @@
 import { cronograma, prova, vestibular } from '@/data/vestibular';
 import aluno from '@public/images/vestibular/aluno-mochila.jpg';
 import Image from 'next/image';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import { BotaoInscricao, Rotulo } from './ui';
 
 const ComoFunciona = () => (

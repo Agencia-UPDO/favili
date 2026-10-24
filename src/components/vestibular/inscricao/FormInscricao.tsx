@@ -50,8 +50,22 @@ const grupos = (lista: Oferta[]) => {
   return [...mapa.entries()];
 };
 
-const Bloco = ({ numero, titulo, children }: { numero: number; titulo: string; children: ReactNode }) => (
-  <fieldset className="border-stroke-2 space-y-4 border-t pt-7 first:border-t-0 first:pt-0">
+// Cada bloco tem um id para o formulário rolar até o próximo passo; scroll-mt deixa espaço para o cabeçalho fixo
+const Bloco = ({
+  id,
+  numero,
+  titulo,
+  children,
+}: {
+  id: string;
+  numero: number;
+  titulo: string;
+  children: ReactNode;
+}) => (
+  <fieldset
+    id={id}
+    tabIndex={-1}
+    className="border-stroke-2 scroll-mt-24 space-y-4 border-t pt-7 outline-none first:border-t-0 first:pt-0">
     <legend className="flex items-center gap-3">
       <span className="font-chamada bg-vest-blue flex size-9 items-center justify-center rounded-xl text-[19px] text-white">
         {numero}
@@ -68,6 +82,19 @@ const Erro = ({ id, children }: { id: string; children?: string }) =>
       {children}
     </p>
   ) : null;
+
+// Leva o candidato ao próximo passo: rola suave (ou direto, para quem pede menos movimento) e põe o foco no bloco,
+// sem abrir o teclado do celular
+const irPara = (id: string, bloco: ScrollLogicalPosition = 'start') =>
+  requestAnimationFrame(() => {
+    const alvo = document.getElementById(id);
+    if (!alvo) {
+      return;
+    }
+    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    alvo.scrollIntoView({ behavior: suave ? 'smooth' : 'auto', block: bloco });
+    alvo.focus({ preventScroll: true });
+  });
 
 const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId; ofertaInicial?: string }) => {
   const [forma, setForma] = useState<FormaId>(formaInicial ?? 'vestibular');
@@ -99,7 +126,13 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
     if (ofertaId && !ofertas.find((o) => o.id === ofertaId)?.formas.includes(id)) {
       setOfertaId('');
     }
+    // Enem tem a opção "fazer a prova também" logo abaixo: mostra ela; nas outras formas, segue para o curso
+    irPara(id === 'enem' ? 'enem-com-prova' : 'passo-curso', id === 'enem' ? 'nearest' : 'start');
   };
+
+  // Próximo bloco depois do curso e depois do horário
+  const depoisDoCurso = () => (fazProva ? 'passo-prova' : deOutraFaculdade ? 'passo-origem' : 'passo-dados');
+  const depoisDaProva = () => (deOutraFaculdade ? 'passo-origem' : 'passo-dados');
 
   const validar = () => {
     const e: Record<string, string> = {};
@@ -148,9 +181,12 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
     setAviso('');
     const encontrados = validar();
     setErros(encontrados);
+    // Leva ao primeiro erro, no meio da tela (o cabeçalho fixo não cobre)
     const primeiro = Object.keys(encontrados)[0];
     if (primeiro) {
-      document.getElementById(primeiro)?.focus();
+      const alvo = document.getElementById(primeiro);
+      alvo?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      alvo?.focus({ preventScroll: true });
       return;
     }
 
@@ -241,7 +277,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
 
   return (
     <form onSubmit={enviar} noValidate className="space-y-8">
-      <Bloco numero={++n} titulo="Como você quer entrar?">
+      <Bloco id="passo-forma" numero={++n} titulo="Como você quer entrar?">
         <div role="radiogroup" aria-label="Forma de ingresso" className="grid gap-3 sm:grid-cols-2">
           {formas.map((f) => {
             const ativa = forma === f.id;
@@ -274,7 +310,10 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
           })}
         </div>
         {forma === 'enem' && (
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-white p-4">
+          <label
+            id="enem-com-prova"
+            tabIndex={-1}
+            className="flex cursor-pointer scroll-mt-24 items-start gap-3 rounded-2xl bg-white p-4 outline-none">
             <input
               type="checkbox"
               checked={enemComProva}
@@ -289,7 +328,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
         )}
       </Bloco>
 
-      <Bloco numero={++n} titulo="Escolha o curso">
+      <Bloco id="passo-curso" numero={++n} titulo="Escolha o curso">
         <div>
           <label htmlFor="oferta" className={rotuloClass}>
             Curso, modalidade e unidade
@@ -300,6 +339,9 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
             onChange={(e) => {
               setOfertaId(e.target.value);
               setErros((x) => ({ ...x, oferta: undefined }));
+              if (e.target.value) {
+                irPara(depoisDoCurso());
+              }
             }}
             aria-invalid={!!erros.oferta}
             className={cn(campoClass, 'mt-2 cursor-pointer pr-10')}>
@@ -324,7 +366,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
       </Bloco>
 
       {fazProva && (
-        <Bloco numero={++n} titulo="Dia e horário da prova">
+        <Bloco id="passo-prova" numero={++n} titulo="Dia e horário da prova">
           <p className="-mt-1 text-[15px]">
             A prova é on-line e dura até {vestibular.duracaoHoras} horas. Escolha quando vai começar.
           </p>
@@ -340,7 +382,12 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
                   type="button"
                   role="radio"
                   aria-checked={campos.diaProva === d.id}
-                  onClick={() => set('diaProva', d.id)}
+                  onClick={() => {
+                    set('diaProva', d.id);
+                    if (!campos.horaProva) {
+                      irPara('grupo-hora', 'center');
+                    }
+                  }}
                   className={cn(opcaoClass, 'h-12', campos.diaProva === d.id && opcaoAtiva)}>
                   {d.rotulo}
                 </button>
@@ -348,7 +395,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
             </div>
             <Erro id="diaProva-erro">{erros.diaProva}</Erro>
           </div>
-          <div>
+          <div id="grupo-hora" tabIndex={-1} className="scroll-mt-24 outline-none">
             <span className={rotuloClass} id="horaProva-rotulo">
               Horário de início
             </span>
@@ -363,7 +410,10 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
                   type="button"
                   role="radio"
                   aria-checked={campos.horaProva === h}
-                  onClick={() => set('horaProva', h)}
+                  onClick={() => {
+                    set('horaProva', h);
+                    irPara(depoisDaProva());
+                  }}
                   className={cn(opcaoClass, 'h-11', campos.horaProva === h && opcaoAtiva)}>
                   {h.replace(':00', 'h')}
                 </button>
@@ -375,7 +425,10 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
       )}
 
       {deOutraFaculdade && (
-        <Bloco numero={++n} titulo={forma === 'transferencia' ? 'Onde você estuda hoje' : 'Sua graduação'}>
+        <Bloco
+          id="passo-origem"
+          numero={++n}
+          titulo={forma === 'transferencia' ? 'Onde você estuda hoje' : 'Sua graduação'}>
           <div className="grid gap-4 sm:grid-cols-2">
             {campo('instituicaoOrigem', 'Faculdade de origem', {
               placeholder: 'Nome da instituição',
@@ -405,7 +458,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
         </Bloco>
       )}
 
-      <Bloco numero={++n} titulo="Seus dados">
+      <Bloco id="passo-dados" numero={++n} titulo="Seus dados">
         <div className="grid gap-4 sm:grid-cols-2">
           {campo('cpf', 'CPF', {
             inputMode: 'numeric',
@@ -413,7 +466,12 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
             placeholder: '000.000.000-00',
             formatar: formatarCpf,
           })}
-          {campo('nascimento', 'Data de nascimento', { type: 'date', max: '2012-12-31', min: '1926-01-01' })}
+          {campo('nascimento', 'Data de nascimento', {
+            type: 'date',
+            autoComplete: 'bday',
+            max: '2012-12-31',
+            min: '1926-01-01',
+          })}
           {campo('nome', 'Nome completo', {
             autoComplete: 'name',
             placeholder: 'Seu nome',
@@ -444,7 +502,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
             type="checkbox"
             checked={atendimento}
             onChange={(e) => setAtendimento(e.target.checked)}
-            className="accent-vest-blue mt-1 size-5 shrink-0"
+            className="accent-vest-blue mt-0.5 size-6 shrink-0"
           />
           <span className="text-[15px]">
             Preciso de atendimento especial na prova (ex.: tempo adicional, fonte ampliada).
@@ -471,7 +529,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
               setAceite(e.target.checked);
               setErros((x) => ({ ...x, aceite: undefined }));
             }}
-            className="accent-vest-blue mt-1 size-5 shrink-0"
+            className="accent-vest-blue mt-0.5 size-6 shrink-0"
           />
           <span className="text-[15px]">
             Li e aceito o{' '}

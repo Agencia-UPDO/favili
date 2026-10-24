@@ -1,6 +1,6 @@
 import { empresas } from '@/data/empreend';
 import Image from 'next/image';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import Kicker from './Kicker';
 
 const Empresas = () => {

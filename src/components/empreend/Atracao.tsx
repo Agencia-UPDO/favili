@@ -1,5 +1,5 @@
 import { atracao } from '@/data/empreend';
-import RevealAnimation from '../animation/RevealAnimation';
+import RevealAnimation from '../animation/Revelar';
 import Kicker from './Kicker';
 
 const Atracao = () => {
