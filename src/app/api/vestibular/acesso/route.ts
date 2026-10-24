@@ -1,6 +1,7 @@
 import { diasProva, horariosProva } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
-import { entrar, trocarHorario, visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { trocarHorario, visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
 import { entregarSeVenceu, modoTeste } from '@/utils/vestibular/prova';
 import { resultadoDoCandidato } from '@/utils/vestibular/resultado';
 import { soDigitos } from '@/utils/vestibular/validacao';
@@ -25,17 +26,16 @@ const naoEncontrada = async () => {
   );
 };
 
-const autenticar = async (corpo: Corpo) => {
-  const cpf = soDigitos(texto(corpo.cpf));
-  const codigo = texto(corpo.codigo);
-  if (cpf.length !== 11 || codigo.length < 6) {
-    return null;
-  }
-  return entrar(cpf, codigo);
-};
+const bloqueio = () => NextResponse.json({ ok: false, mensagem: mensagemBloqueio }, { status: 429 });
+
+const autenticar = (request: Request, corpo: Corpo) =>
+  entrarComLimite(request, soDigitos(texto(corpo.cpf)), texto(corpo.codigo));
 
 export async function POST(request: Request) {
-  const inscricao = await autenticar(await request.json().catch(() => ({})));
+  const { bloqueado, inscricao } = await autenticar(request, await request.json().catch(() => ({})));
+  if (bloqueado) {
+    return bloqueio();
+  }
   if (!inscricao) {
     return naoEncontrada();
   }
@@ -50,7 +50,10 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const corpo: Corpo = await request.json().catch(() => ({}));
-  const inscricao = await autenticar(corpo);
+  const { bloqueado, inscricao } = await autenticar(request, corpo);
+  if (bloqueado) {
+    return bloqueio();
+  }
   if (!inscricao) {
     return naoEncontrada();
   }

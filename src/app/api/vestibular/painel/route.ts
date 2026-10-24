@@ -9,6 +9,7 @@ import {
   revisarDocumentos,
 } from '@/utils/vestibular/documentos';
 import { listarInscricoes, statusDocumento } from '@/utils/vestibular/inscricoes';
+import { bloqueado, ipDe, limites, mensagemBloqueio, registrarErro } from '@/utils/vestibular/limite';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
 import {
   ajustar,
@@ -281,7 +282,12 @@ export async function POST(request: Request) {
   const corpo = await request.json().catch(() => ({}));
 
   if (corpo.acao === 'entrar') {
+    const chave = `painel:${ipDe(request)}`;
+    if (await bloqueado({ [chave]: limites.ipPainel })) {
+      return negar(mensagemBloqueio, 429);
+    }
     if (!senhaCorreta(typeof corpo.senha === 'string' ? corpo.senha : '')) {
+      await registrarErro([chave]);
       await new Promise((r) => setTimeout(r, 1000));
       return negar('Senha incorreta.', 401);
     }

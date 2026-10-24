@@ -4,10 +4,10 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 
 // Acesso ao painel da faculdade: senha única em VESTIBULAR_PAINEL_SENHA (sem ela, o painel fica fechado).
-// Depois de entrar, um cookie assinado vale por 12 horas.
+// Depois de entrar, um cookie assinado (httpOnly, Secure, SameSite=Strict) vale por 8 horas.
 
 const nomeCookie = 'vestibular_painel';
-const validadeMs = 12 * 60 * 60 * 1000;
+const validadeMs = 8 * 60 * 60 * 1000;
 
 const senhaConfigurada = () => process.env.VESTIBULAR_PAINEL_SENHA ?? '';
 

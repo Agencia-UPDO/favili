@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { randomInt } from 'node:crypto';
+import { randomInt, timingSafeEqual } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { NotasEnem } from '@/data/bolsas';
@@ -179,7 +179,12 @@ export const criarInscricao = async (dados: NovaInscricao): Promise<Inscricao> =
 // Entrada na área do candidato: CPF e código precisam bater (o código é comparado sem diferenciar maiúsculas)
 export const entrar = async (cpf: string, codigo: string): Promise<Inscricao | null> => {
   const inscricao = await buscarPorCpf(cpf);
-  return inscricao && normalizarCodigo(inscricao.codigo) === normalizarCodigo(codigo) ? inscricao : null;
+  if (!inscricao) {
+    return null;
+  }
+  const certo = Buffer.from(normalizarCodigo(inscricao.codigo));
+  const recebido = Buffer.from(normalizarCodigo(codigo));
+  return certo.length === recebido.length && timingSafeEqual(certo, recebido) ? inscricao : null;
 };
 
 // Atualiza campos de uma inscrição (horário da prova, respostas, entrega)

@@ -1,4 +1,4 @@
-import { entrar, Inscricao } from '@/utils/vestibular/inscricoes';
+import { Inscricao } from '@/utils/vestibular/inscricoes';
 import {
   entregar,
   entregarSeVenceu,
@@ -9,6 +9,7 @@ import {
   totalQuestoes,
   visaoProva,
 } from '@/utils/vestibular/prova';
+import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
 import { soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
 
@@ -41,7 +42,11 @@ export async function POST(request: Request) {
   const corpo: Corpo = await request.json().catch(() => ({}));
   const cpf = soDigitos(texto(corpo.cpf));
   const codigo = texto(corpo.codigo);
-  let inscricao = cpf.length === 11 && codigo.length >= 6 ? await entrar(cpf, codigo) : null;
+  const acesso = await entrarComLimite(request, cpf, codigo);
+  if (acesso.bloqueado) {
+    return negar(mensagemBloqueio, 429);
+  }
+  let inscricao = acesso.inscricao;
   if (!inscricao) {
     await new Promise((r) => setTimeout(r, 700));
     return negar('Sessão expirada. Entre de novo em Minha inscrição com seu CPF e código.', 401);

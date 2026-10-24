@@ -9,7 +9,8 @@ import {
   removerDocumento,
   salvarNotasEnem,
 } from '@/utils/vestibular/documentos';
-import { entrar, visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
 import { soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
 
@@ -27,7 +28,10 @@ export async function POST(request: Request) {
   const corpo: Corpo = await request.json().catch(() => ({}));
   const cpf = soDigitos(texto(corpo.cpf));
   const codigo = texto(corpo.codigo);
-  const inscricao = cpf.length === 11 && codigo.length >= 6 ? await entrar(cpf, codigo) : null;
+  const { bloqueado, inscricao } = await entrarComLimite(request, cpf, codigo);
+  if (bloqueado) {
+    return NextResponse.json({ ok: false, mensagem: mensagemBloqueio }, { status: 429 });
+  }
   if (!inscricao) {
     await new Promise((r) => setTimeout(r, 700));
     return NextResponse.json(
@@ -66,7 +70,8 @@ export async function POST(request: Request) {
     if (e instanceof ErroDocumento) {
       return NextResponse.json({ ok: false, mensagem: e.message }, { status: 400 });
     }
-    console.error('[vestibular documento] falha', e);
+    // Sem dados pessoais no log: só a mensagem técnica
+    console.error('[vestibular documento] falha:', (e as Error).message);
     return NextResponse.json(
       {
         ok: false,

@@ -11,16 +11,6 @@ type Corpo = Partial<Record<string, string | boolean>>;
 
 const texto = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
-// "rodrigo@updo.com.br" → "r•••••o@updo.com.br", para avisar onde está a inscrição sem expor o e-mail
-const mascararEmail = (email: string) => {
-  const [usuario, dominio] = email.split('@');
-  if (!dominio) {
-    return '';
-  }
-  const meio = usuario.length > 2 ? '•'.repeat(Math.min(usuario.length - 2, 5)) : '';
-  return `${usuario[0]}${meio}${usuario.length > 1 ? usuario.at(-1) : ''}@${dominio}`;
-};
-
 const erro = (mensagem: string, campo?: string, status = 400) =>
   NextResponse.json({ ok: false, mensagem, campo }, { status });
 
@@ -137,12 +127,14 @@ export async function POST(request: Request) {
         {
           ok: false,
           jaInscrito: true,
-          mensagem: `Esse CPF já tem inscrição (nº ${e.inscricao.numero}), feita com o e-mail ${mascararEmail(e.inscricao.email)}. Use o código de acesso que você recebeu; se não tiver mais, fale com a Faculdade Vidal pelo ${instituicao.telefone}.`,
+          // Não revela número nem e-mail da inscrição existente (qualquer um pode digitar um CPF)
+          mensagem: `Esse CPF já tem inscrição. Entre em Minha inscrição com o código de acesso que apareceu quando você se inscreveu; se não tiver mais, fale com a Faculdade Vidal pelo ${instituicao.telefone}.`,
         },
         { status: 409 },
       );
     }
-    console.error('[vestibular inscricao] falha ao gravar', e);
+    // Sem dados pessoais no log: só a mensagem técnica
+    console.error('[vestibular inscricao] falha ao gravar:', (e as Error).message?.replace(/\d{11}/g, '***'));
     return erro('Não conseguimos concluir sua inscrição agora. Tente de novo em alguns minutos.', undefined, 500);
   }
 }
