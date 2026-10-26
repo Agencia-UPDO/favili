@@ -1,24 +1,31 @@
 import 'server-only';
 
 import {
-  avisoEntrada,
   avisoFim,
   diasProva,
+  documentoPorForma,
   fusoHorario,
+  horaDeEntrar,
   linkAreaCandidato,
+  minutosAntes,
   nomeOferta,
   ofertas,
 } from '@/data/inscricao';
-import { instituicao, vestibular } from '@/data/vestibular';
+import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
 import { Inscricao } from './inscricoes';
 
-// E-mails do vestibular pelo Resend (https://resend.com). Precisa de RESEND_API_KEY e VESTIBULAR_EMAIL_REMETENTE
-// (ex.: "Vestibular Vidal <vestibular@favili.com.br>", com o domínio verificado no Resend). Sem elas, nada é enviado
-// e o site orienta a falar com a secretaria. O e-mail de confirmação da inscrição só sai com
-// VESTIBULAR_EMAIL_CONFIRMACAO=1 (pronto, mas desligado até a faculdade decidir).
+// E-mails do vestibular pelo Resend (https://resend.com): confirmação da inscrição e "Esqueci meu código".
+// Precisa de RESEND_API_KEY e VESTIBULAR_EMAIL_REMETENTE (ex.: "Vestibular Vidal <vestibular@materiais.favili.com.br>",
+// com o domínio verificado no Resend). Sem elas, nada é enviado e o site orienta a falar com a secretaria.
+// As respostas vão para a secretaria (VESTIBULAR_EMAIL_RESPONDER_PARA troca o endereço). A confirmação sai sempre
+// que o e-mail está configurado; VESTIBULAR_EMAIL_CONFIRMACAO=0 desliga só ela.
+// Layout em tabelas com CSS inline e largura de 600px, para funcionar no Gmail, no Outlook e no celular.
+
+const responderPara = () => process.env.VESTIBULAR_EMAIL_RESPONDER_PARA || 'atendimento01@favili.com.br';
+const logo = `${vestibular.site}/images/vestibular/logo-vidal.png`;
 
 export const emailConfigurado = () => !!process.env.RESEND_API_KEY && !!process.env.VESTIBULAR_EMAIL_REMETENTE;
-export const confirmacaoLigada = () => emailConfigurado() && process.env.VESTIBULAR_EMAIL_CONFIRMACAO === '1';
+export const confirmacaoLigada = () => emailConfigurado() && process.env.VESTIBULAR_EMAIL_CONFIRMACAO !== '0';
 
 // "rodrigo@gmail.com" → "r•••••o@gmail.com"
 export const mascararEmail = (email: string) => {
@@ -39,6 +46,7 @@ const enviar = async (para: string, assunto: string, html: string, texto: string
     body: JSON.stringify({
       from: process.env.VESTIBULAR_EMAIL_REMETENTE,
       to: [para],
+      reply_to: responderPara(),
       subject: assunto,
       html,
       text: texto,
@@ -52,55 +60,221 @@ const enviar = async (para: string, assunto: string, html: string, texto: string
   return true;
 };
 
-// Linhas comuns: código, curso e, se faz prova, dia, horário e aviso de entrar 15 minutos antes
-const detalhes = (i: Inscricao) => {
+// ---------- Conteúdo ----------
+type Dados = {
+  primeiroNome: string;
+  numero: number;
+  codigo: string;
+  curso: string;
+  forma: string;
+  prova: { quando: string; entrar: string; fim: string; agenda: string } | null;
+  documento: string | null;
+};
+
+// Link do Google Agenda com o horário da prova (fuso de Brasília explícito)
+const linkAgenda = (i: Inscricao) => {
+  const inicio = new Date(`${i.dia_prova}T${i.hora_prova?.slice(0, 5)}:00-03:00`);
+  const fim = new Date(inicio.getTime() + vestibular.duracaoHoras * 60 * 60 * 1000);
+  const utc = (d: Date) =>
+    d
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '');
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Prova · ${vestibular.nome}`,
+    dates: `${utc(inicio)}/${utc(fim)}`,
+    details: `Entre em ${linkAreaCandidato} com seu CPF e o código de acesso (está no e-mail de confirmação), ${minutosAntes} minutos antes.`,
+    location: linkAreaCandidato,
+  });
+  return `https://calendar.google.com/calendar/render?${params}`;
+};
+
+const dados = (i: Inscricao): Dados => {
   const oferta = ofertas.find((o) => o.id === i.oferta_id);
   const dia = diasProva.find((d) => d.id === i.dia_prova)?.rotulo;
   const hora = i.hora_prova?.slice(0, 5);
-  return [
-    oferta ? `Curso: ${nomeOferta(oferta)}` : '',
-    `Inscrição nº ${i.numero}`,
-    i.faz_prova && dia && hora ? `Prova: ${dia}, às ${hora.replace(':00', 'h')} (${fusoHorario})` : '',
-    i.faz_prova && hora ? avisoEntrada(hora) : '',
-    i.faz_prova && hora ? avisoFim(hora) : '',
-  ].filter(Boolean);
+  return {
+    primeiroNome: i.nome.split(' ')[0],
+    numero: i.numero,
+    codigo: i.codigo,
+    curso: oferta ? nomeOferta(oferta) : '',
+    forma: formas.find((f) => f.id === i.forma)?.rotulo ?? '',
+    prova:
+      i.faz_prova && dia && hora
+        ? {
+            quando: `${dia}, às ${hora.replace(':00', 'h')} (${fusoHorario})`,
+            entrar: `Entre às ${horaDeEntrar(hora)}, ${minutosAntes} minutos antes, para liberar a prova.`,
+            fim: avisoFim(hora),
+            agenda: linkAgenda(i),
+          }
+        : null,
+    documento: documentoPorForma[i.forma as FormaId] ?? null,
+  };
 };
 
-const modelo = (titulo: string, i: Inscricao, chamada: string) => {
-  const linhas = detalhes(i);
-  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;background:#eef3fb;font-family:Arial,Helvetica,sans-serif;color:#0b1f4d">
-<div style="max-width:520px;margin:0 auto;padding:24px 16px">
-  <div style="background:#062a6e;border-radius:20px;padding:28px 24px;color:#fff;text-align:center">
-    <p style="margin:0;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#45d3ff">${escapar(vestibular.nome)}</p>
-    <h1 style="margin:10px 0 0;font-size:24px">${escapar(titulo)}</h1>
-  </div>
-  <div style="background:#fff;border-radius:20px;padding:24px;margin-top:12px">
-    <p style="margin:0 0 12px">Olá, ${escapar(i.nome.split(' ')[0])}! ${escapar(chamada)}</p>
-    <p style="margin:0 0 4px;font-size:13px;color:#5b6b8c">Seu código de acesso</p>
-    <p style="margin:0 0 16px;font-size:34px;font-weight:bold;letter-spacing:6px">${escapar(i.codigo)}</p>
-    ${linhas.map((l) => `<p style="margin:0 0 6px;font-size:15px">${escapar(l)}</p>`).join('')}
-    <p style="margin:18px 0"><a href="${linkAreaCandidato}" style="display:inline-block;background:#ffd21f;color:#062a6e;font-weight:bold;text-decoration:none;padding:12px 22px;border-radius:999px">Entrar em Minha inscrição</a></p>
-    <p style="margin:0;font-size:13px;color:#5b6b8c">Entre com o seu CPF e este código. Não compartilhe o código com ninguém.</p>
-  </div>
-  <p style="font-size:12px;color:#5b6b8c;text-align:center">${escapar(instituicao.nome)} · ${escapar(instituicao.telefone)}<br>Se você não pediu este e-mail, pode ignorar.</p>
-</div></body></html>`;
+// ---------- Layout (tabelas + CSS inline) ----------
+const fonte = "font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;";
+const azul = '#062a6e';
+const azulClaro = '#0d5fd1';
+const amarelo = '#ffd21f';
+const cinza = '#5b6b8c';
+
+const linha = (rotulo: string, valor: string) => `
+<tr>
+  <td style="${fonte}padding:8px 0;border-bottom:1px solid #e6ecf5;font-size:13px;color:${cinza};width:38%;vertical-align:top">${escapar(rotulo)}</td>
+  <td style="${fonte}padding:8px 0;border-bottom:1px solid #e6ecf5;font-size:15px;color:${azul};font-weight:bold;vertical-align:top">${escapar(valor)}</td>
+</tr>`;
+
+const botao = (href: string, texto: string, fundo: string, cor: string) => `
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto">
+  <tr><td align="center" bgcolor="${fundo}" style="border-radius:999px">
+    <a href="${href}" target="_blank" style="${fonte}display:inline-block;padding:14px 28px;font-size:16px;font-weight:bold;color:${cor};text-decoration:none;border-radius:999px">${escapar(texto)}</a>
+  </td></tr>
+</table>`;
+
+const aviso = (titulo: string, texto: string) => `
+<tr><td style="padding:0 32px 20px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff8d6;border-radius:14px">
+    <tr><td style="${fonte}padding:16px 18px;font-size:14px;line-height:20px;color:${azul}">
+      <strong>${escapar(titulo)}</strong><br>${escapar(texto)}
+    </td></tr>
+  </table>
+</td></tr>`;
+
+const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d: Dados; confirmacao: boolean }) => {
+  const { d } = opcoes;
+  const linhas = [
+    linha('Inscrição nº', String(d.numero)),
+    d.curso ? linha('Curso', d.curso) : '',
+    opcoes.confirmacao && d.forma ? linha('Forma de ingresso', d.forma) : '',
+    d.prova ? linha('Prova on-line', d.prova.quando) : '',
+  ].join('');
+
+  const html = `<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting"><title>${escapar(opcoes.titulo)}</title>
+</head>
+<body style="margin:0;padding:0;background:#eef3fb">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapar(opcoes.preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef3fb">
+<tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden">
+
+  <tr><td align="center" bgcolor="${azul}" style="background:${azul};background-image:linear-gradient(160deg,${azulClaro},${azul});padding:28px 24px 30px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffffff" style="border-radius:14px;padding:8px 14px">
+      <img src="${logo}" width="58" height="62" alt="Faculdade Vidal" style="display:block;border:0;width:58px;height:auto">
+    </td></tr></table>
+    <p style="${fonte}margin:18px 0 0;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#45d3ff;font-weight:bold">${escapar(vestibular.nome)}</p>
+    <h1 style="${fonte}margin:8px 0 0;font-size:26px;line-height:32px;color:#ffffff;font-weight:bold">${escapar(opcoes.titulo)}</h1>
+  </td></tr>
+
+  <tr><td style="${fonte}padding:28px 32px 8px;font-size:16px;line-height:24px;color:${azul}">
+    Olá, <strong>${escapar(d.primeiroNome)}</strong>! ${escapar(opcoes.abertura)}
+  </td></tr>
+
+  <tr><td align="center" style="padding:16px 32px 8px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2f6fd;border:2px dashed ${azulClaro};border-radius:16px">
+      <tr><td align="center" style="${fonte}padding:18px 12px">
+        <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${cinza}">Seu código de acesso</p>
+        <p style="margin:6px 0 0;font-family:'Courier New',Courier,monospace;font-size:38px;line-height:44px;letter-spacing:8px;font-weight:bold;color:${azul}">${escapar(d.codigo)}</p>
+        <p style="margin:6px 0 0;font-size:12px;color:${cinza}">Use com o seu CPF para entrar em Minha inscrição.</p>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:16px 32px 8px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${linhas}</table>
+  </td></tr>
+
+  ${
+    d.prova
+      ? `<tr><td style="${fonte}padding:12px 32px 20px;font-size:14px;line-height:21px;color:${azul}">
+    ⏰ ${escapar(d.prova.entrar)}<br>⌛ ${escapar(d.prova.fim)}
+  </td></tr>`
+      : ''
+  }
+
+  ${
+    opcoes.confirmacao && d.documento
+      ? aviso(
+          'Último passo: envie seu documento',
+          `Entre em Minha inscrição e envie ${d.documento} (foto ou PDF), até 20/11 às 18h. A aprovação acontece depois da conferência.`,
+        )
+      : ''
+  }
+
+  <tr><td align="center" style="padding:4px 32px 12px">${botao(linkAreaCandidato, 'Entrar em Minha inscrição', amarelo, azul)}</td></tr>
+  ${
+    opcoes.confirmacao && d.prova
+      ? `<tr><td align="center" style="padding:0 32px 24px">${botao(d.prova.agenda, 'Salvar no Google Agenda', '#ffffff', azulClaro).replace('border-radius:999px">', `border-radius:999px;border:2px solid ${azulClaro}">`)}</td></tr>`
+      : '<tr><td style="padding:0 0 12px"></td></tr>'
+  }
+
+  <tr><td style="${fonte}padding:18px 32px;background:#f6f8fc;font-size:12px;line-height:18px;color:${cinza}">
+    🔒 <strong>Não compartilhe seu código</strong>: com ele e o seu CPF é possível entrar na sua inscrição e fazer a prova.<br>
+    Dúvidas? Responda este e-mail ou ligue (88) 3423-6090.<br><br>
+    ${escapar(instituicao.nome)}<br>${escapar(instituicao.endereco)}
+  </td></tr>
+</table>
+<p style="${fonte}margin:14px 0 0;font-size:11px;color:${cinza}">Você recebeu este e-mail porque se inscreveu no ${escapar(vestibular.nome)}.</p>
+</td></tr>
+</table>
+</body></html>`;
+
   const texto = [
-    `${vestibular.nome}: ${titulo}`,
-    `Olá, ${i.nome.split(' ')[0]}! ${chamada}`,
-    `Seu código de acesso: ${i.codigo}`,
-    ...linhas,
+    `${vestibular.nome}: ${opcoes.titulo}`,
+    '',
+    `Olá, ${d.primeiroNome}! ${opcoes.abertura}`,
+    '',
+    `Seu código de acesso: ${d.codigo}`,
+    `Inscrição nº ${d.numero}`,
+    d.curso ? `Curso: ${d.curso}` : '',
+    opcoes.confirmacao && d.forma ? `Forma de ingresso: ${d.forma}` : '',
+    d.prova ? `Prova on-line: ${d.prova.quando}` : '',
+    d.prova ? d.prova.entrar : '',
+    d.prova ? d.prova.fim : '',
+    opcoes.confirmacao && d.documento ? `Último passo: envie ${d.documento} em Minha inscrição, até 20/11 às 18h.` : '',
+    '',
     `Minha inscrição: ${linkAreaCandidato}`,
-    `Dúvidas: ${instituicao.telefone}`,
-  ].join('\n');
+    opcoes.confirmacao && d.prova ? `Salvar no Google Agenda: ${d.prova.agenda}` : '',
+    '',
+    'Não compartilhe seu código: com ele e o seu CPF é possível entrar na sua inscrição.',
+    `Dúvidas? Responda este e-mail ou ligue (88) 3423-6090.`,
+    `${instituicao.nome} · ${instituicao.endereco}`,
+  ]
+    .filter((l, idx, todas) => l !== '' || todas[idx - 1] !== '')
+    .join('\n');
+
   return { html, texto };
 };
 
+// ---------- E-mails ----------
+export const emailCodigo = (i: Inscricao) =>
+  montar({
+    preheader: `Seu código de acesso: ${i.codigo}`,
+    titulo: 'Seu código de acesso',
+    abertura: 'Você pediu o código da sua inscrição. Aqui está:',
+    d: dados(i),
+    confirmacao: false,
+  });
+
+export const emailConfirmacao = (i: Inscricao) =>
+  montar({
+    preheader: `Inscrição nº ${i.numero} confirmada. Guarde seu código: ${i.codigo}`,
+    titulo: 'Inscrição confirmada!',
+    abertura: `Você está no ${vestibular.nome}. Guarde este e-mail: ele tem tudo o que você precisa.`,
+    d: dados(i),
+    confirmacao: true,
+  });
+
 export const enviarCodigo = (i: Inscricao) => {
-  const { html, texto } = modelo('Seu código de acesso', i, 'Você pediu o código da sua inscrição.');
+  const { html, texto } = emailCodigo(i);
   return enviar(i.email, `Seu código de acesso · ${vestibular.nome}`, html, texto);
 };
 
 export const enviarConfirmacao = (i: Inscricao) => {
-  const { html, texto } = modelo('Inscrição confirmada', i, 'Sua inscrição está confirmada.');
+  const { html, texto } = emailConfirmacao(i);
   return enviar(i.email, `Inscrição confirmada · ${vestibular.nome}`, html, texto);
 };
