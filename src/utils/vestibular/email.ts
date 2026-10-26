@@ -71,24 +71,9 @@ type Dados = {
   documento: string | null;
 };
 
-// Link do Google Agenda com o horário da prova (fuso de Brasília explícito)
-const linkAgenda = (i: Inscricao) => {
-  const inicio = new Date(`${i.dia_prova}T${i.hora_prova?.slice(0, 5)}:00-03:00`);
-  const fim = new Date(inicio.getTime() + vestibular.duracaoHoras * 60 * 60 * 1000);
-  const utc = (d: Date) =>
-    d
-      .toISOString()
-      .replace(/[-:]/g, '')
-      .replace(/\.\d{3}/, '');
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: `Prova · ${vestibular.nome}`,
-    dates: `${utc(inicio)}/${utc(fim)}`,
-    details: `Entre em ${linkAreaCandidato} com seu CPF e o código de acesso (está no e-mail de confirmação), ${minutosAntes} minutos antes.`,
-    location: linkAreaCandidato,
-  });
-  return `https://calendar.google.com/calendar/render?${params}`;
-};
+// Botão de agenda: rota do nosso domínio que redireciona para o Google Agenda (src/app/vestibular/agenda/route.ts)
+const linkAgenda = (i: Inscricao) =>
+  `${vestibular.site}/vestibular/agenda?${new URLSearchParams({ dia: i.dia_prova ?? '', hora: i.hora_prova?.slice(0, 5) ?? '' })}`;
 
 const dados = (i: Inscricao): Dados => {
   const oferta = ofertas.find((o) => o.id === i.oferta_id);
@@ -220,7 +205,7 @@ const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d
 
   <tr><td style="${fonte}padding:18px 32px;background:#f6f8fc;font-size:12px;line-height:18px;color:${cinza}">
     🔒 <strong>Não compartilhe seu código</strong>: com ele e o seu CPF é possível entrar na sua inscrição e fazer a prova.<br>
-    Dúvidas? Responda este e-mail ou ligue <a href="${instituicao.telefoneLink}" style="color:${cinza}">${escapar(instituicao.telefone)}</a>.<br><br>
+    Dúvidas? Responda este e-mail ou ligue ${escapar(instituicao.telefone)}.<br><br>
     ${escapar(instituicao.nome)}<br>${escapar(instituicao.endereco)}
   </td></tr>
 </table>
