@@ -63,8 +63,6 @@ export const ofertas: Oferta[] = [
     turno: 'On-line',
     processoSei: 150,
     formas: semTransferencia,
-    // Retirado pela faculdade em 26/10/2026
-    ativo: false,
   },
   {
     id: 'administracao-ead-fortaleza',
@@ -92,8 +90,6 @@ export const ofertas: Oferta[] = [
     turno: 'On-line',
     processoSei: 152,
     formas: semTransferencia,
-    // Retirado pela faculdade em 26/10/2026
-    ativo: false,
   },
 ];
 

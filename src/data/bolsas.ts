@@ -1,7 +1,7 @@
 import { ofertasAtivas } from './inscricao';
 
-// Regras de bolsas do Vestibular Conquista Vidal 2027.1 (regulamento, seção 8, e notas mínimas passadas pela
-// faculdade em 23/10/2026). Tudo o que pode mudar está neste arquivo.
+// Regras de bolsas do Vestibular Conquista Vidal 2027.1 (regulamento revisado de 26/10/2026: Art. 22 a 25 e
+// seção 8). Tudo o que pode mudar está neste arquivo.
 
 // Abaixo desta nota (de 0 a 10) o candidato é reprovado
 export const notaAprovacao = 5;
@@ -22,11 +22,13 @@ export const limitarQuantidades = true;
 const repetir = (percentual: number, vezes: number) => Array<number>(vezes).fill(percentual);
 
 const presencialPadrao = [...repetir(65, 1), ...repetir(60, 2), ...repetir(50, 2)];
-const eadPadrao = [...repetir(70, 5), ...repetir(60, 5)];
+// EAD e semipresencial: 10 de 70% e 10 de 60% por oferta (eram 5 + 5 no regulamento anterior)
+const eadPadrao = [...repetir(70, 10), ...repetir(60, 10)];
 
 // Bolsas por oferta, da maior para a menor. A de 100% vai para o 1º lugar geral (Art. 22), à parte destas.
 export const bolsasPorOferta: Record<string, number[]> = {
-  administracao: repetir(65, 5),
+  // Administração presencial: 5 de 65% e 5 de 60% (eram 5 de 65%)
+  administracao: [...repetir(65, 5), ...repetir(60, 5)],
   direito: presencialPadrao,
   enfermagem: presencialPadrao,
   fisioterapia: presencialPadrao,

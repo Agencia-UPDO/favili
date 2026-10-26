@@ -229,12 +229,12 @@ export const formas: Forma[] = [
   },
 ];
 
-// ---------- Bolsas do vestibular (Arts. 22 a 24 e item 8 do regulamento) ----------
+// ---------- Bolsas do vestibular (Arts. 22 a 25 e item 8 do regulamento revisado de 26/10) ----------
 export const bolsasResumo = [
   { percentual: '100%', quantidade: 1, texto: 'para o 1º lugar da classificação geral' },
-  { percentual: '70%', quantidade: 30, texto: 'nos cursos EAD e semipresenciais' },
-  { percentual: '65%', quantidade: 10, texto: 'nos cursos presenciais' },
-  { percentual: '60%', quantidade: 46, texto: 'presenciais, EAD e semipresenciais' },
+  { percentual: '70%', quantidade: 60, texto: 'nos cursos EAD e semipresenciais' },
+  { percentual: '65%', quantidade: 12, texto: 'nos cursos presenciais' },
+  { percentual: '60%', quantidade: 79, texto: 'presenciais, EAD e semipresenciais' },
   { percentual: '50%', quantidade: 14, texto: 'nos cursos presenciais' },
 ];
 
@@ -259,7 +259,7 @@ export const degraus = [
   },
 ];
 
-// Regras que o candidato precisa conhecer antes de aceitar a bolsa (Arts. 32 a 40)
+// Regras que o candidato precisa conhecer antes de aceitar a bolsa (Arts. 33 a 41 do regulamento revisado)
 export const regrasBolsa = [
   'É pessoal e vale para o curso, modalidade, unidade e turno escolhidos na inscrição.',
   'Vale durante todo o período regular do curso, com renovação a cada semestre.',
@@ -355,7 +355,6 @@ export const cursos: Curso[] = [
   },
   {
     nome: 'Recursos Humanos',
-    ativo: false,
     modalidade: 'EAD',
     duracao: '4 anos',
     turno: 'On-line, no seu ritmo',
@@ -433,7 +432,7 @@ export const faq = [
   {
     pergunta: 'Como as bolsas são distribuídas?',
     resposta:
-      'O 1º lugar geral ganha bolsa de 100%. As 80 bolsas parciais (50%, 60%, 65% e 70%) vão para os mais bem classificados em cada curso, modalidade e unidade, conforme a quantidade de bolsas de cada oferta.',
+      'O 1º lugar geral ganha bolsa de 100%. As 165 bolsas parciais (50%, 60%, 65% e 70%) vão para os mais bem classificados em cada curso, modalidade e unidade, conforme a quantidade de bolsas de cada oferta.',
   },
   {
     pergunta: 'E se eu empatar com outro candidato?',
