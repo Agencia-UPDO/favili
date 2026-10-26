@@ -184,7 +184,7 @@ const SalvarInscricao = ({ inscricao }: { inscricao: InscricaoConfirmada }) => {
           onClick={() => window.print()}
           className={`${botao} cursor-pointer bg-[#D93025] text-white hover:bg-[#B3261E]`}>
           <IconePdf />
-          Baixar comprovante em PDF
+          Baixar comprovante (PDF)
         </button>
       </div>
       <p className="text-secondary/60 text-center text-[13px]">

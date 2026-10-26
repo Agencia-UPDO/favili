@@ -24,8 +24,8 @@ const page = async ({ searchParams }: { searchParams: Promise<Record<string, str
     <>
       <Cabecalho link="area" />
 
-      <main className="bg-background-3 min-h-[calc(100vh-68px)] py-10 md:py-14">
-        <div className="mx-auto w-full max-w-[720px] px-4">
+      <main className="bg-background-3 min-h-[calc(100vh-68px)] py-10 md:py-14 print:min-h-0 print:bg-white print:py-0">
+        <div className="mx-auto w-full max-w-[720px] px-4 print:max-w-none print:px-0">
           <div className="mb-8 space-y-3 text-center print:hidden">
             <Rotulo>Inscrição grátis</Rotulo>
             <h1 className="font-chamada text-vest-navy text-[44px] md:text-[56px]">Garanta sua vaga</h1>
@@ -36,7 +36,7 @@ const page = async ({ searchParams }: { searchParams: Promise<Record<string, str
             </p>
           </div>
 
-          <div className="rounded-[28px] bg-white p-5 shadow-[0_30px_60px_-30px_rgba(6,46,114,0.35)] md:p-9">
+          <div className="rounded-[28px] bg-white p-5 shadow-[0_30px_60px_-30px_rgba(6,46,114,0.35)] md:p-9 print:rounded-none print:p-0 print:shadow-none">
             {encerradas ? (
               <p className="text-center text-lg">
                 As inscrições do {vestibular.nome} foram encerradas em 20/11, às 18h.
