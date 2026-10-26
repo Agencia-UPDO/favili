@@ -120,10 +120,15 @@ const azulClaro = '#0d5fd1';
 const amarelo = '#ffd21f';
 const cinza = '#5b6b8c';
 
-const linha = (rotulo: string, valor: string) => `
+// Com link: o valor vira link próprio (o Gmail e o iPhone transformavam o nº de inscrição em telefone)
+const linha = (rotulo: string, valor: string, link?: string) => `
 <tr>
   <td style="${fonte}padding:8px 0;border-bottom:1px solid #e6ecf5;font-size:13px;color:${cinza};width:38%;vertical-align:top">${escapar(rotulo)}</td>
-  <td style="${fonte}padding:8px 0;border-bottom:1px solid #e6ecf5;font-size:15px;color:${azul};font-weight:bold;vertical-align:top">${escapar(valor)}</td>
+  <td style="${fonte}padding:8px 0;border-bottom:1px solid #e6ecf5;font-size:15px;color:${azul};font-weight:bold;vertical-align:top">${
+    link
+      ? `<a href="${link}" target="_blank" style="color:${azul};text-decoration:underline">${escapar(valor)}</a>`
+      : escapar(valor)
+  }</td>
 </tr>`;
 
 const botao = (href: string, texto: string, fundo: string, cor: string) => `
@@ -145,7 +150,7 @@ const aviso = (titulo: string, texto: string) => `
 const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d: Dados; confirmacao: boolean }) => {
   const { d } = opcoes;
   const linhas = [
-    linha('Inscrição nº', String(d.numero)),
+    linha('Inscrição nº', String(d.numero), linkAreaCandidato),
     d.curso ? linha('Curso', d.curso) : '',
     opcoes.confirmacao && d.forma ? linha('Forma de ingresso', d.forma) : '',
     d.prova ? linha('Prova on-line', d.prova.quando) : '',
@@ -154,9 +159,10 @@ const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d
   const html = `<!doctype html>
 <html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="x-apple-disable-message-reformatting"><title>${escapar(opcoes.titulo)}</title>
+<meta name="x-apple-disable-message-reformatting"><meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
+<style>a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}u+#corpo a{color:inherit;text-decoration:none}</style><title>${escapar(opcoes.titulo)}</title>
 </head>
-<body style="margin:0;padding:0;background:#eef3fb">
+<body id="corpo" style="margin:0;padding:0;background:#eef3fb">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapar(opcoes.preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef3fb">
 <tr><td align="center" style="padding:24px 12px">
@@ -214,7 +220,7 @@ const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d
 
   <tr><td style="${fonte}padding:18px 32px;background:#f6f8fc;font-size:12px;line-height:18px;color:${cinza}">
     🔒 <strong>Não compartilhe seu código</strong>: com ele e o seu CPF é possível entrar na sua inscrição e fazer a prova.<br>
-    Dúvidas? Responda este e-mail ou ligue (88) 3423-6090.<br><br>
+    Dúvidas? Responda este e-mail ou ligue <a href="${instituicao.telefoneLink}" style="color:${cinza}">${escapar(instituicao.telefone)}</a>.<br><br>
     ${escapar(instituicao.nome)}<br>${escapar(instituicao.endereco)}
   </td></tr>
 </table>
