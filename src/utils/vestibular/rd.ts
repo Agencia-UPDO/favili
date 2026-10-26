@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { documentoPorForma, linkAreaCandidato } from '@/data/inscricao';
-import { FormaId, formas } from '@/data/vestibular';
+import { FormaId, formas, vestibular } from '@/data/vestibular';
 import { Inscricao, statusDocumento } from './inscricoes';
 
 const situacoes: Record<string, string> = {
@@ -64,6 +64,8 @@ export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao') =>
     cf_vestibular_dia_da_prova: i.faz_prova ? dataBr(i.dia_prova) : '',
     cf_vestibular_hora_da_prova: i.faz_prova ? (i.hora_prova?.slice(0, 5) ?? '') : '',
     cf_vestibular_link_minha_inscricao: linkAreaCandidato,
+    // Ficha do candidato no painel (pede a senha do painel; sem token no link)
+    cf_vestibular_link_do_painel: `${vestibular.site}/vestibular/painel?inscricao=${i.numero}`,
     // Específicos da forma de ingresso (vazios quando não se aplicam)
     cf_vestibular_faz_prova: i.faz_prova ? 'Sim' : 'Não',
     cf_vestibular_instituicao_de_origem: i.instituicao_origem ?? '',

@@ -643,6 +643,30 @@ const Painel = () => {
               className="bg-vest-blue rounded-full px-5 py-2.5 text-[14px] font-bold text-white">
               Baixar planilha (CSV)
             </a>
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    'Reenviar os dados de todas as inscrições para a RD? Vai como atualização (não dispara o WhatsApp).',
+                  )
+                ) {
+                  return;
+                }
+                const res = await fetch('/api/vestibular/painel', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ acao: 'reenviar-rd' }),
+                }).catch(() => null);
+                const json = res ? await res.json().catch(() => ({})) : {};
+                window.alert(
+                  res?.ok ? `${json.enviadas} inscrições atualizadas na RD.` : (json.mensagem ?? 'Não deu certo.'),
+                );
+              }}
+              className="border-stroke-3 cursor-pointer rounded-full border px-4 py-2.5 text-[14px] font-bold">
+              Reenviar para a RD
+            </button>
           </div>
           {/* Cabeçalho e coluna do candidato fixos; detalhes menos usados abrem numa linha abaixo */}
           <div className="border-stroke-2 max-h-[75vh] overflow-auto rounded-2xl border">

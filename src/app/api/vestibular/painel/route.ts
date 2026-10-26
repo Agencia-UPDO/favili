@@ -365,6 +365,16 @@ export async function POST(request: Request) {
       historico: await historicoCodigo(inscricao.numero),
     });
   }
+  if (corpo.acao === 'reenviar-rd') {
+    // Reenvia todas as inscrições como "atualização" (não dispara o WhatsApp), em sequência para não sobrecarregar a RD
+    let enviadas = 0;
+    for (const i of await listarInscricoes()) {
+      if (await enviarConversaoRd(i, 'atualizacao')) {
+        enviadas++;
+      }
+    }
+    return NextResponse.json({ ok: true, enviadas });
+  }
   if (corpo.acao === 'publicar') {
     const resultado = await publicarResultado();
     return NextResponse.json({ ok: true, publicadoEm: resultado.publicadoEm });
