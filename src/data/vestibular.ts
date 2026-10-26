@@ -15,7 +15,6 @@ export const vestibular = {
   resultado: '24 de novembro',
   matricula: '24/11 a 04/12/2026',
   taxaMatricula: 'R$ 150,00',
-  totalBolsas: 101,
   // Desconto garantido para todos os ingressantes 2027.1 (alguns cursos têm 50%), com ou sem vestibular
   descontoGarantido: '40%',
   regulamento: '/vestibular/regulamento-vestibular-conquista-vidal-2027-1.pdf',
@@ -277,6 +276,8 @@ export type Curso = {
   turno: string;
   desconto: string;
   bolsaVestibular: boolean;
+  // false: fora desta edição (some da LP)
+  ativo?: boolean;
 };
 
 export const cursos: Curso[] = [
@@ -354,6 +355,7 @@ export const cursos: Curso[] = [
   },
   {
     nome: 'Recursos Humanos',
+    ativo: false,
     modalidade: 'EAD',
     duracao: '4 anos',
     turno: 'On-line, no seu ritmo',
@@ -370,6 +372,7 @@ export const cursos: Curso[] = [
   },
   {
     nome: 'Marketing',
+    ativo: false,
     modalidade: 'EAD',
     duracao: '4 anos',
     turno: 'On-line, no seu ritmo',
@@ -378,6 +381,7 @@ export const cursos: Curso[] = [
   },
   {
     nome: 'Ciências Contábeis',
+    ativo: false,
     modalidade: 'EAD',
     duracao: '4 anos',
     turno: 'On-line, no seu ritmo',
@@ -386,6 +390,7 @@ export const cursos: Curso[] = [
   },
   {
     nome: 'Análise e Desenv. de Sistemas',
+    ativo: false,
     modalidade: 'EAD',
     duracao: '4 anos',
     turno: 'On-line, no seu ritmo',
@@ -428,7 +433,7 @@ export const faq = [
   {
     pergunta: 'Como as bolsas são distribuídas?',
     resposta:
-      'O 1º lugar geral ganha bolsa de 100%. As 100 bolsas parciais (50%, 60%, 65% e 70%) vão para os mais bem classificados em cada curso, modalidade e unidade, conforme a quantidade de bolsas de cada oferta.',
+      'O 1º lugar geral ganha bolsa de 100%. As 80 bolsas parciais (50%, 60%, 65% e 70%) vão para os mais bem classificados em cada curso, modalidade e unidade, conforme a quantidade de bolsas de cada oferta.',
   },
   {
     pergunta: 'E se eu empatar com outro candidato?',

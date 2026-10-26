@@ -1,3 +1,4 @@
+import { totalBolsas } from '@/data/bolsas';
 import Bolsas from '@/components/vestibular/Bolsas';
 import ChamadaFinal from '@/components/vestibular/ChamadaFinal';
 import ComoFunciona from '@/components/vestibular/ComoFunciona';
@@ -11,8 +12,7 @@ import { IngressoProvider } from '@/components/vestibular/IngressoContext';
 import { Metadata } from 'next';
 
 const titulo = 'Vestibular Vidal 2027.1 · 40% garantido e bolsas de até 100% | Faculdade Vidal';
-const descricao =
-  'Vestibular Conquista Vidal 2027.1: prova on-line em 21 ou 22 de novembro, no dia e horário que você escolher, inscrição gratuita, 40% de desconto garantido para os aprovados e 101 bolsas de até 100%. Também é possível entrar com a nota do Enem, por segunda graduação ou transferência.';
+const descricao = `Vestibular Conquista Vidal 2027.1: prova on-line em 21 ou 22 de novembro, no dia e horário que você escolher, inscrição gratuita, 40% de desconto garantido para os aprovados e ${totalBolsas} bolsas de até 100%. Também é possível entrar com a nota do Enem, por segunda graduação ou transferência.`;
 
 export const metadata: Metadata = {
   title: titulo,

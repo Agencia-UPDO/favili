@@ -1,4 +1,4 @@
-import { horariosProva, diasProva, ofertas } from '@/data/inscricao';
+import { horariosProva, diasProva, ofertasAtivas } from '@/data/inscricao';
 import { FormaId, formas, instituicao, vestibular } from '@/data/vestibular';
 import { CpfJaInscrito, criarInscricao, visaoCandidato } from '@/utils/vestibular/inscricoes';
 import { celularValido, cpfValido, emailValido, idadeEm, soDigitos } from '@/utils/vestibular/validacao';
@@ -31,7 +31,8 @@ export async function POST(request: Request) {
     return erro('Escolha como você quer entrar.', 'forma');
   }
 
-  const oferta = ofertas.find((o) => o.id === texto(corpo.oferta));
+  // Só ofertas abertas nesta edição (cursos retirados são recusados aqui também)
+  const oferta = ofertasAtivas.find((o) => o.id === texto(corpo.oferta));
   if (!oferta) {
     return erro('Escolha o curso.', 'oferta');
   }

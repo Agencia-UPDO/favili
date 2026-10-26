@@ -1,3 +1,5 @@
+import { ofertasAtivas } from './inscricao';
+
 // Regras de bolsas do Vestibular Conquista Vidal 2027.1 (regulamento, seção 8, e notas mínimas passadas pela
 // faculdade em 23/10/2026). Tudo o que pode mudar está neste arquivo.
 
@@ -41,6 +43,9 @@ export const bolsasPorOferta: Record<string, number[]> = {
 };
 
 export const bolsaIntegral = 100;
+
+// Total anunciado: parciais das ofertas abertas nesta edição + a integral (o regulamento original previa 101, com RH)
+export const totalBolsas = ofertasAtivas.reduce((total, o) => total + (bolsasPorOferta[o.id]?.length ?? 0), 0) + 1;
 
 // Ingresso pelo Enem (regra da faculdade, 23/10/2026): média das 5 notas de pelo menos 450 e redação acima de 0.
 // A equipe confere o boletim no painel e confirma as notas; o sistema aprova ou reprova sozinho.

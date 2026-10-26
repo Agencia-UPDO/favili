@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPhone } from '@/components/empreend/formStyles';
-import { diasProva, fusoHorario, horariosProva, nomeOferta, Oferta, ofertas } from '@/data/inscricao';
+import { diasProva, fusoHorario, horariosProva, nomeOferta, Oferta, ofertasAtivas } from '@/data/inscricao';
 import { FormaId, formas, vestibular } from '@/data/vestibular';
 import { celularValido, cpfValido, emailValido, formatarCpf, idadeEm, soDigitos } from '@/utils/vestibular/validacao';
 import { cn } from '@/utils/cn';
@@ -109,7 +109,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
   const [jaInscrito, setJaInscrito] = useState(false);
   const [confirmada, setConfirmada] = useState<InscricaoConfirmada | null>(null);
 
-  const disponiveis = useMemo(() => ofertas.filter((o) => o.formas.includes(forma)), [forma]);
+  const disponiveis = useMemo(() => ofertasAtivas.filter((o) => o.formas.includes(forma)), [forma]);
   const oferta = disponiveis.find((o) => o.id === ofertaId);
   const fazProva = forma === 'vestibular' || (forma === 'enem' && enemComProva);
   const deOutraFaculdade = forma === 'segunda-graduacao' || forma === 'transferencia';
@@ -123,7 +123,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
     setForma(id);
     setErros({});
     // Transferência não existe em todas as ofertas: limpa o curso se ele deixar de valer
-    if (ofertaId && !ofertas.find((o) => o.id === ofertaId)?.formas.includes(id)) {
+    if (ofertaId && !ofertasAtivas.find((o) => o.id === ofertaId)?.formas.includes(id)) {
       setOfertaId('');
     }
     // Enem tem a opção "fazer a prova também" logo abaixo: mostra ela; nas outras formas, segue para o curso

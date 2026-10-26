@@ -2,7 +2,7 @@ import Cabecalho from '@/components/vestibular/inscricao/Cabecalho';
 import Rodape from '@/components/vestibular/inscricao/Rodape';
 import FormInscricao from '@/components/vestibular/inscricao/FormInscricao';
 import { Rotulo } from '@/components/vestibular/ui';
-import { ofertas } from '@/data/inscricao';
+import { ofertasAtivas } from '@/data/inscricao';
 import { FormaId, formas, vestibular } from '@/data/vestibular';
 import { Metadata } from 'next';
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const page = async ({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) => {
   const params = await searchParams;
   const forma = formas.find((f) => f.id === params.forma)?.id as FormaId | undefined;
-  const oferta = ofertas.find((o) => o.id === params.curso)?.id;
+  const oferta = ofertasAtivas.find((o) => o.id === params.curso)?.id;
   const encerradas = Date.now() > new Date(vestibular.fimInscricoes).getTime();
 
   return (
@@ -30,8 +30,8 @@ const page = async ({ searchParams }: { searchParams: Promise<Record<string, str
             <Rotulo>Inscrição grátis</Rotulo>
             <h1 className="font-chamada text-vest-navy text-[44px] md:text-[56px]">Garanta sua vaga</h1>
             <p className="text-[16px] md:text-lg">
-              {vestibular.descontoGarantido} de desconto garantido para os aprovados. Faça a prova em {vestibular.diasCurto},
-              no dia e horário que escolher, e concorra a bolsas de até 100%. Inscrições até{' '}
+              {vestibular.descontoGarantido} de desconto garantido para os aprovados. Faça a prova em{' '}
+              {vestibular.diasCurto}, no dia e horário que escolher, e concorra a bolsas de até 100%. Inscrições até{' '}
               {vestibular.inscricoes.split(' a ')[1]}, às 18h.
             </p>
           </div>

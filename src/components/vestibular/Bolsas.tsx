@@ -1,3 +1,4 @@
+import { totalBolsas } from '@/data/bolsas';
 import { bolsasResumo, degraus, regrasBolsa, vestibular } from '@/data/vestibular';
 import { Check, Marca, Rotulo } from './ui';
 
@@ -11,8 +12,8 @@ const Bolsas = () => (
         </h2>
         <p className="md:text-lg">
           O desconto de 40% é garantido para todos os ingressantes 2027.1. Quem faz a prova de 21 ou 22 de novembro
-          concorre a uma das {vestibular.totalBolsas} bolsas, definidas pela classificação no curso, na modalidade e na
-          unidade escolhidos na inscrição.
+          concorre a uma das {totalBolsas} bolsas, definidas pela classificação no curso, na modalidade e na unidade
+          escolhidos na inscrição.
         </p>
       </div>
 
@@ -20,6 +21,7 @@ const Bolsas = () => (
       <ol className="grid items-end gap-3 md:grid-cols-3">
         {degraus.map((d, i) => (
           <li
+            key={d.titulo}
             className={
               i === 2
                 ? 'bg-vest-yellow text-vest-navy rounded-[24px] p-6 md:min-h-[300px]'
@@ -39,12 +41,13 @@ const Bolsas = () => (
       </ol>
 
       <p className="font-chamada text-vest-navy text-center text-[26px] md:text-[30px]">
-        As {vestibular.totalBolsas} bolsas do vestibular
+        As {totalBolsas} bolsas do vestibular
       </p>
 
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {bolsasResumo.map((b, i) => (
           <li
+            key={b.percentual}
             className={
               i === 0
                 ? 'bg-vest-yellow text-vest-navy col-span-2 rounded-[22px] p-5 md:col-span-1'

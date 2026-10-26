@@ -11,6 +11,8 @@ export type Oferta = {
   processoSei: number;
   // Formas de ingresso aceitas pelo processo seletivo da oferta no SEI
   formas: FormaId[];
+  // false: fora desta edição (some do formulário e da LP e o servidor recusa inscrição; fica para o histórico)
+  ativo?: boolean;
 };
 
 const todas: FormaId[] = ['vestibular', 'enem', 'segunda-graduacao', 'transferencia'];
@@ -61,6 +63,8 @@ export const ofertas: Oferta[] = [
     turno: 'On-line',
     processoSei: 150,
     formas: semTransferencia,
+    // Retirado pela faculdade em 26/10/2026
+    ativo: false,
   },
   {
     id: 'administracao-ead-fortaleza',
@@ -88,8 +92,13 @@ export const ofertas: Oferta[] = [
     turno: 'On-line',
     processoSei: 152,
     formas: semTransferencia,
+    // Retirado pela faculdade em 26/10/2026
+    ativo: false,
   },
 ];
+
+// Ofertas abertas nesta edição (formulário, servidor e contagem de bolsas)
+export const ofertasAtivas = ofertas.filter((o) => o.ativo !== false);
 
 export const nomeOferta = (o: Oferta) => `${o.curso} · ${o.modalidade} · ${o.unidade}`;
 

@@ -61,7 +61,9 @@ const Sobre = () => {
 
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {pilares.map((p, i) => (
-            <li className="border-stroke-2 group relative overflow-hidden rounded-[24px] border bg-white p-6 md:p-7">
+            <li
+              key={p.titulo}
+              className="border-stroke-2 group relative overflow-hidden rounded-[24px] border bg-white p-6 md:p-7">
               <span className="font-letreiro text-primary-100 absolute -top-2 right-4 text-[64px]">0{i + 1}</span>
               <span aria-hidden className="bg-emp-cyan block h-6 w-2 skew-x-[-20deg]" />
               <h3 className="font-letreiro text-secondary relative mt-5 text-[18px] md:text-[19px]">{p.titulo}</h3>
