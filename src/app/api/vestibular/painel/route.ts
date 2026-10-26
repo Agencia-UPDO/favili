@@ -15,6 +15,7 @@ import {
   statusDocumento,
   trocarCodigo,
 } from '@/utils/vestibular/inscricoes';
+import { enviarAtualizacao } from '@/utils/vestibular/email';
 import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { bloqueado, ipDe, limites, mensagemBloqueio, registrarErro } from '@/utils/vestibular/limite';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
@@ -353,8 +354,8 @@ export async function POST(request: Request) {
     }
     if (corpo.acao === 'novo-codigo') {
       inscricao = await trocarCodigo(inscricao);
-      // A RD (e o WhatsApp) passam a ter o código novo
-      await enviarConversaoRd(inscricao);
+      // Código novo para o aluno (e-mail) e para o lead na RD (conversão de atualização, sem disparar WhatsApp)
+      await Promise.all([enviarAtualizacao(inscricao), enviarConversaoRd(inscricao, 'atualizacao')]);
     }
     await registrarCodigo(inscricao.numero, corpo.acao === 'novo-codigo' ? 'gerar' : 'ver', por);
     return NextResponse.json({

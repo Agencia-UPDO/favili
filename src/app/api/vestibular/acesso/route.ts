@@ -1,6 +1,7 @@
 import { diasProva, horariosProva } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { trocarHorario, visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { enviarAtualizacao } from '@/utils/vestibular/email';
 import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
 import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { entregarSeVenceu, modoTeste } from '@/utils/vestibular/prova';
@@ -75,7 +76,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ ok: false, mensagem: 'Escolha o dia e o horário da prova.' }, { status: 400 });
   }
   const atualizada = await trocarHorario(inscricao, dia, hora);
-  // A RD (e o WhatsApp) passam a ter o dia e o horário novos
-  await enviarConversaoRd(atualizada);
+  // Dados novos para o aluno (e-mail) e para o lead na RD (conversão de atualização, sem disparar WhatsApp)
+  await Promise.all([enviarAtualizacao(atualizada), enviarConversaoRd(atualizada, 'atualizacao')]);
   return NextResponse.json({ ok: true, inscricao: visaoCandidato(atualizada) });
 }

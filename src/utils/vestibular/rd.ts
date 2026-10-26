@@ -8,10 +8,18 @@ import { Inscricao } from './inscricoes';
 // Usa a mesma chave da conta (RDSTATION_API_KEY); o identificador é RDSTATION_CONVERSION_VESTIBULAR
 // (padrão "vestibular-2027-1-inscricao"), separado do Empreend. Os campos cf_vestibular_* foram criados na RD em
 // 26/10/2026. Vai o código e o nº JÁ gravados no Supabase (o objeto devolvido pelo INSERT); sem CPF nem nascimento.
+// Duas conversões, para não confundir a automação:
+// - "vestibular-2027-1-inscricao": UMA vez, na nova inscrição (é a que dispara o WhatsApp);
+// - "vestibular-2027-1-atualizacao": quando o código é trocado no painel ou o candidato troca dia/horário, só para
+//   atualizar os dados do lead (nenhuma automação deve escutar esta).
 // Nunca derruba a inscrição: erro na RD só vai para o log (sem dados pessoais).
 
 const endpoint = 'https://api.rd.services/platform/conversions';
-const identificador = () => process.env.RDSTATION_CONVERSION_VESTIBULAR || 'vestibular-2027-1-inscricao';
+export type TipoConversao = 'inscricao' | 'atualizacao';
+const identificador = (tipo: TipoConversao) =>
+  tipo === 'inscricao'
+    ? process.env.RDSTATION_CONVERSION_VESTIBULAR || 'vestibular-2027-1-inscricao'
+    : process.env.RDSTATION_CONVERSION_VESTIBULAR_ATUALIZACAO || 'vestibular-2027-1-atualizacao';
 
 // "88999990000" → "+55 88 99999-0000"
 const telefoneRd = (telefone: string) => {
@@ -21,8 +29,8 @@ const telefoneRd = (telefone: string) => {
 
 const dataBr = (iso?: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '');
 
-export const payloadRd = (i: Inscricao) => ({
-  conversion_identifier: identificador(),
+export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao') => ({
+  conversion_identifier: identificador(tipo),
   email: i.email,
   name: i.nome,
   mobile_phone: telefoneRd(i.celular),
@@ -42,7 +50,7 @@ export const payloadRd = (i: Inscricao) => ({
   cf_vestibular_link_minha_inscricao: linkAreaCandidato,
 });
 
-export const enviarConversaoRd = async (i: Inscricao) => {
+export const enviarConversaoRd = async (i: Inscricao, tipo: TipoConversao = 'inscricao') => {
   const chave = process.env.RDSTATION_API_KEY;
   if (!chave) {
     return false;
@@ -51,7 +59,7 @@ export const enviarConversaoRd = async (i: Inscricao) => {
     const res = await fetch(`${endpoint}?api_key=${encodeURIComponent(chave)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ event_type: 'CONVERSION', event_family: 'CDP', payload: payloadRd(i) }),
+      body: JSON.stringify({ event_type: 'CONVERSION', event_family: 'CDP', payload: payloadRd(i, tipo) }),
       // Não segura o candidato esperando a RD
       signal: AbortSignal.timeout(5000),
     });

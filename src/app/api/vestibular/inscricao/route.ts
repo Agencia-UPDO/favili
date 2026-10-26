@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     });
 
     // Conversão na RD (WhatsApp via Kommo) com o código e o nº já gravados; não derruba a inscrição se falhar
-    await enviarConversaoRd(inscricao);
+    await enviarConversaoRd(inscricao, 'inscricao');
 
     if (confirmacaoLigada()) {
       // Não atrapalha a inscrição se o e-mail falhar

@@ -275,6 +275,25 @@ export const emailConfirmacao = (i: Inscricao) =>
     confirmacao: true,
   });
 
+export const emailAtualizacao = (i: Inscricao) =>
+  montar({
+    preheader: `Sua inscrição nº ${i.numero} foi atualizada. Confira os dados novos.`,
+    titulo: 'Sua inscrição foi atualizada',
+    abertura:
+      'Houve uma alteração na sua inscrição (código de acesso ou dia e horário da prova). Estes são os dados que valem agora:',
+    d: dados(i),
+    confirmacao: true,
+  });
+
+// Depois de trocar o código (painel) ou o dia/horário (Minha inscrição); só se o e-mail estiver configurado
+export const enviarAtualizacao = (i: Inscricao) => {
+  if (!emailConfigurado()) {
+    return Promise.resolve(false);
+  }
+  const { html, texto } = emailAtualizacao(i);
+  return enviar(i.email, `Sua inscrição foi atualizada · ${vestibular.nome}`, html, texto).catch(() => false);
+};
+
 export const enviarCodigo = (i: Inscricao) => {
   const { html, texto } = emailCodigo(i);
   return enviar(i.email, `Seu código de acesso · ${vestibular.nome}`, html, texto);
