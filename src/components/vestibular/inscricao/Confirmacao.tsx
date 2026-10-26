@@ -176,8 +176,8 @@ const Confirmacao = ({
               <li className="flex gap-3">
                 <span className="text-vest-blue font-bold">1.</span>
                 <span>
-                  Na véspera da prova, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e
-                  o código de acesso. Confira também a caixa de spam.
+                  Em 19/11, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e o código
+                  de acesso. Confira também a caixa de spam.
                 </span>
               </li>
               <li className="flex gap-3">

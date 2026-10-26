@@ -1,11 +1,11 @@
-import { diasProva } from '@/data/inscricao';
-import { amanha, enviarLembretes } from '@/utils/vestibular/lembretes';
+import { diaLembrete } from '@/data/inscricao';
+import { enviarLembretes, hojeBrasilia } from '@/utils/vestibular/lembretes';
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 
-// Lembrete da véspera da prova, chamado pelo cron da Vercel (vercel.json, 21:00 UTC = 18h de Brasília).
+// Lembrete da prova, chamado pelo cron da Vercel (vercel.json: 19/11 às 13:00 UTC = 10h de Brasília).
 // A Vercel manda "Authorization: Bearer <CRON_SECRET>"; sem a variável, a rota fica fechada.
-// ?dia=AAAA-MM-DD (um dos dias de prova) força o dia, para reenviar ou testar; sem ele, vale amanhã.
+// Só envia no dia do lembrete; ?forcar=1 envia em outro dia (reenvio manual com o segredo).
 
 export const maxDuration = 300;
 
@@ -23,16 +23,11 @@ export async function GET(request: Request) {
   if (!autorizado(request)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
-  const pedido = new URL(request.url).searchParams.get('dia');
-  if (pedido && !diasProva.some((d) => d.id === pedido)) {
-    return NextResponse.json({ ok: false, mensagem: 'Dia de prova inválido.' }, { status: 400 });
+  const forcar = new URL(request.url).searchParams.get('forcar') === '1';
+  if (!forcar && hojeBrasilia() !== diaLembrete.id) {
+    return NextResponse.json({ ok: true, mensagem: `O lembrete só sai em ${diaLembrete.rotulo}.` });
   }
-  const dia = pedido ?? amanha();
-  // Fora da véspera de um dia de prova não há o que enviar
-  if (!diasProva.some((d) => d.id === dia)) {
-    return NextResponse.json({ ok: true, dia, pendentes: 0, enviados: 0, falhas: 0, restantes: 0 });
-  }
-  const resultado = await enviarLembretes(dia);
+  const resultado = await enviarLembretes();
   console.log('[vestibular lembrete]', JSON.stringify(resultado));
   return NextResponse.json({ ok: true, ...resultado });
 }

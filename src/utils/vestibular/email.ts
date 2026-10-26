@@ -270,20 +270,20 @@ export const emailAtualizacao = (i: Inscricao) =>
     confirmacao: true,
   });
 
-// Véspera da prova (cron /api/vestibular/lembretes): dia, hora, regra das 2h, link e código
+// Lembrete da prova em 19/11 (cron /api/vestibular/lembretes): dia, hora, regra das 2h, link e código
 export const emailLembrete = (i: Inscricao) =>
   montar({
-    preheader: `Sua prova on-line é amanhã. Entre com seu CPF e o código ${i.codigo}.`,
-    titulo: 'Sua prova é amanhã',
+    preheader: `Sua prova on-line está chegando. Entre com seu CPF e o código ${i.codigo}.`,
+    titulo: 'Sua prova está chegando',
     abertura:
-      'Amanhã é o dia da sua prova on-line. No horário, entre em Minha inscrição com o seu CPF e o código abaixo para liberar a prova:',
+      'Falta pouco para a sua prova on-line. No dia e horário abaixo, entre em Minha inscrição com o seu CPF e este código para liberar a prova:',
     d: dados(i),
     confirmacao: false,
   });
 
 export const enviarLembrete = (i: Inscricao) => {
   const { html, texto } = emailLembrete(i);
-  return enviar(i.email, `Sua prova é amanhã · ${vestibular.nome}`, html, texto).catch(() => false);
+  return enviar(i.email, `Lembrete: sua prova está chegando · ${vestibular.nome}`, html, texto).catch(() => false);
 };
 
 // Depois de trocar o código (painel) ou o dia/horário (Minha inscrição); só se o e-mail estiver configurado

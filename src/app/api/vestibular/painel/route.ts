@@ -8,11 +8,10 @@ import {
   linkDeLeitura,
   revisarDocumentos,
 } from '@/utils/vestibular/documentos';
-import { amanha, enviarLembretes } from '@/utils/vestibular/lembretes';
+import { enviarLembretes, pendentesLembrete } from '@/utils/vestibular/lembretes';
 import {
   historicoCodigo,
   listarInscricoes,
-  listarParaLembrete,
   registrarCodigo,
   statusDocumento,
   trocarCodigo,
@@ -380,13 +379,12 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: true, enviadas });
   }
-  // Plano B do cron da véspera: primeiro conta quem vai receber, depois envia (só quem ainda não recebeu)
+  // Plano B do cron do lembrete (19/11): primeiro conta quem vai receber, depois envia (só quem ainda não recebeu)
   if (corpo.acao === 'lembretes-previa') {
-    const dia = amanha();
-    return NextResponse.json({ ok: true, dia, pendentes: (await listarParaLembrete(dia)).length });
+    return NextResponse.json({ ok: true, pendentes: (await pendentesLembrete()).length });
   }
   if (corpo.acao === 'lembretes-enviar') {
-    return NextResponse.json({ ok: true, ...(await enviarLembretes(amanha())) });
+    return NextResponse.json({ ok: true, ...(await enviarLembretes()) });
   }
   if (corpo.acao === 'publicar') {
     const resultado = await publicarResultado();

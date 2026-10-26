@@ -104,6 +104,8 @@ export const diasProva = [
   { id: '2026-11-21', rotulo: 'Sábado, 21 de novembro' },
   { id: '2026-11-22', rotulo: 'Domingo, 22 de novembro' },
 ];
+// Dia do lembrete da prova (e-mail + WhatsApp): um envio só para os dois dias de prova (cron às 10h de Brasília)
+export const diaLembrete = { id: '2026-11-19', rotulo: '19/11' };
 export const horariosProva = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
 
 // O que cada forma de ingresso precisa mandar depois da inscrição

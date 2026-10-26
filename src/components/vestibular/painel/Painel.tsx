@@ -684,16 +684,13 @@ const Painel = () => {
                   window.alert(previa.json.mensagem ?? 'Não deu certo.');
                   return;
                 }
-                const dia = String(previa.json.dia).split('-').reverse().join('/');
                 if (!previa.json.pendentes) {
-                  window.alert(
-                    `Ninguém para lembrar da prova de ${dia}: todos já receberam ou não há prova nesse dia.`,
-                  );
+                  window.alert('Ninguém para lembrar: todos os inscritos com prova já receberam o lembrete.');
                   return;
                 }
                 if (
                   !window.confirm(
-                    `Enviar agora o lembrete da prova de ${dia} (e-mail + WhatsApp pela RD) para ${previa.json.pendentes} candidato(s) que ainda não receberam?`,
+                    `Enviar agora o lembrete da prova (e-mail + WhatsApp pela RD) para ${previa.json.pendentes} candidato(s) que ainda não receberam? O envio automático é em 19/11, às 10h.`,
                   )
                 ) {
                   return;
@@ -706,7 +703,7 @@ const Painel = () => {
                 );
               }}
               className="border-stroke-3 cursor-pointer rounded-full border px-4 py-2.5 text-[14px] font-bold">
-              Enviar lembretes de amanhã agora
+              Enviar lembretes da prova agora
             </button>
           </div>
           {/* Cabeçalho e coluna do candidato fixos; detalhes menos usados abrem numa linha abaixo */}

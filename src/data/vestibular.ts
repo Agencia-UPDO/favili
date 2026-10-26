@@ -48,8 +48,8 @@ export const cronograma = [
   },
   {
     etapa: 'Receba o lembrete',
-    data: '1 dia antes',
-    extra: 'Na véspera da prova, você recebe por e-mail e WhatsApp o lembrete com o link. Confira também o spam.',
+    data: '19/11',
+    extra: 'Em 19/11, você recebe por e-mail e WhatsApp o lembrete com o link da prova. Confira também o spam.',
   },
   {
     etapa: 'Faça a prova on-line',
@@ -123,7 +123,7 @@ export const formas: Forma[] = [
       {
         titulo: 'Receba o lembrete',
         texto:
-          'Um dia antes da prova, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e o código de acesso. Fique de olho também na caixa de spam.',
+          'Em 19/11, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e o código de acesso. Fique de olho também na caixa de spam.',
       },
       {
         titulo: 'Faça a prova on-line',
@@ -409,12 +409,12 @@ export const faq = [
   {
     pergunta: 'Onde e como eu faço a prova?',
     resposta:
-      'A prova é 100% on-line. Um dia antes da prova, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e o código de acesso que recebeu na inscrição, no dia e no horário que escolheu na inscrição (21 ou 22 de novembro; 8h, 10h, 12h, 14h, 16h ou 18h).',
+      'A prova é 100% on-line. Em 19/11, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e o código de acesso que recebeu na inscrição, no dia e no horário que escolheu na inscrição (21 ou 22 de novembro; 8h, 10h, 12h, 14h, 16h ou 18h).',
   },
   {
     pergunta: 'Perdi meu código de acesso ou não recebi o lembrete. O que eu faço?',
     resposta:
-      'O código aparece na tela e chega por e-mail logo depois da inscrição, e o lembrete chega um dia antes da prova. Confira a caixa de spam e as abas de promoções. Se perdeu o código, use "Esqueci meu código" em Minha inscrição: ele chega no seu e-mail. Se ainda precisar de ajuda, fale com a Faculdade Vidal pelo (88) 3423-6090.',
+      'O código aparece na tela e chega por e-mail logo depois da inscrição, e o lembrete chega em 19/11. Confira a caixa de spam e as abas de promoções. Se perdeu o código, use "Esqueci meu código" em Minha inscrição: ele chega no seu e-mail. Se ainda precisar de ajuda, fale com a Faculdade Vidal pelo (88) 3423-6090.',
   },
   {
     pergunta: 'Quanto tempo eu tenho para fazer a prova?',

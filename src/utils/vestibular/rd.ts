@@ -23,7 +23,7 @@ const situacoes: Record<string, string> = {
 // Nunca derruba a inscrição: erro na RD só vai para o log (sem dados pessoais).
 
 const endpoint = 'https://api.rd.services/platform/conversions';
-// - "vestibular-2027-1-lembrete": na véspera da prova (cron /api/vestibular/lembretes), para o WhatsApp do lembrete.
+// - "vestibular-2027-1-lembrete": em 19/11, antes da prova (cron /api/vestibular/lembretes), para o WhatsApp do lembrete.
 export type TipoConversao = 'inscricao' | 'atualizacao' | 'lembrete';
 const identificador = (tipo: TipoConversao) =>
   ({

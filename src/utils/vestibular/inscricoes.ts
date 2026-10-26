@@ -44,7 +44,7 @@ export type DadosProva = {
   acertos?: number | null;
   nota?: number | null;
   nota_matematica?: number | null;
-  // Dia da prova para o qual o lembrete da véspera já saiu (troca de dia: sai o do dia novo)
+  // Dia da prova para o qual o lembrete (19/11) já saiu (troca de dia: o painel manda o do dia novo)
   lembrete_enviado_para?: string | null;
 };
 
@@ -278,7 +278,7 @@ export const listarInscricoes = async (): Promise<Inscricao[]> => {
   return (await res.json()) as Inscricao[];
 };
 
-// Quem faz a prova no dia `dia` (AAAA-MM-DD), ainda não começou e não recebeu o lembrete da véspera para esse dia
+// Quem faz a prova no dia `dia` (AAAA-MM-DD), ainda não começou e não recebeu o lembrete para esse dia
 export const listarParaLembrete = async (dia: string): Promise<Inscricao[]> => {
   const precisa = (i: Inscricao) =>
     i.faz_prova && i.dia_prova === dia && !i.prova_inicio && i.lembrete_enviado_para !== dia;
