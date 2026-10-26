@@ -356,7 +356,8 @@ export const cursos: Curso[] = [
   {
     nome: 'Recursos Humanos',
     modalidade: 'EAD',
-    duracao: '4 anos',
+    // Tecnólogo: 2 anos (confirmado pelo Rodrigo em 26/10)
+    duracao: '2 anos',
     turno: 'On-line, no seu ritmo',
     desconto: '50%',
     bolsaVestibular: true,
