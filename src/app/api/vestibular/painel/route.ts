@@ -15,6 +15,7 @@ import {
   statusDocumento,
   trocarCodigo,
 } from '@/utils/vestibular/inscricoes';
+import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { bloqueado, ipDe, limites, mensagemBloqueio, registrarErro } from '@/utils/vestibular/limite';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
 import {
@@ -352,6 +353,8 @@ export async function POST(request: Request) {
     }
     if (corpo.acao === 'novo-codigo') {
       inscricao = await trocarCodigo(inscricao);
+      // A RD (e o WhatsApp) passam a ter o código novo
+      await enviarConversaoRd(inscricao);
     }
     await registrarCodigo(inscricao.numero, corpo.acao === 'novo-codigo' ? 'gerar' : 'ver', por);
     return NextResponse.json({
