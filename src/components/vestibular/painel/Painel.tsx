@@ -401,6 +401,15 @@ const Painel = () => {
   const [ocupado, setOcupado] = useState(false);
   const [filtroDocumento, setFiltroDocumento] = useState<StatusDocumento | ''>('');
   const [abertas, setAbertas] = useState<Set<number>>(new Set());
+  // Link direto para um candidato (ex.: vindo da Kommo): /vestibular/painel?inscricao=2027100003.
+  // O parâmetro fica na URL durante o login (a senha não muda de página), então abre assim que os dados chegam.
+  const [destino, setDestino] = useState<number | null>(null);
+  useEffect(() => {
+    const numero = Number(new URLSearchParams(window.location.search).get('inscricao'));
+    if (Number.isInteger(numero) && numero > 0) {
+      setDestino(numero);
+    }
+  }, []);
   const alternar = (numero: number, abrir?: boolean) =>
     setAbertas((atual) => {
       const nova = new Set(atual);
@@ -420,6 +429,20 @@ const Painel = () => {
       // sem armazenamento: digita de novo
     }
   }, []);
+
+  useEffect(() => {
+    if (!dados || destino === null) {
+      return;
+    }
+    setAba('inscricoes');
+    setBusca(String(destino));
+    setFiltroDocumento('');
+    setAbertas(new Set([destino]));
+    setDestino(null);
+    requestAnimationFrame(() =>
+      document.getElementById(`inscricao-${destino}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+    );
+  }, [dados, destino]);
 
   const carregar = useCallback(async () => {
     const res = await fetch('/api/vestibular/painel', { cache: 'no-store' });
@@ -644,7 +667,7 @@ const Painel = () => {
                   const celula = 'border-stroke-2 border-b px-3 py-2 align-top';
                   return (
                     <Fragment key={i.numero}>
-                      <tr className="hover:bg-primary-50/40">
+                      <tr id={`inscricao-${i.numero}`} className="hover:bg-primary-50/40">
                         <td className={cn(celula, 'sticky left-0 z-[1] min-w-[240px] bg-white')}>
                           <button
                             type="button"
