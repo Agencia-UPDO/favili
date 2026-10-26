@@ -8,9 +8,11 @@ import {
   linkDeLeitura,
   revisarDocumentos,
 } from '@/utils/vestibular/documentos';
+import { amanha, enviarLembretes } from '@/utils/vestibular/lembretes';
 import {
   historicoCodigo,
   listarInscricoes,
+  listarParaLembrete,
   registrarCodigo,
   statusDocumento,
   trocarCodigo,
@@ -27,6 +29,9 @@ import {
   resultadoPublicado,
 } from '@/utils/vestibular/resultado';
 import { NextResponse } from 'next/server';
+
+// O envio dos lembretes pelo painel espera ~0,6 s por candidato
+export const maxDuration = 300;
 
 // Painel interno da faculdade: inscrições, prévia do resultado, publicação e planilhas (CSV).
 // Só responde com a sessão aberta pela senha de VESTIBULAR_PAINEL_SENHA.
@@ -374,6 +379,14 @@ export async function POST(request: Request) {
       }
     }
     return NextResponse.json({ ok: true, enviadas });
+  }
+  // Plano B do cron da véspera: primeiro conta quem vai receber, depois envia (só quem ainda não recebeu)
+  if (corpo.acao === 'lembretes-previa') {
+    const dia = amanha();
+    return NextResponse.json({ ok: true, dia, pendentes: (await listarParaLembrete(dia)).length });
+  }
+  if (corpo.acao === 'lembretes-enviar') {
+    return NextResponse.json({ ok: true, ...(await enviarLembretes(amanha())) });
   }
   if (corpo.acao === 'publicar') {
     const resultado = await publicarResultado();

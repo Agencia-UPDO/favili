@@ -667,6 +667,47 @@ const Painel = () => {
               className="border-stroke-3 cursor-pointer rounded-full border px-4 py-2.5 text-[14px] font-bold">
               Reenviar para a RD
             </button>
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={async () => {
+                const chamar = async (acao: string) => {
+                  const res = await fetch('/api/vestibular/painel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao }),
+                  }).catch(() => null);
+                  return { ok: !!res?.ok, json: res ? await res.json().catch(() => ({})) : {} };
+                };
+                const previa = await chamar('lembretes-previa');
+                if (!previa.ok) {
+                  window.alert(previa.json.mensagem ?? 'Não deu certo.');
+                  return;
+                }
+                const dia = String(previa.json.dia).split('-').reverse().join('/');
+                if (!previa.json.pendentes) {
+                  window.alert(
+                    `Ninguém para lembrar da prova de ${dia}: todos já receberam ou não há prova nesse dia.`,
+                  );
+                  return;
+                }
+                if (
+                  !window.confirm(
+                    `Enviar agora o lembrete da prova de ${dia} (e-mail + WhatsApp pela RD) para ${previa.json.pendentes} candidato(s) que ainda não receberam?`,
+                  )
+                ) {
+                  return;
+                }
+                const envio = await chamar('lembretes-enviar');
+                window.alert(
+                  envio.ok
+                    ? `Lembretes enviados: ${envio.json.enviados}. Falhas: ${envio.json.falhas}.${envio.json.restantes ? ` Faltaram ${envio.json.restantes}: clique de novo.` : ''}`
+                    : (envio.json.mensagem ?? 'Não deu certo.'),
+                );
+              }}
+              className="border-stroke-3 cursor-pointer rounded-full border px-4 py-2.5 text-[14px] font-bold">
+              Enviar lembretes de amanhã agora
+            </button>
           </div>
           {/* Cabeçalho e coluna do candidato fixos; detalhes menos usados abrem numa linha abaixo */}
           <div className="border-stroke-2 max-h-[75vh] overflow-auto rounded-2xl border">

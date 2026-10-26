@@ -23,11 +23,14 @@ const situacoes: Record<string, string> = {
 // Nunca derruba a inscrição: erro na RD só vai para o log (sem dados pessoais).
 
 const endpoint = 'https://api.rd.services/platform/conversions';
-export type TipoConversao = 'inscricao' | 'atualizacao';
+// - "vestibular-2027-1-lembrete": na véspera da prova (cron /api/vestibular/lembretes), para o WhatsApp do lembrete.
+export type TipoConversao = 'inscricao' | 'atualizacao' | 'lembrete';
 const identificador = (tipo: TipoConversao) =>
-  tipo === 'inscricao'
-    ? process.env.RDSTATION_CONVERSION_VESTIBULAR || 'vestibular-2027-1-inscricao'
-    : process.env.RDSTATION_CONVERSION_VESTIBULAR_ATUALIZACAO || 'vestibular-2027-1-atualizacao';
+  ({
+    inscricao: process.env.RDSTATION_CONVERSION_VESTIBULAR || 'vestibular-2027-1-inscricao',
+    atualizacao: process.env.RDSTATION_CONVERSION_VESTIBULAR_ATUALIZACAO || 'vestibular-2027-1-atualizacao',
+    lembrete: process.env.RDSTATION_CONVERSION_VESTIBULAR_LEMBRETE || 'vestibular-2027-1-lembrete',
+  })[tipo];
 
 // "88999990000" → "+55 88 99999-0000"
 const telefoneRd = (telefone: string) => {

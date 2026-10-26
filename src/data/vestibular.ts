@@ -47,14 +47,14 @@ export const cronograma = [
     extra: 'Escolha o dia e o horário de início: 8h, 10h, 12h, 14h, 16h ou 18h.',
   },
   {
-    etapa: 'Receba seu acesso por e-mail',
+    etapa: 'Receba o lembrete',
     data: '1 dia antes',
-    extra: 'Na véspera da prova, enviamos o link com o seu login e senha. Confira também o spam.',
+    extra: 'Na véspera da prova, você recebe por e-mail e WhatsApp o lembrete com o link. Confira também o spam.',
   },
   {
     etapa: 'Faça a prova on-line',
     data: 'Até 2 horas',
-    extra: 'Entre com seu login e senha e responda as 20 questões.',
+    extra: 'Entre com seu CPF e o código de acesso e responda as 20 questões.',
   },
   { etapa: 'Confira o resultado', data: '24/11', extra: 'Aqui no site, pelo seu número de inscrição.' },
   {
@@ -121,9 +121,9 @@ export const formas: Forma[] = [
         texto: 'Faça a prova em 21 ou 22 de novembro, no horário que você escolher: 8h, 10h, 12h, 14h, 16h ou 18h.',
       },
       {
-        titulo: 'Receba seu acesso por e-mail',
+        titulo: 'Receba o lembrete',
         texto:
-          'Um dia antes da prova, você recebe o link com o seu login e senha. Fique de olho também na caixa de spam.',
+          'Um dia antes da prova, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e o código de acesso. Fique de olho também na caixa de spam.',
       },
       {
         titulo: 'Faça a prova on-line',
@@ -409,12 +409,12 @@ export const faq = [
   {
     pergunta: 'Onde e como eu faço a prova?',
     resposta:
-      'A prova é 100% on-line. Um dia antes da prova, você recebe por e-mail o link com o seu login e senha. Você entra no dia e no horário que escolheu na inscrição (21 ou 22 de novembro; 8h, 10h, 12h, 14h, 16h ou 18h).',
+      'A prova é 100% on-line. Um dia antes da prova, você recebe por e-mail e WhatsApp o lembrete com o link. Você entra com seu CPF e o código de acesso que recebeu na inscrição, no dia e no horário que escolheu na inscrição (21 ou 22 de novembro; 8h, 10h, 12h, 14h, 16h ou 18h).',
   },
   {
-    pergunta: 'Não recebi o e-mail com login e senha. O que eu faço?',
+    pergunta: 'Perdi meu código de acesso ou não recebi o lembrete. O que eu faço?',
     resposta:
-      'O e-mail chega um dia antes da prova. Confira a caixa de spam e as abas de promoções e, se não encontrar, fale com a Faculdade Vidal pelo (88) 3423-6090.',
+      'O código aparece na tela e chega por e-mail logo depois da inscrição, e o lembrete chega um dia antes da prova. Confira a caixa de spam e as abas de promoções. Se perdeu o código, use "Esqueci meu código" em Minha inscrição: ele chega no seu e-mail. Se ainda precisar de ajuda, fale com a Faculdade Vidal pelo (88) 3423-6090.',
   },
   {
     pergunta: 'Quanto tempo eu tenho para fazer a prova?',

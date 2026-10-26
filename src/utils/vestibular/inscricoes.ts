@@ -44,6 +44,8 @@ export type DadosProva = {
   acertos?: number | null;
   nota?: number | null;
   nota_matematica?: number | null;
+  // Dia da prova para o qual o lembrete da véspera já saiu (troca de dia: sai o do dia novo)
+  lembrete_enviado_para?: string | null;
 };
 
 // Documento enviado pelo candidato (o arquivo fica na pasta privada; aqui só os dados)
@@ -274,6 +276,28 @@ export const listarInscricoes = async (): Promise<Inscricao[]> => {
     throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
   }
   return (await res.json()) as Inscricao[];
+};
+
+// Quem faz a prova no dia `dia` (AAAA-MM-DD), ainda não começou e não recebeu o lembrete da véspera para esse dia
+export const listarParaLembrete = async (dia: string): Promise<Inscricao[]> => {
+  const precisa = (i: Inscricao) =>
+    i.faz_prova && i.dia_prova === dia && !i.prova_inicio && i.lembrete_enviado_para !== dia;
+  const sb = supabase();
+  if (!sb) {
+    return (await lerLocal()).filter(precisa);
+  }
+  const filtro = new URLSearchParams({
+    faz_prova: 'is.true',
+    dia_prova: `eq.${dia}`,
+    prova_inicio: 'is.null',
+    or: `(lembrete_enviado_para.is.null,lembrete_enviado_para.neq.${dia})`,
+    order: 'numero.asc',
+  });
+  const res = await fetch(`${sb.url}?${filtro}`, { headers: sb.headers, cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
+  }
+  return ((await res.json()) as Inscricao[]).filter(precisa);
 };
 
 // ---------- Configurações (resultado publicado) ----------
