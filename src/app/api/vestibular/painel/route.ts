@@ -326,7 +326,8 @@ export async function POST(request: Request) {
     if (decisao === 'recusado' && !obs) {
       return negar('Escreva o motivo para o candidato saber o que mandar.', 400);
     }
-    await revisarDocumentos(inscricao, decisao, obs, por);
+    // Situação do documento chega à RD (conversão de atualização, sem disparar WhatsApp)
+    await enviarConversaoRd(await revisarDocumentos(inscricao, decisao, obs, por), 'atualizacao');
     return NextResponse.json({ ok: true });
   }
   if (corpo.acao === 'enem') {
@@ -335,7 +336,7 @@ export async function POST(request: Request) {
       return negar('Inscrição do Enem não encontrada.', 400);
     }
     try {
-      await confirmarNotasEnem(inscricao, corpo.ano, corpo.notas, por);
+      await enviarConversaoRd(await confirmarNotasEnem(inscricao, corpo.ano, corpo.notas, por), 'atualizacao');
     } catch (e) {
       if (e instanceof ErroDocumento) {
         return negar(e.message, 400);

@@ -9,7 +9,8 @@ import {
   removerDocumento,
   salvarNotasEnem,
 } from '@/utils/vestibular/documentos';
-import { visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { statusDocumento, visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
 import { soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
@@ -55,6 +56,9 @@ export async function POST(request: Request) {
         { caminho: texto(corpo.caminho, 120), nome: texto(corpo.nome, 120) },
         vestibular.fimInscricoes,
       );
+      if (statusDocumento(atualizada) !== statusDocumento(inscricao)) {
+        await enviarConversaoRd(atualizada, 'atualizacao');
+      }
       return NextResponse.json({ ok: true, inscricao: visaoCandidato(atualizada) });
     }
     if (corpo.acao === 'notas') {
