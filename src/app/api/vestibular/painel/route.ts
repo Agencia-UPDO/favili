@@ -403,9 +403,11 @@ export async function POST(request: Request) {
     if (bolsa !== null && bolsa !== 0 && !(bolsa in notaMinimaBolsa)) {
       return negar('Faixa de bolsa inválida.', 400);
     }
+    const situacao = corpo.situacao === 'aprovado' || corpo.situacao === 'reprovado' ? corpo.situacao : null;
     await ajustar(numero, {
-      situacao: corpo.situacao === 'aprovado' || corpo.situacao === 'reprovado' ? corpo.situacao : null,
-      bolsa,
+      situacao,
+      // Reprovado não tem bolsa
+      bolsa: situacao === 'reprovado' ? null : bolsa,
       obs: typeof corpo.obs === 'string' ? corpo.obs.trim().slice(0, 300) : '',
     });
     return NextResponse.json({ ok: true });

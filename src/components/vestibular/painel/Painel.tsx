@@ -58,6 +58,8 @@ type Dados = {
     classificacaoGeral: number | null;
     classificacaoOferta: number | null;
     bolsa: number | null;
+    bolsaRegra?: number | null;
+    avisos?: string[];
   }[];
   publicadoEm: string | null;
 };
@@ -69,7 +71,9 @@ const faixasBolsa = Object.keys(notaMinimaBolsa)
   .map(Number)
   .sort((a, b) => b - a);
 
-// Ajuste manual de uma linha (só antes de publicar): situação, faixa de bolsa e observação
+// Ajuste manual de uma linha (só antes de publicar): situação, faixa de bolsa e observação.
+// A bolsa pode ser escolhida mesmo com a situação "pela nota": para quem a nota reprovou, escolher uma bolsa aprova.
+// Reprovar limpa a bolsa. Fugir da nota mínima ou da cota só gera aviso (vem do servidor em linha.avisos).
 const AjusteLinha = ({
   linha,
   travado,
@@ -92,7 +96,10 @@ const AjusteLinha = ({
         value={atual.situacao ?? ''}
         disabled={travado}
         aria-label={`Situação da inscrição ${linha.numero}`}
-        onChange={(e) => salvar({ ...atual, obs, situacao: (e.target.value || null) as Ajuste['situacao'] })}
+        onChange={(e) => {
+          const situacao = (e.target.value || null) as Ajuste['situacao'];
+          salvar({ ...atual, obs, situacao, bolsa: situacao === 'reprovado' ? null : atual.bolsa });
+        }}
         className={cn(campo, atual.situacao && 'border-vest-blue text-vest-blue font-bold')}>
         <option value="">Situação: pela nota</option>
         <option value="aprovado">Aprovar</option>
@@ -100,11 +107,21 @@ const AjusteLinha = ({
       </select>
       <select
         value={atual.bolsa ?? ''}
-        disabled={travado || !linha.aprovado}
+        disabled={travado || atual.situacao === 'reprovado'}
+        title={atual.situacao === 'reprovado' ? 'Reprovado não tem bolsa' : undefined}
         aria-label={`Bolsa da inscrição ${linha.numero}`}
-        onChange={(e) => salvar({ ...atual, obs, bolsa: e.target.value === '' ? null : Number(e.target.value) })}
+        onChange={(e) => {
+          const bolsa = e.target.value === '' ? null : Number(e.target.value);
+          // Bolsa para quem a nota reprovou: passa a ser aprovado
+          const situacao = bolsa !== null && !linha.aprovado ? 'aprovado' : atual.situacao;
+          salvar({ ...atual, obs, situacao, bolsa });
+        }}
         className={cn(campo, atual.bolsa !== null && 'border-vest-blue text-vest-blue font-bold')}>
-        <option value="">Bolsa: pela nota</option>
+        <option value="">
+          {linha.aprovado
+            ? `Pela regra (${linha.bolsaRegra ? `${linha.bolsaRegra}%` : 'sem bolsa, 40%'})`
+            : 'Pela regra (reprovado)'}
+        </option>
         {faixasBolsa.map((p) => (
           <option key={p} value={p}>
             {p}%
@@ -122,6 +139,11 @@ const AjusteLinha = ({
         onBlur={() => obs !== atual.obs && salvar({ ...atual, obs })}
         className={cn(campo, 'w-[140px]')}
       />
+      {(linha.avisos ?? []).map((a) => (
+        <span key={a} className="w-full rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+          ⚠ {a}
+        </span>
+      ))}
       {linha.ajuste && (
         <span
           title={`Ajustado em ${dataHora(linha.ajuste.em)}`}
@@ -905,6 +927,20 @@ const Painel = () => {
             {dados.previa.length - aprovados.length} reprovados · {dados.previa.filter((l) => l.ajuste).length} com
             ajuste manual
           </p>
+          {dados.previa.some((l) => l.avisos?.length) && (
+            <div className="rounded-2xl bg-amber-50 p-3 text-[13px] text-amber-900">
+              <p className="font-bold">Ajustes fora da regra (confira antes de publicar):</p>
+              <ul className="mt-1 space-y-0.5">
+                {dados.previa
+                  .filter((l) => l.avisos?.length)
+                  .map((l) => (
+                    <li key={l.numero}>
+                      nº {l.numero} · {l.nome}: {l.avisos?.join('; ')}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
           <div className="border-stroke-2 max-h-[75vh] overflow-auto rounded-2xl border">
             <table className="w-full min-w-[1240px] text-left text-[13px]">
               <thead className="text-secondary/60 border-stroke-2 sticky top-0 z-10 border-b bg-white">

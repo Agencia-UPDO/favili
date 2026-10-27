@@ -14,7 +14,8 @@ import { gravarConfig, Inscricao, lerConfig, listarInscricoes } from './inscrico
 // - aprovado sem bolsa fica com os 40% garantidos; quem não fez a prova não aparece no resultado;
 // - ajustes manuais do painel (só antes de publicar) vencem as regras acima: a situação forçada decide se a
 //   pessoa entra na classificação, e a bolsa forçada é dada antes da distribuição automática, ocupando uma vaga
-//   do curso daquela faixa, se houver.
+//   do curso daquela faixa, se houver. O painel avisa (sem bloquear) quando a bolsa forçada fica abaixo da nota
+//   mínima da faixa ou passa da cota do curso, e mostra a bolsa que a regra daria (bolsaRegra).
 
 export type Situacao = 'aprovado' | 'reprovado';
 
@@ -39,6 +40,9 @@ export type LinhaResultado = {
   classificacaoGeral: number | null;
   classificacaoOferta: number | null;
   bolsa: number | null;
+  // Só no painel (não vão para o resultado publicado): bolsa pela regra, sem a bolsa forçada, e avisos do ajuste
+  bolsaRegra?: number | null;
+  avisos?: string[];
 };
 
 export type Resultado = {
@@ -80,7 +84,7 @@ const comparar = (a: Inscricao, b: Inscricao) =>
 
 const alcanca = (nota: number, percentual: number) => nota >= (notaMinimaBolsa[percentual] ?? Infinity);
 
-export const calcularResultado = (inscricoes: Inscricao[], ajustes: Ajustes = {}): Resultado => {
+export const calcularResultado = (inscricoes: Inscricao[], ajustes: Ajustes = {}, comRegra = true): Resultado => {
   const entregues = inscricoes.filter((i) => i.prova_entregue_em).sort(comparar);
   const aprova = (i: Inscricao) => {
     const situacao = ajustes[i.numero]?.situacao;
@@ -100,6 +104,9 @@ export const calcularResultado = (inscricoes: Inscricao[], ajustes: Ajustes = {}
   // 1) bolsas forçadas no painel (ocupam uma vaga daquela faixa no curso, se houver)
   const bolsas = new Map<number, number>();
   const definidas = new Set<number>();
+  const avisos = new Map<number, string[]>();
+  const avisar = (numero: number, texto: string) => avisos.set(numero, [...(avisos.get(numero) ?? []), texto]);
+  let integraisManuais = 0;
   for (const i of aprovados) {
     const bolsa = ajustes[i.numero]?.bolsa;
     if (bolsa === null || bolsa === undefined) {
@@ -108,9 +115,26 @@ export const calcularResultado = (inscricoes: Inscricao[], ajustes: Ajustes = {}
     definidas.add(i.numero);
     if (bolsa > 0) {
       bolsas.set(i.numero, bolsa);
+      if (!alcanca(i.nota ?? 0, bolsa)) {
+        avisar(i.numero, `Abaixo da nota mínima (mín. ${notaMinimaBolsa[bolsa]} para ${bolsa}%)`);
+      }
+      if (bolsa === bolsaIntegral) {
+        if (++integraisManuais > 1) {
+          avisar(i.numero, 'Mais de uma bolsa de 100% (o regulamento prevê uma)');
+        }
+        continue;
+      }
       const lista = vagas.get(i.oferta_id) ?? [];
       if (limitarQuantidades && lista.includes(bolsa)) {
         lista.splice(lista.indexOf(bolsa), 1);
+      } else if (limitarQuantidades) {
+        const cota = (bolsasPorOferta[i.oferta_id] ?? []).filter((p) => p === bolsa).length;
+        avisar(
+          i.numero,
+          cota
+            ? `Passa da cota do curso: ${cota} ${cota === 1 ? 'bolsa' : 'bolsas'} de ${bolsa}% e já foram usadas`
+            : `O curso não tem bolsa de ${bolsa}% no regulamento`,
+        );
       }
     }
   }
@@ -145,6 +169,17 @@ export const calcularResultado = (inscricoes: Inscricao[], ajustes: Ajustes = {}
     }
   }
 
+  // Bolsa que a regra daria, sem as bolsas forçadas (mantém as situações forçadas)
+  const regra = comRegra
+    ? new Map(
+        calcularResultado(
+          inscricoes,
+          Object.fromEntries(Object.entries(ajustes).map(([n, a]) => [n, { ...a, bolsa: null }])),
+          false,
+        ).linhas.map((l) => [l.numero, l.bolsa]),
+      )
+    : null;
+
   const linha = (i: Inscricao, aprovado: boolean, posicao: number | null): LinhaResultado => {
     const oferta = ofertas.find((o) => o.id === i.oferta_id);
     return {
@@ -161,6 +196,7 @@ export const calcularResultado = (inscricoes: Inscricao[], ajustes: Ajustes = {}
         ? (porOferta.get(i.oferta_id) ?? []).findIndex((x) => x.numero === i.numero) + 1
         : null,
       bolsa: aprovado ? (bolsas.get(i.numero) ?? null) : null,
+      ...(regra ? { bolsaRegra: regra.get(i.numero) ?? null, avisos: avisos.get(i.numero) ?? [] } : {}),
     };
   };
 
@@ -176,7 +212,18 @@ export const previaResultado = async () => calcularResultado(await listarInscric
 
 // Publicar congela o resultado: mudanças posteriores nas inscrições não alteram o que foi divulgado
 export const publicarResultado = async () => {
-  const resultado = { ...(await previaResultado()), publicadoEm: new Date().toISOString() };
+  const previa = await previaResultado();
+  const resultado = {
+    ...previa,
+    // Campos de conferência do painel não vão para o resultado publicado
+    linhas: previa.linhas.map((l) => {
+      const publica = { ...l };
+      delete publica.bolsaRegra;
+      delete publica.avisos;
+      return publica;
+    }),
+    publicadoEm: new Date().toISOString(),
+  };
   await gravarConfig(chaveResultado, resultado);
   return resultado;
 };
