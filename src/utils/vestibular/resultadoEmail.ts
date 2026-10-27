@@ -2,13 +2,11 @@ import 'server-only';
 
 import { emailConfigurado, enviarResultado } from './email';
 import { atualizar, Inscricao, listarInscricoes } from './inscricoes';
-import { enviarConversaoRd } from './rd';
 import { resultadoPublicado } from './resultado';
 
 // E-mail do resultado, enviado pela equipe no painel DEPOIS de publicar: só para os aprovados do resultado
 // publicado (a bolsa vem dele, não da prévia). Cada envio marca resultado_email_em; o envio em lote pula quem já
-// recebeu e o botão individual permite reenviar. Junto, a conversão "vestibular-2027-1-resultado" na RD (se a RD
-// recusar, o e-mail vale do mesmo jeito).
+// recebeu e o botão individual permite reenviar. O resultado vai só por e-mail (não passa pela RD).
 
 export class ErroResultadoEmail extends Error {}
 
@@ -24,10 +22,6 @@ const enviarUm = async (i: Inscricao, bolsa: number | null) => {
   if (!(await enviarResultado(i, bolsa))) {
     return false;
   }
-  await enviarConversaoRd(i, 'resultado', {
-    cf_vestibular_resultado: bolsa ? 'Aprovado com bolsa' : 'Aprovado 40%',
-    cf_vestibular_bolsa: `${bolsa ?? 40}%`,
-  });
   await atualizar(i, { resultado_email_em: new Date().toISOString() });
   return true;
 };

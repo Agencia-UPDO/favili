@@ -24,15 +24,12 @@ const situacoes: Record<string, string> = {
 
 const endpoint = 'https://api.rd.services/platform/conversions';
 // - "vestibular-2027-1-lembrete": em 19/11, antes da prova (cron /api/vestibular/lembretes), para o WhatsApp do lembrete.
-// - "vestibular-2027-1-resultado": quando a equipe envia o e-mail do resultado (só aprovados), com
-//   cf_vestibular_resultado e cf_vestibular_bolsa.
-export type TipoConversao = 'inscricao' | 'atualizacao' | 'lembrete' | 'resultado';
+export type TipoConversao = 'inscricao' | 'atualizacao' | 'lembrete';
 const identificador = (tipo: TipoConversao) =>
   ({
     inscricao: process.env.RDSTATION_CONVERSION_VESTIBULAR || 'vestibular-2027-1-inscricao',
     atualizacao: process.env.RDSTATION_CONVERSION_VESTIBULAR_ATUALIZACAO || 'vestibular-2027-1-atualizacao',
     lembrete: process.env.RDSTATION_CONVERSION_VESTIBULAR_LEMBRETE || 'vestibular-2027-1-lembrete',
-    resultado: process.env.RDSTATION_CONVERSION_VESTIBULAR_RESULTADO || 'vestibular-2027-1-resultado',
   })[tipo];
 
 // "88999990000" → "+55 88 99999-0000"
@@ -50,9 +47,8 @@ const semArtigo = (t: string) => t.replace(/^(o|a|os|as) /, '').replace(/^./, (c
 const semVazios = (o: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v !== null && v !== undefined));
 
-export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao', extras: Record<string, string> = {}) =>
+export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao') =>
   semVazios({
-    ...extras,
     conversion_identifier: identificador(tipo),
     email: i.email,
     name: i.nome,
@@ -87,11 +83,7 @@ export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao', extra
       i.enem_media != null && i.enem_notas?.redacao != null ? String(i.enem_notas.redacao) : '',
   });
 
-export const enviarConversaoRd = async (
-  i: Inscricao,
-  tipo: TipoConversao = 'inscricao',
-  extras: Record<string, string> = {},
-) => {
+export const enviarConversaoRd = async (i: Inscricao, tipo: TipoConversao = 'inscricao') => {
   const chave = process.env.RDSTATION_API_KEY;
   if (!chave) {
     return false;
@@ -100,7 +92,7 @@ export const enviarConversaoRd = async (
     const res = await fetch(`${endpoint}?api_key=${encodeURIComponent(chave)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ event_type: 'CONVERSION', event_family: 'CDP', payload: payloadRd(i, tipo, extras) }),
+      body: JSON.stringify({ event_type: 'CONVERSION', event_family: 'CDP', payload: payloadRd(i, tipo) }),
       // Não segura o candidato esperando a RD
       signal: AbortSignal.timeout(5000),
     });
