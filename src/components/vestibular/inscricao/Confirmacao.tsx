@@ -34,7 +34,6 @@ export type InscricaoConfirmada = {
   horaProva: string | null;
   provaIniciada?: boolean;
   provaEntregue?: boolean;
-  liberadaAgora?: boolean;
 } & Omit<InscricaoComDocumentos, 'forma'>;
 
 // Comprovante da inscrição, com o número e o código de acesso. Aparece logo depois da inscrição (modo "nova")

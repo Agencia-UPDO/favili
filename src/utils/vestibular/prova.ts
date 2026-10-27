@@ -5,7 +5,7 @@ import bancoPortugues from '@/data/prova/banco-portugues.json';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { atualizar, Inscricao, liberadaAgora } from './inscricoes';
+import { atualizar, Inscricao } from './inscricoes';
 
 // Motor da prova on-line. O banco de questões e o gabarito só existem no servidor: o navegador recebe as
 // questões sorteadas para o candidato, sem a resposta certa, e cada resposta é gravada aqui.
@@ -114,7 +114,7 @@ export const situacao = (i: Inscricao, agora = Date.now()): Situacao => {
   if (i.prova_inicio) {
     return 'em-andamento';
   }
-  if (modoTeste || liberadaAgora(i)) {
+  if (modoTeste) {
     return 'liberada';
   }
   if (agora < inicioHorario(i).getTime()) {
@@ -154,14 +154,10 @@ export const entregarSeVenceu = async (i: Inscricao, agora = Date.now()) => {
 };
 
 // Fim da prova de quem começa agora: o fim da janela, mesmo começando depois (separado para os testes)
-export const fimDaProva = (i: Inscricao, agora: number) =>
-  modoTeste || liberadaAgora(i) ? agora + duracaoMs : fimDaJanela(i).getTime();
+export const fimDaProva = (i: Inscricao, agora: number) => (modoTeste ? agora + duracaoMs : fimDaJanela(i).getTime());
 
 export const iniciar = async (i: Inscricao, agora = Date.now()) => {
   const fim = fimDaProva(i, agora);
-  if (liberadaAgora(i)) {
-    console.log('[vestibular prova] liberação antecipada (VESTIBULAR_LIBERAR_AGORA) usada pela inscrição', i.numero);
-  }
   return atualizar(i, {
     prova_inicio: new Date(agora).toISOString(),
     prova_fim: new Date(fim).toISOString(),
