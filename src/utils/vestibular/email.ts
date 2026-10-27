@@ -132,13 +132,41 @@ const aviso = (titulo: string, texto: string) => `
   </table>
 </td></tr>`;
 
-const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d: Dados; confirmacao: boolean }) => {
+// Bloco extra (resultado): título, parágrafos e lista, em HTML e texto
+type Bloco = { titulo: string; paragrafos: string[]; lista?: string[] };
+
+const blocoHtml = (b: Bloco) => `
+<tr><td style="padding:0 32px 20px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2f6fd;border-radius:14px">
+    <tr><td style="${fonte}padding:16px 18px;font-size:14px;line-height:21px;color:${azul}">
+      <strong style="font-size:15px">${escapar(b.titulo)}</strong>
+      ${b.paragrafos.map((p) => `<p style="margin:8px 0 0">${escapar(p)}</p>`).join('')}
+      ${b.lista ? `<ul style="margin:8px 0 0;padding-left:18px">${b.lista.map((l) => `<li style="margin:2px 0">${escapar(l)}</li>`).join('')}</ul>` : ''}
+    </td></tr>
+  </table>
+</td></tr>`;
+
+const blocoTexto = (b: Bloco) => [b.titulo, ...b.paragrafos, ...(b.lista ?? []).map((l) => `- ${l}`)].join('\n');
+
+const montar = (opcoes: {
+  preheader: string;
+  titulo: string;
+  abertura: string;
+  d: Dados;
+  confirmacao: boolean;
+  // Resultado: sem a linha da prova, com linhas e blocos a mais
+  semProva?: boolean;
+  linhasExtras?: [string, string][];
+  blocos?: Bloco[];
+}) => {
   const { d } = opcoes;
+  const prova = opcoes.semProva ? null : d.prova;
   const linhas = [
     linha('Inscrição nº', String(d.numero), linkAreaCandidato),
     d.curso ? linha('Curso', d.curso) : '',
+    ...(opcoes.linhasExtras ?? []).map(([rotulo, valor]) => linha(rotulo, valor)),
     opcoes.confirmacao && d.forma ? linha('Forma de ingresso', d.forma) : '',
-    d.prova ? linha('Prova on-line', d.prova.quando) : '',
+    prova ? linha('Prova on-line', prova.quando) : '',
   ].join('');
 
   const html = `<!doctype html>
@@ -180,12 +208,14 @@ const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d
   </td></tr>
 
   ${
-    d.prova
+    prova
       ? `<tr><td style="${fonte}padding:12px 32px 20px;font-size:14px;line-height:21px;color:${azul}">
-    ⏰ ${escapar(d.prova.entrar)}<br>⌛ ${escapar(d.prova.fim)}
+    ⏰ ${escapar(prova.entrar)}<br>⌛ ${escapar(prova.fim)}
   </td></tr>`
-      : ''
+      : '<tr><td style="padding:0 0 12px"></td></tr>'
   }
+
+  ${(opcoes.blocos ?? []).map(blocoHtml).join('')}
 
   ${
     opcoes.confirmacao && d.documento
@@ -222,10 +252,12 @@ const montar = (opcoes: { preheader: string; titulo: string; abertura: string; d
     `Seu código de acesso: ${d.codigo}`,
     `Inscrição nº ${d.numero}`,
     d.curso ? `Curso: ${d.curso}` : '',
+    ...(opcoes.linhasExtras ?? []).map(([rotulo, valor]) => `${rotulo}: ${valor}`),
     opcoes.confirmacao && d.forma ? `Forma de ingresso: ${d.forma}` : '',
-    d.prova ? `Prova on-line: ${d.prova.quando}` : '',
-    d.prova ? d.prova.entrar : '',
-    d.prova ? d.prova.fim : '',
+    prova ? `Prova on-line: ${prova.quando}` : '',
+    prova ? prova.entrar : '',
+    prova ? prova.fim : '',
+    ...(opcoes.blocos ?? []).flatMap((b) => ['', blocoTexto(b)]),
     opcoes.confirmacao && d.documento ? `Último passo: envie ${d.documento} em Minha inscrição, até 20/11 às 18h.` : '',
     '',
     `Minha inscrição: ${linkAreaCandidato}`,
@@ -284,6 +316,84 @@ export const emailLembrete = (i: Inscricao) =>
 export const enviarLembrete = (i: Inscricao) => {
   const { html, texto } = emailLembrete(i);
   return enviar(i.email, `Lembrete: sua prova está chegando · ${vestibular.nome}`, html, texto).catch(() => false);
+};
+
+// ---------- Resultado (só aprovados; enviado pelo painel depois de publicar) ----------
+// Regras do regulamento 2027.1: matrícula dos contemplados de 24/11 a 04/12/2026 (Art. 26), sob pena de perder a bolsa
+// (Art. 27); documentos do Art. 28; bolsas parciais pagam R$ 150,00 de matrícula e ganham a 1ª mensalidade
+// (Arts. 30 e 32); a de 100% é isenta (Art. 31). Aprovado sem bolsa: 40% de desconto da campanha. Nunca mostra nota.
+const documentosMatricula = [
+  'Histórico Escolar do Ensino Médio',
+  'Certificado de Conclusão do Ensino Médio',
+  'Documento oficial de identidade e CPF',
+  'Título de Eleitor e comprovante de quitação eleitoral, quando aplicável',
+  'Comprovante de residência',
+  'Certidão de nascimento ou casamento',
+  'Certificado de Reservista, quando aplicável',
+];
+
+export const emailResultado = (i: Inscricao, bolsa: number | null) => {
+  const turno = ofertas.find((o) => o.id === i.oferta_id)?.turno ?? i.turno;
+  const linhasExtras: [string, string][] = [
+    ['Turno', turno],
+    [
+      'Resultado',
+      bolsa ? `Aprovado com bolsa de ${bolsa}%` : `Aprovado com ${vestibular.descontoGarantido} de desconto`,
+    ],
+  ];
+  const documentos: Bloco = {
+    titulo: 'Documentos para a matrícula',
+    paragrafos: ['Leve os documentos abaixo (Art. 28 do regulamento):'],
+    lista: documentosMatricula,
+  };
+  if (bolsa) {
+    const pagamento =
+      bolsa === 100
+        ? 'Com a bolsa de 100%, você está isento do pagamento da matrícula.'
+        : `No ato da matrícula, você paga o valor promocional de R$ 150,00 e a mensalidade seguinte é grátis. A partir da 2ª mensalidade depois da matrícula, vale a sua bolsa de ${bolsa}%.`;
+    return montar({
+      preheader: `Parabéns! Você conquistou bolsa de ${bolsa}% no ${vestibular.nome}.`,
+      titulo: `Parabéns! Bolsa de ${bolsa}%`,
+      abertura: `Você foi aprovado no ${vestibular.nome} e conquistou uma bolsa de ${bolsa}% no curso abaixo.`,
+      d: dados(i),
+      confirmacao: false,
+      semProva: true,
+      linhasExtras,
+      blocos: [
+        {
+          titulo: `Matrícula: de ${vestibular.matricula}`,
+          paragrafos: [pagamento, 'Atenção: quem não fizer a matrícula dentro do prazo perde o direito à bolsa.'],
+        },
+        documentos,
+      ],
+    });
+  }
+  return montar({
+    preheader: `Parabéns! Você foi aprovado no ${vestibular.nome}.`,
+    titulo: 'Parabéns! Você foi aprovado',
+    abertura: `Você foi aprovado no ${vestibular.nome} e garantiu ${vestibular.descontoGarantido} de desconto nas mensalidades do curso abaixo.`,
+    d: dados(i),
+    confirmacao: false,
+    semProva: true,
+    linhasExtras,
+    blocos: [
+      {
+        titulo: 'Próximo passo: a matrícula',
+        paragrafos: [
+          `Fale com a Faculdade Vidal pelo ${instituicao.telefone} para fazer a sua matrícula com ${vestibular.descontoGarantido} de desconto.`,
+        ],
+      },
+      documentos,
+    ],
+  });
+};
+
+export const enviarResultado = (i: Inscricao, bolsa: number | null) => {
+  const { html, texto } = emailResultado(i, bolsa);
+  const assunto = bolsa
+    ? `Parabéns! Você conquistou bolsa de ${bolsa}% · ${vestibular.nome}`
+    : `Parabéns! Você foi aprovado · ${vestibular.nome}`;
+  return enviar(i.email, assunto, html, texto).catch(() => false);
 };
 
 // Depois de trocar o código (painel) ou o dia/horário (Minha inscrição); só se o e-mail estiver configurado

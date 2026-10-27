@@ -46,6 +46,8 @@ export type DadosProva = {
   nota_matematica?: number | null;
   // Dia da prova para o qual o lembrete (19/11) já saiu (troca de dia: o painel manda o do dia novo)
   lembrete_enviado_para?: string | null;
+  // Quando o e-mail do resultado foi enviado pelo painel (só aprovados)
+  resultado_email_em?: string | null;
 };
 
 // Documento enviado pelo candidato (o arquivo fica na pasta privada; aqui só os dados)

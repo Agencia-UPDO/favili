@@ -60,6 +60,7 @@ type Dados = {
     bolsa: number | null;
     bolsaRegra?: number | null;
     avisos?: string[];
+    resultadoEmailEm: string | null;
   }[];
   publicadoEm: string | null;
 };
@@ -915,6 +916,49 @@ const Painel = () => {
                 Tirar do ar
               </button>
             )}
+            {dados.publicadoEm && (
+              <button
+                type="button"
+                disabled={ocupado}
+                onClick={async () => {
+                  const chamar = async (corpo: Record<string, unknown>) => {
+                    const res = await fetch('/api/vestibular/painel', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(corpo),
+                    }).catch(() => null);
+                    return { ok: !!res?.ok, json: res ? await res.json().catch(() => ({})) : {} };
+                  };
+                  const previa = await chamar({ acao: 'resultado-email-previa' });
+                  if (!previa.ok) {
+                    window.alert(previa.json.mensagem ?? 'Não deu certo.');
+                    return;
+                  }
+                  if (!previa.json.pendentes) {
+                    window.alert('Todos os aprovados já receberam o e-mail do resultado.');
+                    return;
+                  }
+                  if (
+                    !window.confirm(
+                      `Enviar o e-mail do resultado para ${previa.json.pendentes} aprovado(s) que ainda não receberam? Vai também para a RD (WhatsApp).`,
+                    )
+                  ) {
+                    return;
+                  }
+                  setOcupado(true);
+                  const envio = await chamar({ acao: 'resultado-email-todos' });
+                  setOcupado(false);
+                  window.alert(
+                    envio.ok
+                      ? `E-mails enviados: ${envio.json.enviados}. Falhas: ${envio.json.falhas}.${envio.json.restantes ? ` Faltaram ${envio.json.restantes}: clique de novo.` : ''}`
+                      : (envio.json.mensagem ?? 'Não deu certo.'),
+                  );
+                  await carregar();
+                }}
+                className="bg-vest-blue cursor-pointer rounded-full px-6 py-3 font-bold text-white disabled:opacity-60">
+                Enviar e-mail aos aprovados que ainda não receberam
+              </button>
+            )}
             <a
               href="/api/vestibular/painel?planilha=resultado"
               className="bg-vest-blue rounded-full px-6 py-3 font-bold text-white">
@@ -977,7 +1021,35 @@ const Painel = () => {
                     <td className="px-2 py-2">{l.oferta}</td>
                     <td className="px-2 py-2">{l.nota.toFixed(1)}</td>
                     <td className="px-2 py-2">{l.notaMatematica.toFixed(1)}</td>
-                    <td className="px-2 py-2 font-bold">{faixa(l)}</td>
+                    <td className="px-2 py-2 font-bold">
+                      {faixa(l)}
+                      {dados.publicadoEm && l.aprovado && (
+                        <span className="mt-1 block font-normal">
+                          {l.resultadoEmailEm && (
+                            <span className="block text-[11px] text-green-700">
+                              E-mail enviado em {dataHora(l.resultadoEmailEm)}
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            disabled={ocupado}
+                            onClick={async () => {
+                              if (
+                                l.resultadoEmailEm &&
+                                !window.confirm(`${l.nome} já recebeu o e-mail do resultado. Enviar de novo?`)
+                              ) {
+                                return;
+                              }
+                              if (await acao({ acao: 'resultado-email', numero: l.numero })) {
+                                await carregar();
+                              }
+                            }}
+                            className="text-vest-blue cursor-pointer text-[12px] font-bold underline-offset-2 hover:underline disabled:opacity-50">
+                            {l.resultadoEmailEm ? 'Reenviar e-mail' : 'Enviar e-mail do resultado'}
+                          </button>
+                        </span>
+                      )}
+                    </td>
                     <td className="px-2 py-2">
                       <AjusteLinha
                         key={JSON.stringify(l.ajuste)}

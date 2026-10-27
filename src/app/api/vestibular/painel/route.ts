@@ -10,6 +10,12 @@ import {
 } from '@/utils/vestibular/documentos';
 import { enviarLembretes, pendentesLembrete } from '@/utils/vestibular/lembretes';
 import {
+  enviarResultadoPara,
+  enviarResultadoTodos,
+  ErroResultadoEmail,
+  pendentesResultado,
+} from '@/utils/vestibular/resultadoEmail';
+import {
   historicoCodigo,
   listarInscricoes,
   registrarCodigo,
@@ -281,7 +287,14 @@ export async function GET(request: Request) {
     // A prévia leva os dados completos do candidato: o painel é interno (a página pública usa só as iniciais)
     previa: previa.linhas.map((l) => {
       const i = porNumero.get(l.numero);
-      return { ...l, nome: i?.nome ?? '', cpf: i?.cpf ?? '', email: i?.email ?? '', celular: i?.celular ?? '' };
+      return {
+        ...l,
+        nome: i?.nome ?? '',
+        cpf: i?.cpf ?? '',
+        email: i?.email ?? '',
+        celular: i?.celular ?? '',
+        resultadoEmailEm: i?.resultado_email_em ?? null,
+      };
     }),
     publicadoEm: publicado?.publicadoEm ?? null,
   });
@@ -385,6 +398,28 @@ export async function POST(request: Request) {
   }
   if (corpo.acao === 'lembretes-enviar') {
     return NextResponse.json({ ok: true, ...(await enviarLembretes()) });
+  }
+  // E-mail do resultado (só aprovados do resultado publicado): individual, contagem e lote
+  if (
+    corpo.acao === 'resultado-email' ||
+    corpo.acao === 'resultado-email-previa' ||
+    corpo.acao === 'resultado-email-todos'
+  ) {
+    try {
+      if (corpo.acao === 'resultado-email') {
+        await enviarResultadoPara(Number(corpo.numero));
+        return NextResponse.json({ ok: true });
+      }
+      if (corpo.acao === 'resultado-email-previa') {
+        return NextResponse.json({ ok: true, pendentes: (await pendentesResultado()).length });
+      }
+      return NextResponse.json({ ok: true, ...(await enviarResultadoTodos()) });
+    } catch (e) {
+      if (e instanceof ErroResultadoEmail) {
+        return negar(e.message, 409);
+      }
+      throw e;
+    }
   }
   if (corpo.acao === 'publicar') {
     const resultado = await publicarResultado();
