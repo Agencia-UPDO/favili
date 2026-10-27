@@ -245,6 +245,15 @@ export const trocarHorario = (inscricao: Inscricao, dia: string, hora: string) =
 export const statusDocumento = (i: Inscricao): StatusDocumento | null =>
   i.documento_status ?? (itensDocumento[i.forma as FormaId] ? 'pendente' : null);
 
+// Liberação antecipada para teste interno: as inscrições listadas em VESTIBULAR_LIBERAR_AGORA (números separados
+// por vírgula) podem começar a prova a qualquer momento e têm 2 horas a partir do clique em "Começar" (prova.ts).
+// Só elas: as demais seguem a janela do dia e horário escolhidos. Variável vazia ou ausente: nenhuma exceção.
+export const liberadaAgora = (i: Pick<Inscricao, 'numero'>) =>
+  (process.env.VESTIBULAR_LIBERAR_AGORA ?? '')
+    .split(',')
+    .map((n) => Number(n.trim()))
+    .includes(i.numero);
+
 // O que o candidato vê da própria inscrição (sem CPF nem dados internos)
 export const visaoCandidato = (i: Inscricao) => ({
   numero: i.numero,
@@ -259,6 +268,7 @@ export const visaoCandidato = (i: Inscricao) => ({
   horaProva: i.hora_prova?.slice(0, 5) ?? null,
   provaIniciada: !!i.prova_inicio,
   provaEntregue: !!i.prova_entregue_em,
+  liberadaAgora: liberadaAgora(i),
   documentoStatus: statusDocumento(i),
   documentoObs: i.documento_status === 'recusado' ? (i.documento_obs ?? null) : null,
   enemAno: i.enem_ano ?? null,

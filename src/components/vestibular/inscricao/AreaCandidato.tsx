@@ -141,7 +141,8 @@ const StatusProva = ({
   const ms = inicio.getTime() - agora;
   // Janela do candidato: do horário dele até 2 horas depois (atraso é descontado)
   const fimDoDia = inicio.getTime() + vestibular.duracaoHoras * 60 * 60 * 1000;
-  const liberada = !inscricao.provaEntregue && (inscricao.provaIniciada || (ms <= 0 && agora < fimDoDia));
+  const liberada =
+    !inscricao.provaEntregue && (inscricao.provaIniciada || inscricao.liberadaAgora || (ms <= 0 && agora < fimDoDia));
 
   if (inscricao.provaEntregue) {
     return (
@@ -167,8 +168,10 @@ const StatusProva = ({
           className="bg-vest-yellow text-vest-navy mt-4 inline-flex items-center gap-2 rounded-full px-8 py-4 text-[18px] font-extrabold transition-colors hover:bg-white">
           {inscricao.provaIniciada ? 'Continuar prova' : 'Começar prova'} <Seta />
         </a>
-        {modoTeste && !inscricao.provaIniciada && (
-          <p className="mt-3 text-[13px] text-white/80">Modo de teste: liberada fora do horário.</p>
+        {(modoTeste || inscricao.liberadaAgora) && !inscricao.provaIniciada && (
+          <p className="mt-3 text-[13px] text-white/80">
+            Teste interno: liberada fora do horário. Você terá 2 horas a partir do clique em Começar.
+          </p>
         )}
       </div>
     );
