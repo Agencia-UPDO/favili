@@ -382,6 +382,17 @@ export async function POST(request: Request) {
       historico: await historicoCodigo(inscricao.numero),
     });
   }
+  // Uma inscrição de novo como "nova inscrição" na RD (refaz o fluxo de entrada na Kommo, inclusive o WhatsApp)
+  if (corpo.acao === 'reenviar-inscricao-rd') {
+    const inscricao = (await listarInscricoes()).find((i) => i.numero === Number(corpo.numero));
+    if (!inscricao) {
+      return negar('Inscrição não encontrada.', 404);
+    }
+    if (!(await enviarConversaoRd(inscricao, 'inscricao'))) {
+      return negar('A RD não aceitou o envio. Tente de novo em instantes.', 502);
+    }
+    return NextResponse.json({ ok: true });
+  }
   if (corpo.acao === 'reenviar-rd') {
     // Reenvia todas as inscrições como "atualização" (não dispara o WhatsApp), em sequência para não sobrecarregar a RD
     let enviadas = 0;

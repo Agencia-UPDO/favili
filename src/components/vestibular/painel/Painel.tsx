@@ -811,6 +811,22 @@ const Painel = () => {
                                 <Detalhe rotulo="Atendimento especial">{i.atendimentoEspecial}</Detalhe>
                                 <div className="pt-2">
                                   <CodigoAcesso numero={i.numero} revisor={revisor} />
+                                  <button
+                                    type="button"
+                                    disabled={ocupado}
+                                    onClick={async () => {
+                                      if (
+                                        window.confirm(
+                                          `Reenviar a inscrição nº ${i.numero} para a RD como NOVA INSCRIÇÃO? Use quando o lead não chegou à Kommo: refaz o fluxo de entrada e o WhatsApp de boas-vindas.`,
+                                        ) &&
+                                        (await acao({ acao: 'reenviar-inscricao-rd', numero: i.numero }))
+                                      ) {
+                                        window.alert('Enviado para a RD como nova inscrição.');
+                                      }
+                                    }}
+                                    className="text-vest-blue mt-2 block cursor-pointer text-[12px] font-bold underline-offset-2 hover:underline disabled:opacity-50">
+                                    Reenviar para a RD como nova inscrição
+                                  </button>
                                 </div>
                               </dl>
                               <div className="space-y-1 text-[13px]">
