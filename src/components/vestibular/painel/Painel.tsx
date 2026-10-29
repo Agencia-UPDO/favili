@@ -5,6 +5,7 @@ import { StatusDocumento } from '@/data/inscricao';
 import { cn } from '@/utils/cn';
 import { formatarCpf } from '@/utils/vestibular/validacao';
 import { FormEvent, Fragment, ReactNode, useCallback, useEffect, useState } from 'react';
+import Resumo, { DadosResumo } from './Resumo';
 
 // Painel interno da faculdade: acompanhar inscrições, conferir a prévia do resultado, publicar e baixar planilhas
 
@@ -17,6 +18,7 @@ type Dados = {
     documentosParaAnalisar: number;
     porForma: { forma: string; total: number }[];
   };
+  estatisticas: DadosResumo;
   inscricoes: {
     numero: number;
     criadoEm: string;
@@ -419,7 +421,7 @@ const Painel = () => {
   const [status, setStatus] = useState<'carregando' | 'login' | 'ok' | 'fechado'>('carregando');
   const [senha, setSenha] = useState('');
   const [aviso, setAviso] = useState('');
-  const [aba, setAba] = useState<'inscricoes' | 'resultado'>('inscricoes');
+  const [aba, setAba] = useState<'inscricoes' | 'resultado' | 'resumo'>('inscricoes');
   const [busca, setBusca] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [filtroDocumento, setFiltroDocumento] = useState<StatusDocumento | ''>('');
@@ -624,8 +626,8 @@ const Painel = () => {
         {dados.resumo.porForma.map((f) => `${f.forma}: ${f.total}`).join(' · ')}
       </p>
 
-      <div className="flex gap-2">
-        {(['inscricoes', 'resultado'] as const).map((a) => (
+      <div className="flex flex-wrap gap-2">
+        {(['inscricoes', 'resultado', 'resumo'] as const).map((a) => (
           <button
             key={a}
             type="button"
@@ -634,12 +636,14 @@ const Painel = () => {
               'cursor-pointer rounded-full px-5 py-2.5 text-[15px] font-bold',
               aba === a ? 'bg-vest-navy text-white' : 'text-vest-navy bg-white',
             )}>
-            {a === 'inscricoes' ? 'Inscrições' : 'Resultado'}
+            {{ inscricoes: 'Inscrições', resultado: 'Resultado', resumo: 'Resumo' }[a]}
           </button>
         ))}
       </div>
 
-      {aba === 'inscricoes' ? (
+      {aba === 'resumo' ? (
+        <Resumo dados={dados.estatisticas} />
+      ) : aba === 'inscricoes' ? (
         <div className="space-y-3 rounded-[24px] bg-white p-4 md:p-6">
           <div className="flex flex-wrap items-center gap-3">
             <input

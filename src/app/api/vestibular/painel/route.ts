@@ -23,6 +23,7 @@ import {
   trocarCodigo,
 } from '@/utils/vestibular/inscricoes';
 import { enviarAtualizacao } from '@/utils/vestibular/email';
+import { estatisticas } from '@/utils/vestibular/estatisticas';
 import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { bloqueado, ipDe, limites, mensagemBloqueio, registrarErro } from '@/utils/vestibular/limite';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
@@ -236,6 +237,8 @@ export async function GET(request: Request) {
       documentosParaAnalisar: inscricoes.filter((i) => statusDocumento(i) === 'enviado').length,
       porForma: formas.map((f) => ({ forma: f.rotulo, total: inscricoes.filter((i) => i.forma === f.id).length })),
     },
+    // Aba Resumo: contagens agrupadas, sem dado pessoal
+    estatisticas: estatisticas(inscricoes),
     inscricoes: inscricoes
       .slice()
       .reverse()

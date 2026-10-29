@@ -93,7 +93,7 @@ export async function POST(request: Request) {
   }
 
   if (corpo.aceite !== true) {
-    return erro('Para se inscrever, aceite o regulamento e o contato.', 'aceite');
+    return erro('Para se inscrever, aceite o regulamento, a Política de Privacidade e o contato.', 'aceite');
   }
 
   try {

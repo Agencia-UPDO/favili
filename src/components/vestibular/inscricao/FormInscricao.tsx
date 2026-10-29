@@ -171,7 +171,7 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
       e.email = 'Confira o e-mail.';
     }
     if (!aceite) {
-      e.aceite = 'Para continuar, marque que leu e aceita o regulamento.';
+      e.aceite = 'Para continuar, marque que leu e aceita o regulamento e a Política de Privacidade.';
     }
     return e;
   };
@@ -547,7 +547,17 @@ const FormInscricao = ({ formaInicial, ofertaInicial }: { formaInicial?: FormaId
               className="text-vest-blue font-semibold underline">
               regulamento do vestibular
             </a>{' '}
-            e autorizo a Faculdade Vidal a falar comigo por WhatsApp e e-mail sobre a inscrição.
+            e a{' '}
+            <a
+              href={vestibular.politicaPrivacidade}
+              target="_blank"
+              rel="noopener"
+              className="text-vest-blue font-semibold underline">
+              Política de Privacidade
+            </a>{' '}
+            da Instituição, autorizo a Faculdade Vidal a tratar meus dados pessoais para fins de inscrição e
+            participação no processo seletivo, bem como a falar comigo por WhatsApp e e-mail sobre a inscrição, nos
+            termos da Lei nº 13.709/2018 (LGPD).
           </span>
         </label>
         <Erro id="aceite-erro">{erros.aceite}</Erro>

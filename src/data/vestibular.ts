@@ -18,6 +18,8 @@ export const vestibular = {
   // Desconto garantido para todos os ingressantes 2027.1 (alguns cursos têm 50%), com ou sem vestibular
   descontoGarantido: '40%',
   regulamento: '/vestibular/regulamento-vestibular-conquista-vidal-2027-1.pdf',
+  // Política de Privacidade do site institucional (a LP não tem página própria)
+  politicaPrivacidade: 'https://favili.com.br/privacidade',
   // Inscrição própria do vestibular: destino de todos os botões de inscrição
   // Endereço público do site (usado por extenso no comprovante, no WhatsApp e na agenda)
   site: 'https://materiais.favili.com.br',
@@ -316,7 +318,7 @@ export const cursos: Curso[] = [
   {
     nome: 'Biomedicina',
     modalidade: 'Presencial',
-    duracao: '5 anos',
+    duracao: '4 anos',
     turno: 'Noite, 19h às 22h',
     desconto: '40%',
     bolsaVestibular: true,
