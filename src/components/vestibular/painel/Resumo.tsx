@@ -1,8 +1,9 @@
 'use client';
 
 import { formas } from '@/data/vestibular';
-import { cn } from '@/utils/cn';
-import { useState } from 'react';
+import type { EChartsCoreOption } from 'echarts/core';
+import { useEffect, useMemo, useState } from 'react';
+import Grafico from './Grafico';
 
 // Aba "Resumo" do painel: inscrições por curso, forma de ingresso e dia. Só recebe contagens agrupadas (ver
 // utils/vestibular/estatisticas.ts); os filtros de unidade e modalidade somam os grupos aqui mesmo.
@@ -35,6 +36,191 @@ const somarDias = (dia: string, dias: number) => {
 const diaMes = (dia: string) => dia.slice(5).split('-').reverse().join('/');
 const numero = (n: number) => n.toLocaleString('pt-BR');
 
+// ---------- Gráficos (Apache ECharts, cores da identidade do site) ----------
+const azul = '#0d5fd1';
+const marinho = '#062e72';
+const tinta = '#1f2937';
+const tintaFraca = '#6b7280';
+const linhaGrade = '#eceef3';
+const fonte = "Montserrat, 'Inter Tight', sans-serif";
+
+const diaPorExtenso = (dia: string) =>
+  new Date(`${dia}T12:00:00Z`).toLocaleDateString('pt-BR', {
+    timeZone: 'UTC',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+const inscricoes = (n: number) => `${numero(n)} inscriç${n === 1 ? 'ão' : 'ões'}`;
+
+const dica = {
+  backgroundColor: '#fff',
+  borderColor: linhaGrade,
+  textStyle: { color: tinta, fontFamily: fonte, fontSize: 13 },
+  extraCssText: 'border-radius:12px;box-shadow:0 4px 16px rgba(6,46,114,.12);',
+};
+const sombra = { type: 'shadow', shadowStyle: { color: 'rgba(13,95,209,.06)' } };
+
+// Barras por dia com todos os dias numerados; hoje em azul-marinho; número em cima das barras com inscrição
+const opcaoPorDia = (dias: { dia: string; total: number }[], hoje: string, estreito: boolean): EChartsCoreOption => {
+  // No celular só o número do dia (o mês aparece quando ele muda: 1/11)
+  const rotulos = dias.map((d, n) =>
+    !estreito || (n > 0 && d.dia.slice(5, 7) !== dias[n - 1].dia.slice(5, 7))
+      ? diaMes(d.dia)
+      : String(Number(d.dia.slice(8))),
+  );
+  // Inclinados quando não cabem lado a lado
+  const inclinar = estreito ? (dias.length > 16 ? 90 : 0) : dias.length > 24 ? 45 : 0;
+  return {
+    textStyle: { fontFamily: fonte },
+    animationDuration: 400,
+    grid: { left: 4, right: 8, top: 28, bottom: 4, outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: sombra,
+      ...dica,
+      formatter: (itens: { dataIndex: number }[]) => {
+        const d = dias[itens[0].dataIndex];
+        return `<div style="font-size:12px;color:${tintaFraca}">${diaPorExtenso(d.dia)}${d.dia === hoje ? ' (hoje)' : ''}</div><b style="font-size:15px">${inscricoes(d.total)}</b>`;
+      },
+    },
+    xAxis: {
+      type: 'category',
+      data: rotulos,
+      axisTick: { show: false },
+      axisLine: { lineStyle: { color: '#d5d9e2' } },
+      axisLabel: {
+        interval: 0,
+        rotate: inclinar,
+        color: tintaFraca,
+        fontSize: estreito ? 10 : 11,
+        formatter: (valor: string, n: number) => (dias[n]?.dia === hoje ? `{hoje|${valor}}` : valor),
+        rich: { hoje: { color: marinho, fontWeight: 'bold', fontSize: estreito ? 10 : 11 } },
+      },
+    },
+    yAxis: {
+      type: 'value',
+      minInterval: 1,
+      splitNumber: 4,
+      axisLabel: { color: tintaFraca, fontSize: 11 },
+      splitLine: { lineStyle: { color: linhaGrade, type: 'dashed' } },
+    },
+    series: [
+      {
+        type: 'bar',
+        barMaxWidth: 36,
+        data: dias.map((d) => ({
+          value: d.total,
+          itemStyle: { color: d.dia === hoje ? marinho : azul, borderRadius: [4, 4, 0, 0] },
+        })),
+        label: {
+          show: true,
+          position: 'top',
+          color: tinta,
+          fontWeight: 'bold',
+          fontSize: estreito ? 10 : 12,
+          formatter: ({ value }: { value: number }) => (value ? numero(value) : ''),
+        },
+        emphasis: { itemStyle: { opacity: 0.85 } },
+      },
+    ],
+  };
+};
+
+type CursoResumo = { curso: string; total: number; partes: { rotulo: string; total: number }[] };
+
+// Barras horizontais por curso (maior em cima), empilhadas por modalidade e unidade, com o total no fim da linha
+const opcaoPorCurso = (cursos: CursoResumo[], visiveis: typeof combinacoes, estreito: boolean): EChartsCoreOption => {
+  const valor = (c: CursoResumo, rotulo: string) => c.partes.find((p) => p.rotulo === rotulo)?.total ?? 0;
+  const comDados = visiveis.filter((v) => cursos.some((c) => valor(c, v.rotulo)));
+  return {
+    textStyle: { fontFamily: fonte },
+    animationDuration: 400,
+    legend: {
+      top: 0,
+      left: 0,
+      icon: 'roundRect',
+      itemWidth: 12,
+      itemHeight: 12,
+      itemGap: 14,
+      textStyle: { color: tinta, fontSize: 12 },
+      data: comDados.map((c) => c.rotulo),
+    },
+    grid: {
+      left: 4,
+      right: 8,
+      top: estreito && comDados.length > 2 ? 64 : 40,
+      bottom: 4,
+      outerBoundsMode: 'same',
+      outerBoundsContain: 'axisLabel',
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: sombra,
+      ...dica,
+      formatter: (itens: { dataIndex: number }[]) => {
+        const c = cursos[itens[0].dataIndex];
+        const linhas = c.partes
+          .map((p) => {
+            const cor = combinacoes.find((x) => x.rotulo === p.rotulo)?.cor;
+            return `<div style="display:flex;gap:12px;justify-content:space-between"><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${cor};margin-right:6px"></span>${p.rotulo}</span><b>${numero(p.total)}</b></div>`;
+          })
+          .join('');
+        return `<div style="font-weight:bold;margin-bottom:4px">${c.curso} · ${inscricoes(c.total)}</div>${linhas}`;
+      },
+    },
+    xAxis: {
+      type: 'value',
+      minInterval: 1,
+      splitNumber: 4,
+      axisLabel: { color: tintaFraca, fontSize: 11 },
+      splitLine: { lineStyle: { color: linhaGrade, type: 'dashed' } },
+    },
+    yAxis: [
+      {
+        type: 'category',
+        inverse: true,
+        data: cursos.map((c) => c.curso),
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: {
+          color: tinta,
+          fontSize: estreito ? 11.5 : 13,
+          fontWeight: 600,
+          width: estreito ? 132 : 190,
+          overflow: 'truncate',
+        },
+      },
+      // Total do curso à direita (mesmas categorias, só o rótulo)
+      {
+        type: 'category',
+        inverse: true,
+        position: 'right',
+        data: cursos.map((c) => numero(c.total)),
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: { color: tinta, fontSize: 13, fontWeight: 'bold' },
+      },
+    ],
+    series: comDados.map((v) => ({
+      name: v.rotulo,
+      type: 'bar',
+      stack: 'curso',
+      barMaxWidth: 18,
+      itemStyle: { color: v.cor, borderColor: '#fff', borderWidth: 1 },
+      emphasis: { focus: 'series' },
+      data: cursos.map((c) => {
+        // Cantos arredondados só na ponta da barra (última parte com valor)
+        const ponta = [...comDados].reverse().find((x) => valor(c, x.rotulo))?.rotulo;
+        return {
+          value: valor(c, v.rotulo) || null,
+          itemStyle: ponta === v.rotulo ? { borderRadius: [0, 4, 4, 0] } : undefined,
+        };
+      }),
+    })),
+  };
+};
+
 const Cartao = ({ titulo, valor, detalhe }: { titulo: string; valor: number; detalhe?: string }) => (
   <div className="rounded-2xl bg-white p-4">
     <p className="text-secondary/60 text-[13px]">{titulo}</p>
@@ -66,18 +252,11 @@ const Barra = ({ rotulo, total, maximo }: { rotulo: string; total: number; maxim
   </li>
 );
 
-const Resumo = ({ dados }: { dados: DadosResumo }) => {
-  const [unidade, setUnidade] = useState('');
-  const [modalidade, setModalidade] = useState('');
-
+// Soma os grupos que passam no filtro: por curso (com a quebra por modalidade e unidade) e por dia
+const agregar = (dados: DadosResumo, unidade: string, modalidade: string) => {
   const grupos = dados.grupos.filter(
     (g) => (!unidade || g.unidade === unidade) && (!modalidade || g.modalidade === modalidade),
   );
-  const total = soma(grupos);
-  const semana = somarDias(dados.hoje, -6);
-  const porForma = formas.map((f) => ({ ...f, total: soma(grupos.filter((g) => g.forma === f.id)) }));
-  const daForma = (id: string) => porForma.find((f) => f.id === id)?.total ?? 0;
-
   const cursos = [...new Set(grupos.map((g) => g.curso))]
     .map((curso) => {
       const doCurso = grupos.filter((g) => g.curso === curso);
@@ -93,7 +272,6 @@ const Resumo = ({ dados }: { dados: DadosResumo }) => {
       };
     })
     .sort((a, b) => b.total - a.total || a.curso.localeCompare(b.curso));
-  const maiorCurso = cursos[0]?.total ?? 0;
   const combinacoesVisiveis = combinacoes.filter(
     (c) => (!unidade || c.unidade === unidade) && (!modalidade || c.modalidade === modalidade),
   );
@@ -102,7 +280,36 @@ const Resumo = ({ dados }: { dados: DadosResumo }) => {
   for (let d = dados.inicio; d <= dados.hoje; d = somarDias(d, 1)) {
     dias.push({ dia: d, total: soma(grupos.filter((g) => g.dia === d)) });
   }
-  const maiorDia = Math.max(1, ...dias.map((d) => d.total));
+  return { grupos, cursos, dias, combinacoesVisiveis };
+};
+
+const Resumo = ({ dados }: { dados: DadosResumo }) => {
+  const [unidade, setUnidade] = useState('');
+  const [modalidade, setModalidade] = useState('');
+  // Celular: rótulos mais curtos nos gráficos
+  const [estreito, setEstreito] = useState(false);
+  useEffect(() => {
+    const consulta = window.matchMedia('(max-width: 640px)');
+    const atualizar = () => setEstreito(consulta.matches);
+    atualizar();
+    consulta.addEventListener('change', atualizar);
+    return () => consulta.removeEventListener('change', atualizar);
+  }, []);
+
+  const { grupos, cursos, dias, combinacoesVisiveis } = useMemo(
+    () => agregar(dados, unidade, modalidade),
+    [dados, unidade, modalidade],
+  );
+  const opcaoDias = useMemo(() => opcaoPorDia(dias, dados.hoje, estreito), [dias, dados.hoje, estreito]);
+  const opcaoCursos = useMemo(
+    () => opcaoPorCurso(cursos, combinacoesVisiveis, estreito),
+    [cursos, combinacoesVisiveis, estreito],
+  );
+  const total = soma(grupos);
+  const semana = somarDias(dados.hoje, -6);
+  const porForma = formas.map((f) => ({ ...f, total: soma(grupos.filter((g) => g.forma === f.id)) }));
+  const daForma = (id: string) => porForma.find((f) => f.id === id)?.total ?? 0;
+
   const campo = 'border-stroke-3 h-10 rounded-full border bg-white px-4 text-[14px]';
 
   return (
@@ -149,50 +356,12 @@ const Resumo = ({ dados }: { dados: DadosResumo }) => {
       </div>
 
       <Bloco titulo="Inscrições por curso">
-        <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px]" aria-label="Legenda">
-          {combinacoesVisiveis.map((c) => (
-            <li key={c.rotulo} className="flex items-center gap-1.5">
-              <span className="size-3 rounded-sm" style={{ background: c.cor }} />
-              {c.rotulo}
-            </li>
-          ))}
-        </ul>
         {cursos.length ? (
-          <ul className="space-y-3">
-            {cursos.map((c) => (
-              <li key={c.curso} className="space-y-1">
-                <div className="flex justify-between gap-3 text-[14px]">
-                  <span className="font-semibold">{c.curso}</span>
-                  <span className="font-bold tabular-nums">{numero(c.total)}</span>
-                </div>
-                <div
-                  className="flex h-3.5 gap-[2px]"
-                  style={{ width: `${(c.total / maiorCurso) * 100}%`, minWidth: 4 }}>
-                  {c.partes.map((p, n) => (
-                    <div
-                      key={p.rotulo}
-                      title={`${c.curso} · ${p.rotulo}: ${numero(p.total)}`}
-                      className={cn(
-                        'h-full',
-                        n === 0 && 'rounded-l-[4px]',
-                        n === c.partes.length - 1 && 'rounded-r-[4px]',
-                      )}
-                      style={{ flexGrow: p.total, flexBasis: 0, minWidth: 3, background: p.cor }}
-                    />
-                  ))}
-                </div>
-                {/* Números de cada combinação por escrito: a cor nunca é a única pista */}
-                {c.partes.length > 1 && (
-                  <p className="text-secondary/70 text-[12px]">
-                    {c.partes.map((p) => `${p.rotulo} ${numero(p.total)}`).join(' · ')}
-                  </p>
-                )}
-                {c.partes.length === 1 && combinacoesVisiveis.length > 1 && (
-                  <p className="text-secondary/70 text-[12px]">{c.partes[0].rotulo}</p>
-                )}
-              </li>
-            ))}
-          </ul>
+          <Grafico
+            opcao={opcaoCursos}
+            altura={cursos.length * 38 + 90}
+            rotulo={`Inscrições por curso: ${cursos.map((c) => `${c.curso} ${c.total}`).join(', ')}`}
+          />
         ) : (
           <p className="text-secondary/60 py-4 text-center">Nenhuma inscrição com esses filtros.</p>
         )}
@@ -230,50 +399,11 @@ const Resumo = ({ dados }: { dados: DadosResumo }) => {
       </div>
 
       <Bloco titulo={`Inscrições por dia desde ${diaMes(dados.inicio)}`}>
-        <div className="flex gap-2">
-          {/* Escala: maior dia em cima, zero embaixo */}
-          <div className="text-secondary/60 flex h-40 flex-col justify-between text-right text-[11px] tabular-nums">
-            <span>{numero(maiorDia)}</span>
-            <span>0</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="border-stroke-3 flex h-40 items-end gap-[2px] border-b">
-              {dias.map((d) => (
-                <div
-                  key={d.dia}
-                  title={`${diaMes(d.dia)}: ${numero(d.total)} inscriç${d.total === 1 ? 'ão' : 'ões'}`}
-                  className="group flex h-full min-w-0 flex-1 items-end">
-                  <div
-                    className={cn(
-                      'w-full rounded-t-[4px] group-hover:opacity-80',
-                      d.dia === dados.hoje ? 'bg-vest-navy' : 'bg-vest-blue',
-                    )}
-                    style={{ height: `${(d.total / maiorDia) * 100}%`, minHeight: d.total ? 2 : 0 }}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="text-secondary/60 mt-1 flex justify-between text-[11px]">
-              <span>{diaMes(dados.inicio)}</span>
-              <span>hoje, {diaMes(dados.hoje)}</span>
-            </div>
-          </div>
-        </div>
-        {/* Os dias com inscrição por escrito (toque no celular não mostra o título da barra) */}
-        <details className="text-[13px]">
-          <summary className="text-vest-blue cursor-pointer font-semibold">Ver os números por dia</summary>
-          <ul className="mt-2 grid grid-cols-3 gap-x-4 gap-y-0.5 sm:grid-cols-5">
-            {dias
-              .filter((d) => d.total)
-              .reverse()
-              .map((d) => (
-                <li key={d.dia} className="flex justify-between gap-2 tabular-nums">
-                  <span className="text-secondary/70">{diaMes(d.dia)}</span>
-                  <span className="font-bold">{numero(d.total)}</span>
-                </li>
-              ))}
-          </ul>
-        </details>
+        <Grafico
+          opcao={opcaoDias}
+          altura={estreito ? 260 : 300}
+          rotulo={`Inscrições por dia: ${dias.map((d) => `${diaMes(d.dia)} ${d.total}`).join(', ')}`}
+        />
       </Bloco>
     </div>
   );
