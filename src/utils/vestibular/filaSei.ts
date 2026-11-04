@@ -8,7 +8,7 @@ import { enviarConversaoRd } from './rd';
 // Fila de avisos das inscrições importadas do SEI: e-mail de confirmação (com nº e código) e conversão de NOVA
 // inscrição na RD (dispara o WhatsApp de boas-vindas na Kommo), igual a uma inscrição feita no site, mas em lotes
 // pequenos para não sobrecarregar a Kommo/WhatsApp. A inscrição já existe; a fila só manda os avisos.
-// Padrão: 8 a cada 10 minutos, das 8h às 20h (Brasília), configurável no painel, com pausar/retomar.
+// Padrão: 4 a cada 10 minutos, das 8h às 21h (Brasília), configurável no painel, com pausar/retomar.
 // Quem processa: o botão "Enviar próximo lote agora" do painel e, se o plano da Vercel permitir cron frequente,
 // a rota /api/vestibular/fila-sei (com CRON_SECRET). Fica em vestibular_config, chave "fila-sei" (sem tabela nova).
 
@@ -42,7 +42,7 @@ const travaMs = 4 * 60 * 1000;
 // No máximo 2 e-mails por segundo no Resend
 const intervaloEnvio = 600;
 
-export const configPadrao: ConfigFila = { pausada: false, lote: 8, intervaloMin: 10, horaInicio: 8, horaFim: 20 };
+export const configPadrao: ConfigFila = { pausada: false, lote: 4, intervaloMin: 10, horaInicio: 8, horaFim: 21 };
 
 const vazia = (): Fila => ({ ...configPadrao, itens: [], ultimoLote: null, processandoDesde: null });
 
