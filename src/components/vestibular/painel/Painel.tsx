@@ -924,17 +924,20 @@ const ImportarSei = ({
         inscrição criada ganha nº e código do nosso sistema e mantém o dia e o horário do SEI.
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          aria-label="Planilha CSV do SEI"
-          onChange={async (e) => {
-            const f = e.target.files?.[0];
-            mudar(setCsv)(f ? await f.text() : '');
-            setArquivo(f?.name ?? '');
-          }}
-          className="text-[12px]"
-        />
+        <label className="bg-vest-blue cursor-pointer rounded-full px-4 py-2 text-[13px] font-bold text-white">
+          {arquivo ? `Arquivo: ${arquivo} (trocar)` : '1. Escolher a planilha (CSV)'}
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            aria-label="Planilha CSV do SEI"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              mudar(setCsv)(f ? await f.text() : '');
+              setArquivo(f?.name ?? '');
+            }}
+            className="sr-only"
+          />
+        </label>
         <select
           value={unidadeEad}
           onChange={(e) => mudar(setUnidadeEad)(e.target.value as typeof unidadeEad)}
