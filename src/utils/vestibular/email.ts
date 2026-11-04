@@ -292,12 +292,14 @@ export const emailConfirmacao = (i: Inscricao) =>
     confirmacao: true,
   });
 
-export const emailAtualizacao = (i: Inscricao) =>
+// pelaEquipe: a equipe mudou a forma de ingresso ou o dia/horário no painel ("Editar inscrição")
+export const emailAtualizacao = (i: Inscricao, pelaEquipe = false) =>
   montar({
     preheader: `Sua inscrição nº ${i.numero} foi atualizada. Confira os dados novos.`,
     titulo: 'Sua inscrição foi atualizada',
-    abertura:
-      'Houve uma alteração na sua inscrição (código de acesso ou dia e horário da prova). Estes são os dados que valem agora:',
+    abertura: pelaEquipe
+      ? `A equipe da Faculdade Vidal atualizou a sua inscrição (${i.faz_prova ? 'forma de ingresso, dia e horário da prova' : 'forma de ingresso'}). Seu número de inscrição e seu código de acesso continuam os mesmos. Estes são os dados que valem agora:`
+      : 'Houve uma alteração na sua inscrição (código de acesso ou dia e horário da prova). Estes são os dados que valem agora:',
     d: dados(i),
     confirmacao: true,
   });
@@ -397,11 +399,11 @@ export const enviarResultado = (i: Inscricao, bolsa: number | null) => {
 };
 
 // Depois de trocar o código (painel) ou o dia/horário (Minha inscrição); só se o e-mail estiver configurado
-export const enviarAtualizacao = (i: Inscricao) => {
+export const enviarAtualizacao = (i: Inscricao, pelaEquipe = false) => {
   if (!emailConfigurado()) {
     return Promise.resolve(false);
   }
-  const { html, texto } = emailAtualizacao(i);
+  const { html, texto } = emailAtualizacao(i, pelaEquipe);
   return enviar(i.email, `Sua inscrição foi atualizada · ${vestibular.nome}`, html, texto).catch(() => false);
 };
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { areasEnem, enemAprovado, enemMediaMinima, mediaEnem, notaMinimaBolsa, NotasEnem } from '@/data/bolsas';
-import { StatusDocumento } from '@/data/inscricao';
+import { diasProva, horariosProva, StatusDocumento } from '@/data/inscricao';
+import { FormaId, formas } from '@/data/vestibular';
 import { cn } from '@/utils/cn';
 import { formatarCpf } from '@/utils/vestibular/validacao';
 import { FormEvent, Fragment, ReactNode, useCallback, useEffect, useState } from 'react';
@@ -29,10 +30,22 @@ type Dados = {
     email: string;
     forma: string;
     origemAcademica: string;
+    origemValida: boolean;
     curso: string;
     prova: string;
     situacao: string;
     nota: number | null;
+    edicao: {
+      ofertaFormas: FormaId[];
+      fazProva: boolean;
+      dia: string | null;
+      hora: string | null;
+      instituicaoOrigem: string;
+      cursoOrigem: string;
+      periodoAtual: string;
+      trava: string | null;
+      historico: RegistroEdicao[];
+    };
     atendimentoEspecial: string | null;
     documentoStatus: StatusDocumento | null;
     documentoObs: string | null;
@@ -67,6 +80,15 @@ type Dados = {
   publicadoEm: string | null;
 };
 
+type ResumoEdicao = { forma: FormaId; fazProva: boolean; dia: string | null; hora: string | null };
+type RegistroEdicao = {
+  por: string;
+  em: string;
+  antes: ResumoEdicao;
+  depois: ResumoEdicao;
+  avisouPorEmail: boolean;
+  rd: boolean;
+};
 type Ajuste = { situacao: 'aprovado' | 'reprovado' | null; bolsa: number | null; obs: string; em: string };
 type Linha = Dados['previa'][number];
 
@@ -385,6 +407,272 @@ const CelulaDocumentos = ({
           </button>
         )}
       </div>
+    </div>
+  );
+};
+
+const rotuloForma = (id: string) => formas.find((f) => f.id === id)?.rotulo ?? id;
+// "Vestibular · prova 21/11 às 8h" / "2ª graduação · sem prova"
+const descreverEdicao = (r: ResumoEdicao) =>
+  `${rotuloForma(r.forma)} · ${
+    r.fazProva && r.dia && r.hora ? `prova ${dataBr(r.dia).slice(0, 5)} às ${Number(r.hora.slice(0, 2))}h` : 'sem prova'
+  }`;
+
+type PreviaEdicao = { antes: ResumoEdicao; depois: ResumoEdicao; emailConfigurado: boolean };
+
+// Editar inscrição (equipe): forma de ingresso e dia/horário da prova, com as regras da inscrição pública.
+// 1) "Revisar alteração" valida no servidor e mostra antes → depois; 2) "Salvar" pede a senha do painel de novo.
+// Número de inscrição e código de acesso não mudam; documentos, origem e notas do Enem antigas ficam no histórico.
+const EditarInscricao = ({
+  inscricao: i,
+  revisor,
+  salvo,
+}: {
+  inscricao: LinhaInscricao;
+  revisor: string;
+  salvo: () => void;
+}) => {
+  const e = i.edicao;
+  const [aberto, setAberto] = useState(false);
+  const [forma, setForma] = useState<FormaId>(i.formaId as FormaId);
+  const [fazProva, setFazProva] = useState(e.fazProva);
+  const [dia, setDia] = useState(e.dia ?? '');
+  const [hora, setHora] = useState(e.hora ?? '');
+  const [instituicaoOrigem, setInstituicaoOrigem] = useState(e.instituicaoOrigem);
+  const [cursoOrigem, setCursoOrigem] = useState(e.cursoOrigem);
+  const [periodoAtual, setPeriodoAtual] = useState(e.periodoAtual);
+  const [avisar, setAvisar] = useState(true);
+  const [senha, setSenha] = useState('');
+  const [previa, setPrevia] = useState<PreviaEdicao | null>(null);
+  const [aviso, setAviso] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+
+  const comProva = forma === 'vestibular' || (forma === 'enem' && fazProva);
+  const deOutraFaculdade = forma === 'segunda-graduacao' || forma === 'transferencia';
+
+  // Qualquer mudança no formulário desfaz a revisão: precisa revisar de novo antes de salvar
+  const mudar =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setPrevia(null);
+      setAviso('');
+    };
+
+  const enviar = async (etapa: 'previa' | 'salvar') => {
+    setOcupado(true);
+    setAviso('');
+    const res = await fetch('/api/vestibular/painel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        acao: 'editar-inscricao',
+        etapa,
+        numero: i.numero,
+        por: revisor,
+        forma,
+        fazProva: comProva,
+        dia: comProva ? dia : null,
+        hora: comProva ? hora : null,
+        instituicaoOrigem,
+        cursoOrigem,
+        periodoAtual,
+        avisar,
+        senha: etapa === 'salvar' ? senha : undefined,
+      }),
+    }).catch(() => null);
+    const json = res ? await res.json().catch(() => ({})) : {};
+    setOcupado(false);
+    if (!res?.ok) {
+      setAviso(json.mensagem ?? 'Não deu certo. Tente de novo.');
+      return;
+    }
+    if (etapa === 'previa') {
+      setPrevia({ antes: json.antes, depois: json.depois, emailConfigurado: json.emailConfigurado });
+      return;
+    }
+    setSenha('');
+    setPrevia(null);
+    setAberto(false);
+    window.alert(
+      [
+        'Inscrição atualizada.',
+        json.rd ? 'RD: atualizada.' : 'RD: não confirmou o envio (dá para usar "Reenviar para a RD").',
+        json.avisar
+          ? json.email
+            ? 'E-mail enviado ao candidato.'
+            : 'O e-mail ao candidato NÃO saiu (não configurado ou falhou): avise por outro canal.'
+          : 'O candidato não foi avisado por e-mail.',
+      ].join('\n'),
+    );
+    salvo();
+  };
+
+  const campo = 'border-stroke-3 h-9 w-full rounded-lg border bg-white px-2 text-[13px]';
+  return (
+    <div className="border-vest-blue/40 space-y-2 rounded-xl border border-dashed p-3 text-[13px]">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-vest-navy font-bold">Editar inscrição</p>
+        {!e.trava && (
+          <button
+            type="button"
+            onClick={() => setAberto(!aberto)}
+            className="text-vest-blue cursor-pointer text-[12px] font-bold hover:underline">
+            {aberto ? 'Fechar' : 'Mudar forma ou horário'}
+          </button>
+        )}
+      </div>
+      {e.trava && <p className="text-secondary/70 text-[12px]">Bloqueada: {e.trava}</p>}
+
+      {aberto && !e.trava && (
+        <div className="space-y-2">
+          <label className="block">
+            <span className="text-secondary/60 text-[12px]">Forma de ingresso</span>
+            <select value={forma} onChange={(ev) => mudar(setForma)(ev.target.value as FormaId)} className={campo}>
+              {formas.map((f) => (
+                <option key={f.id} value={f.id} disabled={!e.ofertaFormas.includes(f.id)}>
+                  {f.rotulo}
+                  {e.ofertaFormas.includes(f.id) ? '' : ' (não disponível no curso)'}
+                </option>
+              ))}
+            </select>
+          </label>
+          {forma === 'enem' && (
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={fazProva} onChange={(ev) => mudar(setFazProva)(ev.target.checked)} />
+              Também faz a prova (para tentar bolsa por nota)
+            </label>
+          )}
+          {comProva && (
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-secondary/60 text-[12px]">Dia da prova</span>
+                <select value={dia} onChange={(ev) => mudar(setDia)(ev.target.value)} className={campo}>
+                  <option value="">Escolha</option>
+                  {diasProva.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.rotulo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-secondary/60 text-[12px]">Horário (Brasília)</span>
+                <select value={hora} onChange={(ev) => mudar(setHora)(ev.target.value)} className={campo}>
+                  <option value="">Escolha</option>
+                  {horariosProva.map((h) => (
+                    <option key={h} value={h}>
+                      {Number(h.slice(0, 2))}h às {Number(h.slice(0, 2)) + 2}h
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+          {deOutraFaculdade && (
+            <div className="grid gap-2">
+              <input
+                value={instituicaoOrigem}
+                onChange={(ev) => mudar(setInstituicaoOrigem)(ev.target.value)}
+                placeholder="Faculdade de origem"
+                aria-label="Faculdade de origem"
+                className={campo}
+              />
+              <input
+                value={cursoOrigem}
+                onChange={(ev) => mudar(setCursoOrigem)(ev.target.value)}
+                placeholder="Curso de origem"
+                aria-label="Curso de origem"
+                className={campo}
+              />
+              {forma === 'transferencia' && (
+                <input
+                  value={periodoAtual}
+                  onChange={(ev) => mudar(setPeriodoAtual)(ev.target.value)}
+                  placeholder="Período atual (ex.: 3º)"
+                  aria-label="Período atual"
+                  className={campo}
+                />
+              )}
+            </div>
+          )}
+          {forma !== i.formaId && (
+            <p className="text-secondary/70 text-[12px]">
+              {forma === 'vestibular'
+                ? 'Passa a fazer a prova. Documentos, origem acadêmica e notas do Enem ficam guardados como histórico, mas deixam de valer.'
+                : 'Os dados da forma anterior ficam guardados como histórico.'}{' '}
+              Número de inscrição e código de acesso não mudam.
+            </p>
+          )}
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={avisar} onChange={(ev) => setAvisar(ev.target.checked)} />
+            Avisar o candidato por e-mail
+          </label>
+
+          {!previa ? (
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={() => enviar('previa')}
+              className="bg-vest-blue cursor-pointer rounded-full px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50">
+              Revisar alteração
+            </button>
+          ) : (
+            <div className="space-y-2 rounded-lg bg-amber-50 p-2">
+              <p className="font-bold">Confirme a alteração da inscrição nº {i.numero}:</p>
+              <p>
+                <span className="text-secondary/70">Antes:</span> {descreverEdicao(previa.antes)}
+                <br />
+                <span className="text-secondary/70">Depois:</span> <strong>{descreverEdicao(previa.depois)}</strong>
+              </p>
+              <p className="text-secondary/70 text-[12px]">
+                Vai para a RD como atualização (sem WhatsApp).{' '}
+                {avisar
+                  ? previa.emailConfigurado
+                    ? 'O candidato recebe um e-mail com os dados novos.'
+                    : 'Atenção: o e-mail não está configurado neste ambiente, o candidato não será avisado.'
+                  : 'O candidato NÃO será avisado por e-mail.'}
+              </p>
+              <input
+                type="password"
+                value={senha}
+                onChange={(ev) => setSenha(ev.target.value)}
+                placeholder="Senha do painel para confirmar"
+                aria-label="Senha do painel"
+                autoComplete="current-password"
+                className={campo}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={ocupado || !senha}
+                  onClick={() => enviar('salvar')}
+                  className="cursor-pointer rounded-full bg-green-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50">
+                  Salvar alteração
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrevia(null)}
+                  className="border-stroke-3 cursor-pointer rounded-full border px-3 py-1.5 text-[12px] font-bold">
+                  Voltar
+                </button>
+              </div>
+            </div>
+          )}
+          {aviso && <p className="text-[12px] font-semibold text-red-700">{aviso}</p>}
+        </div>
+      )}
+
+      {e.historico.length > 0 && (
+        <ul className="text-secondary/60 space-y-0.5 text-[11px]">
+          {e.historico.map((h) => (
+            <li key={h.em}>
+              {dataHora(h.em)} · {h.por}: {descreverEdicao(h.antes)} → {descreverEdicao(h.depois)}
+              {h.avisouPorEmail ? ' · e-mail enviado' : ' · sem e-mail'}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
@@ -811,7 +1099,10 @@ const Painel = () => {
                                 <Detalhe rotulo="Nascimento">
                                   {dataBr(i.nascimento)} ({idade(i.nascimento)} anos)
                                 </Detalhe>
-                                <Detalhe rotulo="Origem acadêmica">{i.origemAcademica}</Detalhe>
+                                <Detalhe
+                                  rotulo={i.origemValida ? 'Origem acadêmica' : 'Origem acadêmica (forma anterior)'}>
+                                  {i.origemAcademica}
+                                </Detalhe>
                                 <Detalhe rotulo="Atendimento especial">{i.atendimentoEspecial}</Detalhe>
                                 <div className="pt-2">
                                   <CodigoAcesso numero={i.numero} revisor={revisor} />
@@ -834,6 +1125,11 @@ const Painel = () => {
                                 </div>
                               </dl>
                               <div className="space-y-1 text-[13px]">
+                                {!i.documentoStatus && i.documentos.length > 0 && (
+                                  <p className="text-secondary/60 text-[12px]">
+                                    Documentos da forma anterior (histórico, não valem mais):
+                                  </p>
+                                )}
                                 {i.documentos.map((d) => (
                                   <a
                                     key={d.id}
@@ -878,6 +1174,14 @@ const Painel = () => {
                                     )}
                                   </dl>
                                 ))}
+                            </div>
+                            <div className="sticky left-3 mt-4 max-w-[620px]">
+                              <EditarInscricao
+                                key={`${i.formaId}-${i.prova}-${i.edicao.historico.length}`}
+                                inscricao={i}
+                                revisor={revisor}
+                                salvo={carregar}
+                              />
                             </div>
                           </td>
                         </tr>

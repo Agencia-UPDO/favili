@@ -200,17 +200,33 @@ export const entrar = async (cpf: string, codigo: string): Promise<Inscricao | n
   return certo.length === recebido.length && timingSafeEqual(certo, recebido) ? inscricao : null;
 };
 
-// Atualiza campos de uma inscrição (horário da prova, respostas, entrega)
-export const atualizar = async (inscricao: Inscricao, campos: Partial<Inscricao>): Promise<Inscricao> => {
+// Atualiza campos de uma inscrição (horário da prova, respostas, entrega).
+// soSemProvaIniciada: só grava se a prova ainda não começou (o candidato pode começar enquanto a equipe edita);
+// se começou, devolve null e nada muda.
+export async function atualizar(inscricao: Inscricao, campos: Partial<Inscricao>): Promise<Inscricao>;
+export async function atualizar(
+  inscricao: Inscricao,
+  campos: Partial<Inscricao>,
+  opcoes: { soSemProvaIniciada: true },
+): Promise<Inscricao | null>;
+export async function atualizar(
+  inscricao: Inscricao,
+  campos: Partial<Inscricao>,
+  opcoes?: { soSemProvaIniciada: true },
+): Promise<Inscricao | null> {
   const sb = supabase();
   if (!sb) {
     const lista = await lerLocal();
     const atual = lista.find((i) => i.numero === inscricao.numero) ?? inscricao;
+    if (opcoes?.soSemProvaIniciada && atual.prova_inicio) {
+      return null;
+    }
     const atualizada = { ...atual, ...campos };
     await gravarLocal(lista.map((i) => (i.numero === inscricao.numero ? atualizada : i)));
     return atualizada;
   }
-  const res = await fetch(`${sb.url}?numero=eq.${inscricao.numero}`, {
+  const condicao = opcoes?.soSemProvaIniciada ? '&prova_inicio=is.null' : '';
+  const res = await fetch(`${sb.url}?numero=eq.${inscricao.numero}${condicao}`, {
     method: 'PATCH',
     headers: { ...sb.headers, Prefer: 'return=representation' },
     body: JSON.stringify(campos),
@@ -219,8 +235,8 @@ export const atualizar = async (inscricao: Inscricao, campos: Partial<Inscricao>
     throw new Error(`Supabase respondeu ${res.status}: ${await res.text()}`);
   }
   const [atualizada] = (await res.json()) as Inscricao[];
-  return atualizada;
-};
+  return atualizada ?? null;
+}
 
 // Novo código de acesso (o anterior deixa de valer). Se colidir com outro (raríssimo), tenta de novo.
 export const trocarCodigo = async (inscricao: Inscricao): Promise<Inscricao> => {
@@ -243,9 +259,11 @@ export const historicoCodigo = async (numero: number) =>
 export const trocarHorario = (inscricao: Inscricao, dia: string, hora: string) =>
   atualizar(inscricao, { dia_prova: dia, hora_prova: hora });
 
-// Situação dos documentos: quem precisa mandar e ainda não tem registro está pendente
+// Situação dos documentos: quem precisa mandar e ainda não tem registro está pendente. Só vale para a forma de
+// ingresso ATUAL: se a equipe muda a forma para Vestibular, o histórico (arquivos, situação, notas do Enem) fica
+// gravado, mas deixa de contar; se voltar para a forma antiga, a situação gravada volta a valer.
 export const statusDocumento = (i: Inscricao): StatusDocumento | null =>
-  i.documento_status ?? (itensDocumento[i.forma as FormaId] ? 'pendente' : null);
+  itensDocumento[i.forma as FormaId] ? (i.documento_status ?? 'pendente') : null;
 
 // O que o candidato vê da própria inscrição (sem CPF nem dados internos)
 export const visaoCandidato = (i: Inscricao) => ({
@@ -262,7 +280,7 @@ export const visaoCandidato = (i: Inscricao) => ({
   provaIniciada: !!i.prova_inicio,
   provaEntregue: !!i.prova_entregue_em,
   documentoStatus: statusDocumento(i),
-  documentoObs: i.documento_status === 'recusado' ? (i.documento_obs ?? null) : null,
+  documentoObs: statusDocumento(i) === 'recusado' ? (i.documento_obs ?? null) : null,
   enemAno: i.enem_ano ?? null,
   enemNotas: i.enem_notas ?? null,
   documentos: (i.documentos ?? []).map(({ id, item, nome, tamanho }) => ({ id, item, nome, tamanho })),

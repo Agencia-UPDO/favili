@@ -19,7 +19,8 @@ const situacoes: Record<string, string> = {
 // Duas conversões, para não confundir a automação:
 // - "vestibular-2027-1-inscricao": UMA vez, na nova inscrição (é a que dispara o WhatsApp);
 // - "vestibular-2027-1-atualizacao": quando o código é trocado no painel ou o candidato troca dia/horário, só para
-//   atualizar os dados do lead (nenhuma automação deve escutar esta).
+//   atualizar os dados do lead (nenhuma automação deve escutar esta). Também quando a equipe edita a forma de
+//   ingresso ou o dia/horário no painel ("Editar inscrição").
 // Nunca derruba a inscrição: erro na RD só vai para o log (sem dados pessoais).
 
 const endpoint = 'https://api.rd.services/platform/conversions';
@@ -47,8 +48,11 @@ const semArtigo = (t: string) => t.replace(/^(o|a|os|as) /, '').replace(/^./, (c
 const semVazios = (o: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v !== null && v !== undefined));
 
-export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao') =>
-  semVazios({
+export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao') => {
+  // Só os dados da forma de ingresso ATUAL (se a equipe trocou a forma no painel, o histórico fica no banco)
+  const deOutraFaculdade = i.forma === 'segunda-graduacao' || i.forma === 'transferencia';
+  const enem = i.forma === 'enem';
+  return semVazios({
     conversion_identifier: identificador(tipo),
     email: i.email,
     name: i.nome,
@@ -71,17 +75,18 @@ export const payloadRd = (i: Inscricao, tipo: TipoConversao = 'inscricao') =>
     cf_vestibular_link_do_painel: `${vestibular.site}/vestibular/painel?inscricao=${i.numero}`,
     // Específicos da forma de ingresso (vazios quando não se aplicam)
     cf_vestibular_faz_prova: i.faz_prova ? 'Sim' : 'Não',
-    cf_vestibular_instituicao_de_origem: i.instituicao_origem ?? '',
-    cf_vestibular_curso_de_origem: i.curso_origem ?? '',
-    cf_vestibular_periodo_atual: i.periodo_atual ?? '',
+    cf_vestibular_instituicao_de_origem: deOutraFaculdade ? (i.instituicao_origem ?? '') : '',
+    cf_vestibular_curso_de_origem: deOutraFaculdade ? (i.curso_origem ?? '') : '',
+    cf_vestibular_periodo_atual: i.forma === 'transferencia' ? (i.periodo_atual ?? '') : '',
     cf_vestibular_documento: semArtigo(documentoPorForma[i.forma as FormaId] ?? ''),
     cf_vestibular_documento_situacao: situacoes[statusDocumento(i) ?? ''] ?? '',
-    cf_vestibular_documento_motivo: i.documento_status === 'recusado' ? (i.documento_obs ?? '') : '',
-    cf_vestibular_enem_ano: i.enem_ano ? String(i.enem_ano) : '',
-    cf_vestibular_enem_media: i.enem_media != null ? Number(i.enem_media).toFixed(1).replace('.', ',') : '',
+    cf_vestibular_documento_motivo: statusDocumento(i) === 'recusado' ? (i.documento_obs ?? '') : '',
+    cf_vestibular_enem_ano: enem && i.enem_ano ? String(i.enem_ano) : '',
+    cf_vestibular_enem_media: enem && i.enem_media != null ? Number(i.enem_media).toFixed(1).replace('.', ',') : '',
     cf_vestibular_enem_redacao:
-      i.enem_media != null && i.enem_notas?.redacao != null ? String(i.enem_notas.redacao) : '',
+      enem && i.enem_media != null && i.enem_notas?.redacao != null ? String(i.enem_notas.redacao) : '',
   });
+};
 
 export const enviarConversaoRd = async (i: Inscricao, tipo: TipoConversao = 'inscricao') => {
   const chave = process.env.RDSTATION_API_KEY;

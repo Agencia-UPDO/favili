@@ -1,6 +1,6 @@
 import { areasEnem, notaMinimaBolsa } from '@/data/bolsas';
 import { formas } from '@/data/vestibular';
-import { itensDocumento } from '@/data/inscricao';
+import { itensDocumento, ofertas } from '@/data/inscricao';
 import {
   confirmarNotasEnem,
   ErroDocumento,
@@ -22,7 +22,15 @@ import {
   statusDocumento,
   trocarCodigo,
 } from '@/utils/vestibular/inscricoes';
-import { enviarAtualizacao } from '@/utils/vestibular/email';
+import { emailConfigurado, enviarAtualizacao } from '@/utils/vestibular/email';
+import {
+  ErroEdicao,
+  lerEdicoes,
+  registrarEdicao,
+  salvarEdicao,
+  travaEdicao,
+  validarPedido,
+} from '@/utils/vestibular/edicao';
 import { estatisticas } from '@/utils/vestibular/estatisticas';
 import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { bloqueado, ipDe, limites, mensagemBloqueio, registrarErro } from '@/utils/vestibular/limite';
@@ -227,6 +235,7 @@ export async function GET(request: Request) {
   }
 
   const publicado = await resultadoPublicado();
+  const edicoes = await lerEdicoes();
   return NextResponse.json({
     ok: true,
     resumo: {
@@ -256,6 +265,8 @@ export async function GET(request: Request) {
         origemAcademica: [i.instituicao_origem, i.curso_origem, i.periodo_atual && `${i.periodo_atual} período`]
           .filter(Boolean)
           .join(' · '),
+        // Depois de a equipe trocar a forma, a origem acadêmica antiga fica só como histórico
+        origemValida: i.forma === 'segunda-graduacao' || i.forma === 'transferencia',
         prova: i.faz_prova
           ? `${i.dia_prova?.split('-').reverse().slice(0, 2).join('/')} ${i.hora_prova?.slice(0, 5)}`
           : '—',
@@ -267,6 +278,18 @@ export async function GET(request: Request) {
               ? 'Agendada'
               : 'Em análise',
         nota: i.nota ?? null,
+        // "Editar inscrição": valores atuais, motivo de trava (null: pode editar) e as últimas edições
+        edicao: {
+          ofertaFormas: ofertas.find((o) => o.id === i.oferta_id)?.formas ?? formas.map((f) => f.id),
+          fazProva: i.faz_prova,
+          dia: i.faz_prova ? i.dia_prova : null,
+          hora: i.faz_prova ? (i.hora_prova?.slice(0, 5) ?? null) : null,
+          instituicaoOrigem: i.instituicao_origem ?? '',
+          cursoOrigem: i.curso_origem ?? '',
+          periodoAtual: i.periodo_atual ?? '',
+          trava: travaEdicao(i, !!publicado?.publicadoEm),
+          historico: edicoes.filter((e) => e.numero === i.numero).slice(-5),
+        },
         atendimentoEspecial: i.atendimento_especial,
         documentoStatus: statusDocumento(i),
         documentoObs: i.documento_obs ?? null,
@@ -431,6 +454,59 @@ export async function POST(request: Request) {
     } catch (e) {
       if (e instanceof ErroResultadoEmail) {
         return negar(e.message, 409);
+      }
+      throw e;
+    }
+  }
+  // Editar inscrição (forma de ingresso e/ou dia e horário da prova). Duas etapas: "previa" valida e devolve o
+  // antes → depois sem gravar; "salvar" pede a senha do painel de novo, grava, registra, manda para a RD e (se marcado)
+  // avisa o candidato por e-mail. Número de inscrição e código de acesso não mudam.
+  if (corpo.acao === 'editar-inscricao') {
+    if (!por) {
+      return negar('Digite seu nome no topo do painel: fica registrado quem editou a inscrição.', 400);
+    }
+    const inscricao = (await listarInscricoes()).find((i) => i.numero === Number(corpo.numero));
+    if (!inscricao) {
+      return negar('Inscrição não encontrada.', 404);
+    }
+    const trava = travaEdicao(inscricao, !!(await resultadoPublicado())?.publicadoEm);
+    if (trava) {
+      return negar(trava, 409);
+    }
+    try {
+      const { campos, antes, depois } = validarPedido(inscricao, corpo);
+      if (corpo.etapa !== 'salvar') {
+        return NextResponse.json({ ok: true, antes, depois, emailConfigurado: emailConfigurado() });
+      }
+      const chave = `painel:${ipDe(request)}`;
+      if (await bloqueado({ [chave]: limites.ipPainel })) {
+        return negar(mensagemBloqueio, 429);
+      }
+      if (!senhaCorreta(typeof corpo.senha === 'string' ? corpo.senha : '')) {
+        await registrarErro([chave]);
+        await new Promise((r) => setTimeout(r, 1000));
+        return negar('Senha do painel incorreta. Nada foi alterado.', 401);
+      }
+      const atualizada = await salvarEdicao(inscricao, campos);
+      const avisar = corpo.avisar !== false;
+      // Dados novos para o lead na RD (conversão de atualização, sem disparar WhatsApp) e, se marcado, e-mail
+      const [rd, email] = await Promise.all([
+        enviarConversaoRd(atualizada, 'atualizacao'),
+        avisar ? enviarAtualizacao(atualizada, true) : Promise.resolve(false),
+      ]);
+      await registrarEdicao({
+        numero: atualizada.numero,
+        por,
+        em: new Date().toISOString(),
+        antes,
+        depois,
+        avisouPorEmail: email,
+        rd,
+      });
+      return NextResponse.json({ ok: true, antes, depois, rd, email, avisar });
+    } catch (e) {
+      if (e instanceof ErroEdicao) {
+        return negar(e.message, 400);
       }
       throw e;
     }
