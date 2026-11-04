@@ -865,6 +865,16 @@ const ImportarSei = ({
       setAviso('');
     };
 
+  const [arrastando, setArrastando] = useState(false);
+  const carregarArquivo = async (f?: File) => {
+    if (f && !/\.csv$/i.test(f.name)) {
+      setAviso('Escolha um arquivo .csv (no Excel: Salvar como → CSV).');
+      return;
+    }
+    mudar(setCsv)(f ? await f.text() : '');
+    setArquivo(f?.name ?? '');
+  };
+
   const chamar = async (etapa: 'previa' | 'importar') => {
     setOcupado(true);
     setAviso('');
@@ -923,21 +933,37 @@ const ImportarSei = ({
         inscricao_sei; tipo; dia; hora. Quem já tem inscrição no nosso sistema (mesmo CPF) não é alterado. Cada
         inscrição criada ganha nº e código do nosso sistema e mantém o dia e o horário do SEI.
       </p>
+      {/* Área de arrastar e soltar; clicar abre a escolha de arquivo */}
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setArrastando(true);
+        }}
+        onDragLeave={() => setArrastando(false)}
+        onDrop={async (e) => {
+          e.preventDefault();
+          setArrastando(false);
+          await carregarArquivo(e.dataTransfer.files?.[0]);
+        }}
+        className={cn(
+          'flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 border-dashed p-5 text-center',
+          arrastando ? 'border-vest-blue bg-primary-50' : 'border-vest-blue/50 bg-white',
+        )}>
+        <span className="bg-vest-blue rounded-full px-5 py-2.5 text-[14px] font-bold text-white">
+          {arquivo ? 'Trocar planilha (.csv)' : 'Escolher planilha (.csv)'}
+        </span>
+        <span className="text-secondary/70 text-[12px]">
+          {arquivo ? `Escolhida: ${arquivo}` : 'ou arraste o arquivo para cá'}
+        </span>
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          aria-label="Planilha CSV do SEI"
+          onChange={(e) => carregarArquivo(e.target.files?.[0])}
+          className="sr-only"
+        />
+      </label>
       <div className="flex flex-wrap items-center gap-2">
-        <label className="bg-vest-blue cursor-pointer rounded-full px-4 py-2 text-[13px] font-bold text-white">
-          {arquivo ? `Arquivo: ${arquivo} (trocar)` : '1. Escolher a planilha (CSV)'}
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            aria-label="Planilha CSV do SEI"
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              mudar(setCsv)(f ? await f.text() : '');
-              setArquivo(f?.name ?? '');
-            }}
-            className="sr-only"
-          />
-        </label>
         <select
           value={unidadeEad}
           onChange={(e) => mudar(setUnidadeEad)(e.target.value as typeof unidadeEad)}
