@@ -1,4 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [{ "path": "/api/vestibular/lembretes", "schedule": "0 13 19 11 *" }]
+  "regions": ["gru1"],
+  "crons": [
+    { "path": "/api/vestibular/lembretes", "schedule": "0 13 19 11 *" },
+    { "path": "/api/vestibular/fila-sei", "schedule": "*/10 * * * *" }
+  ]
 }

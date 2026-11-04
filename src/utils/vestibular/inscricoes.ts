@@ -16,7 +16,8 @@ export type NovaInscricao = {
   nome: string;
   email: string;
   celular: string;
-  nascimento: string;
+  // null: importada do SEI sem a data; o candidato informa em Minha inscrição antes de começar a prova
+  nascimento: string | null;
   forma: string;
   oferta_id: string;
   curso: string;
@@ -284,6 +285,8 @@ export const visaoCandidato = (i: Inscricao) => ({
   enemAno: i.enem_ano ?? null,
   enemNotas: i.enem_notas ?? null,
   documentos: (i.documentos ?? []).map(({ id, item, nome, tamanho }) => ({ id, item, nome, tamanho })),
+  // Importada do SEI sem data de nascimento: precisa informar antes da prova (é critério de desempate)
+  precisaNascimento: !i.nascimento,
 });
 
 export const listarInscricoes = async (): Promise<Inscricao[]> => {

@@ -57,6 +57,10 @@ export async function POST(request: Request) {
   const acao = texto(corpo.acao);
 
   if (acao === 'iniciar') {
+    // Importado do SEI sem data de nascimento: informa em Minha inscrição (é critério de desempate)
+    if (!inscricao.nascimento && !inscricao.prova_inicio) {
+      return negar('Antes de começar, informe sua data de nascimento em Minha inscrição.', 403);
+    }
     const s = situacao(inscricao);
     if (s === 'liberada') {
       inscricao = await iniciar(inscricao);

@@ -33,6 +33,7 @@ export type InscricaoConfirmada = {
   diaProva: string | null;
   horaProva: string | null;
   provaIniciada?: boolean;
+  precisaNascimento?: boolean;
   provaEntregue?: boolean;
 } & Omit<InscricaoComDocumentos, 'forma'>;
 

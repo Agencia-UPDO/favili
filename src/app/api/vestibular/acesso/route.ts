@@ -1,16 +1,17 @@
 import { diasProva, horariosProva } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
-import { trocarHorario, visaoCandidato } from '@/utils/vestibular/inscricoes';
+import { atualizar, trocarHorario, visaoCandidato } from '@/utils/vestibular/inscricoes';
 import { enviarAtualizacao } from '@/utils/vestibular/email';
 import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
 import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { entregarSeVenceu, modoTeste } from '@/utils/vestibular/prova';
 import { resultadoDoCandidato } from '@/utils/vestibular/resultado';
-import { soDigitos } from '@/utils/vestibular/validacao';
+import { idadeEm, soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
 
 // Área do candidato: POST entra com CPF + código e devolve a inscrição; PATCH troca o dia/horário da prova
-// (até o fim das inscrições). Toda chamada confere CPF e código de novo, então não há sessão para roubar.
+// (até o fim das inscrições) ou registra a data de nascimento de quem foi importado do SEI sem ela.
+// Toda chamada confere CPF e código de novo, então não há sessão para roubar.
 
 type Corpo = Partial<Record<string, unknown>>;
 
@@ -60,6 +61,22 @@ export async function PATCH(request: Request) {
   }
   if (!inscricao) {
     return naoEncontrada();
+  }
+  // Importado do SEI sem data de nascimento: o candidato informa uma vez (depois, só a secretaria corrige)
+  if (corpo.nascimento !== undefined) {
+    if (inscricao.nascimento) {
+      return NextResponse.json(
+        { ok: false, mensagem: 'Sua data de nascimento já está registrada.' },
+        { status: 400 },
+      );
+    }
+    const nascimento = texto(corpo.nascimento, 10);
+    const idade = idadeEm(nascimento);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nascimento) || !(idade >= 14 && idade <= 100)) {
+      return NextResponse.json({ ok: false, mensagem: 'Confira a data de nascimento.' }, { status: 400 });
+    }
+    const atualizada = await atualizar(inscricao, { nascimento });
+    return NextResponse.json({ ok: true, inscricao: visaoCandidato(atualizada) });
   }
   if (!inscricao.faz_prova) {
     return NextResponse.json({ ok: false, mensagem: 'Sua inscrição não tem prova agendada.' }, { status: 400 });

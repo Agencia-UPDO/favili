@@ -25,7 +25,7 @@ type Dados = {
     criadoEm: string;
     nome: string;
     cpf: string;
-    nascimento: string;
+    nascimento: string | null;
     celular: string;
     email: string;
     forma: string;
@@ -78,6 +78,8 @@ type Dados = {
     resultadoEmailEm: string | null;
   }[];
   publicadoEm: string | null;
+  importacoes?: { por: string; em: string; criadas: number; avisar: boolean }[];
+  filaSei?: ResumoFila;
 };
 
 type ResumoEdicao = { forma: FormaId; fazProva: boolean; dia: string | null; hora: string | null };
@@ -677,6 +679,405 @@ const EditarInscricao = ({
   );
 };
 
+type LinhaImportacao = {
+  linha: number;
+  nome: string;
+  inscricaoSei: string;
+  curso: string;
+  prova: string;
+  status: 'criar' | 'existe' | 'problema' | 'descartada';
+  motivo: string;
+  numeroExistente: number | null;
+};
+type PreviaImportacao = {
+  resumo: {
+    total: number;
+    criar: number;
+    semNascimento: number;
+    existe: number;
+    problema: number;
+    descartada: number;
+  };
+  emailConfigurado: boolean;
+  linhas: LinhaImportacao[];
+};
+
+const rotuloStatusImportacao: Record<LinhaImportacao['status'], { texto: string; cor: string }> = {
+  criar: { texto: 'Criar', cor: 'bg-green-100 text-green-900' },
+  existe: { texto: 'Já existe', cor: 'bg-stroke-2 text-secondary' },
+  problema: { texto: 'Problema', cor: 'bg-red-100 text-red-800' },
+  descartada: { texto: 'Descartada', cor: 'bg-amber-100 text-amber-900' },
+};
+
+type ResumoFila = {
+  pausada: boolean;
+  lote: number;
+  intervaloMin: number;
+  horaInicio: number;
+  horaFim: number;
+  ultimoLote: string | null;
+  total: number;
+  pendentes: number;
+  enviados: number;
+  erros: number[];
+};
+
+// Fila de avisos das inscrições importadas do SEI: andamento, pausar/retomar, ritmo e "enviar próximo lote agora"
+const FilaSei = ({ fila, atualizar }: { fila: ResumoFila; atualizar: () => void }) => {
+  const [lote, setLote] = useState(String(fila.lote));
+  const [intervaloMin, setIntervaloMin] = useState(String(fila.intervaloMin));
+  const [horaInicio, setHoraInicio] = useState(String(fila.horaInicio));
+  const [horaFim, setHoraFim] = useState(String(fila.horaFim));
+  const [aviso, setAviso] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+
+  const chamar = async (corpo: Record<string, unknown>) => {
+    setOcupado(true);
+    setAviso('');
+    const res = await fetch('/api/vestibular/painel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo),
+    }).catch(() => null);
+    const json = res ? await res.json().catch(() => ({})) : {};
+    setOcupado(false);
+    if (!res?.ok) {
+      setAviso(json.mensagem ?? 'Não deu certo. Tente de novo.');
+      return;
+    }
+    if (corpo.acao === 'fila-sei-lote') {
+      setAviso(
+        json.motivo ?? `Lote enviado: ${json.enviados} avisados${json.erros ? `, ${json.erros} com erro` : ''}.`,
+      );
+    }
+    atualizar();
+  };
+
+  const campo = 'border-stroke-3 h-8 w-14 rounded-lg border bg-white px-2 text-[12px]';
+  const botao =
+    'border-stroke-3 cursor-pointer rounded-full border px-3 py-1.5 text-[12px] font-bold disabled:opacity-50';
+  return (
+    <div className="space-y-2 rounded-2xl bg-amber-50 p-4 text-[13px]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-vest-navy font-bold">
+          Fila de avisos do SEI {fila.pausada && <span className="text-red-700">(pausada)</span>}
+        </p>
+        <p>
+          <strong>{fila.enviados}</strong> enviados · <strong>{fila.pendentes}</strong> pendentes ·{' '}
+          <strong className={fila.erros.length ? 'text-red-700' : ''}>{fila.erros.length}</strong> com erro
+          {fila.ultimoLote && <span className="text-secondary/60"> · último lote {dataHora(fila.ultimoLote)}</span>}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={ocupado || !fila.pendentes || fila.pausada}
+          onClick={() => chamar({ acao: 'fila-sei-lote' })}
+          className="bg-vest-blue cursor-pointer rounded-full px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50">
+          {ocupado ? 'Enviando…' : `Enviar próximo lote agora (${Math.min(fila.lote, fila.pendentes)})`}
+        </button>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => chamar({ acao: 'fila-sei-config', config: { pausada: !fila.pausada } })}
+          className={botao}>
+          {fila.pausada ? 'Retomar' : 'Pausar'}
+        </button>
+        {fila.erros.length > 0 && (
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => chamar({ acao: 'fila-sei-config', config: { reprocessar: true } })}
+            className={botao}>
+            Tentar de novo os com erro
+          </button>
+        )}
+        <span className="text-secondary/70 ml-2">Ritmo automático:</span>
+        <input value={lote} onChange={(e) => setLote(e.target.value)} aria-label="Por lote" className={campo} />
+        <span>a cada</span>
+        <input
+          value={intervaloMin}
+          onChange={(e) => setIntervaloMin(e.target.value)}
+          aria-label="Minutos entre lotes"
+          className={campo}
+        />
+        <span>min, das</span>
+        <input
+          value={horaInicio}
+          onChange={(e) => setHoraInicio(e.target.value)}
+          aria-label="Hora de início"
+          className={campo}
+        />
+        <span>às</span>
+        <input
+          value={horaFim}
+          onChange={(e) => setHoraFim(e.target.value)}
+          aria-label="Hora de fim"
+          className={campo}
+        />
+        <span>h</span>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => chamar({ acao: 'fila-sei-config', config: { lote, intervaloMin, horaInicio, horaFim } })}
+          className={botao}>
+          Salvar ritmo
+        </button>
+      </div>
+      {fila.erros.length > 0 && (
+        <p className="text-[12px] text-red-800">Com erro (3 tentativas): nº {fila.erros.join(', ')}</p>
+      )}
+      {aviso && <p className="text-[12px] font-semibold">{aviso}</p>}
+    </div>
+  );
+};
+
+// Importar do SEI: planilha CSV já cruzada (um candidato por linha) → prévia → senha → cria, e-mail e RD
+const ImportarSei = ({
+  revisor,
+  importacoes,
+  fechar,
+  concluido,
+}: {
+  revisor: string;
+  importacoes: NonNullable<Dados['importacoes']>;
+  fechar: () => void;
+  concluido: () => void;
+}) => {
+  const [csv, setCsv] = useState('');
+  const [arquivo, setArquivo] = useState('');
+  const [unidadeEad, setUnidadeEad] = useState<'limoeiro' | 'fortaleza'>('limoeiro');
+  const [duplicados, setDuplicados] = useState<'maior-inscricao' | 'menor-inscricao' | 'pular'>('maior-inscricao');
+  const [avisar, setAvisar] = useState(true);
+  const [aceitarSemNascimento, setAceitarSemNascimento] = useState(false);
+  const [previa, setPrevia] = useState<PreviaImportacao | null>(null);
+  const [filtro, setFiltro] = useState<LinhaImportacao['status'] | ''>('');
+  const [senha, setSenha] = useState('');
+  const [aviso, setAviso] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+
+  // Mudar arquivo ou opção desfaz a prévia
+  const mudar =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setPrevia(null);
+      setAviso('');
+    };
+
+  const chamar = async (etapa: 'previa' | 'importar') => {
+    setOcupado(true);
+    setAviso('');
+    const res = await fetch('/api/vestibular/painel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        acao: 'importar-sei',
+        etapa,
+        por: revisor,
+        csv,
+        opcoes: { unidadeEad, duplicados, avisar, aceitarSemNascimento },
+        senha: etapa === 'importar' ? senha : undefined,
+      }),
+    }).catch(() => null);
+    const json = res ? await res.json().catch(() => ({})) : {};
+    setOcupado(false);
+    if (!res?.ok) {
+      setAviso(json.mensagem ?? 'Não deu certo. Tente de novo.');
+      return;
+    }
+    if (etapa === 'previa') {
+      setPrevia(json);
+      return;
+    }
+    setSenha('');
+    setPrevia(null);
+    window.alert(
+      [
+        `Inscrições criadas: ${json.criadas}.`,
+        json.jaExistiam ? `Já existiam: ${json.jaExistiam}.` : '',
+        json.falhas ? `Falharam: ${json.falhas} (tente de novo).` : '',
+        avisar
+          ? `${json.naFila} na fila de avisos (e-mail + RD nova inscrição), que sai em lotes: acompanhe no quadro "Fila de avisos do SEI".`
+          : 'Ninguém foi avisado (opção desmarcada).',
+        json.restantes ? `Faltaram ${json.restantes}: carregue a mesma planilha e importe de novo para continuar.` : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    );
+    concluido();
+  };
+
+  const campo = 'border-stroke-3 h-10 rounded-full border bg-white px-3 text-[13px]';
+  const linhas = (previa?.linhas ?? []).filter((l) => !filtro || l.status === filtro);
+  return (
+    <div className="border-vest-blue/40 space-y-3 rounded-2xl border border-dashed p-4 text-[13px]">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-vest-navy text-[15px] font-bold">Importar inscrições do SEI</p>
+        <button type="button" onClick={fechar} className="text-secondary/70 cursor-pointer text-[12px] font-bold">
+          Fechar
+        </button>
+      </div>
+      <p className="text-secondary/70">
+        Planilha CSV com uma linha por candidato e as colunas cpf; nome; email; celular; nascimento; curso_sei;
+        inscricao_sei; tipo; dia; hora. Quem já tem inscrição no nosso sistema (mesmo CPF) não é alterado. Cada
+        inscrição criada ganha nº e código do nosso sistema e mantém o dia e o horário do SEI.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          aria-label="Planilha CSV do SEI"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            mudar(setCsv)(f ? await f.text() : '');
+            setArquivo(f?.name ?? '');
+          }}
+          className="text-[12px]"
+        />
+        <select
+          value={unidadeEad}
+          onChange={(e) => mudar(setUnidadeEad)(e.target.value as typeof unidadeEad)}
+          aria-label="Unidade dos cursos EAD e semipresencial"
+          className={campo}>
+          <option value="limoeiro">EAD/semi: Limoeiro do Norte</option>
+          <option value="fortaleza">EAD/semi: Fortaleza (Tauape)</option>
+        </select>
+        <select
+          value={duplicados}
+          onChange={(e) => mudar(setDuplicados)(e.target.value as typeof duplicados)}
+          aria-label="Quem está em 2 cursos"
+          className={campo}>
+          <option value="maior-inscricao">Em 2 cursos: fica o de maior nº SEI (mais recente)</option>
+          <option value="menor-inscricao">Em 2 cursos: fica o de menor nº SEI</option>
+          <option value="pular">Em 2 cursos: não importar (decidir depois)</option>
+        </select>
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={avisar} onChange={(e) => mudar(setAvisar)(e.target.checked)} />
+          Avisar (e-mail + RD nova inscrição, pela fila)
+        </label>
+        <label
+          className="flex items-center gap-1.5"
+          title="Só depois de rodar o SQL do nascimento opcional no Supabase">
+          <input
+            type="checkbox"
+            checked={aceitarSemNascimento}
+            onChange={(e) => mudar(setAceitarSemNascimento)(e.target.checked)}
+          />
+          Aceitar sem data de nascimento
+        </label>
+      </div>
+      {!previa && (
+        <button
+          type="button"
+          disabled={ocupado || !csv}
+          onClick={() => chamar('previa')}
+          className="bg-vest-blue cursor-pointer rounded-full px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50">
+          {ocupado ? 'Analisando…' : 'Ver prévia'}
+        </button>
+      )}
+      {previa && (
+        <div className="space-y-2">
+          <p className="font-semibold">
+            {arquivo}: {previa.resumo.total} linhas ·{' '}
+            <span className="text-green-800">{previa.resumo.criar} a criar</span>
+            {previa.resumo.semNascimento > 0 && ` (${previa.resumo.semNascimento} sem data de nascimento)`} ·{' '}
+            {previa.resumo.existe} já existem · {previa.resumo.descartada} descartadas (2 cursos) ·{' '}
+            <span className="text-red-800">{previa.resumo.problema} com problema</span>
+          </p>
+          <select
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value as typeof filtro)}
+            aria-label="Filtrar a prévia"
+            className={campo}>
+            <option value="">Mostrar todas</option>
+            <option value="criar">Só a criar</option>
+            <option value="existe">Só as que já existem</option>
+            <option value="problema">Só com problema</option>
+            <option value="descartada">Só as descartadas (2 cursos)</option>
+          </select>
+          <div className="border-stroke-2 max-h-[320px] overflow-auto rounded-xl border">
+            <table className="w-full text-left text-[12px]">
+              <thead className="text-secondary/60 sticky top-0 bg-white">
+                <tr>
+                  {['Linha', 'Situação', 'Nome', 'Nº SEI', 'Curso', 'Prova', 'Observação'].map((c) => (
+                    <th key={c} className="px-2 py-1 font-semibold">
+                      {c}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {linhas.map((l) => (
+                  <tr key={l.linha} className="border-stroke-2 border-t align-top">
+                    <td className="px-2 py-1">{l.linha}</td>
+                    <td className="px-2 py-1">
+                      <span
+                        className={cn('rounded-full px-1.5 py-0.5 font-bold', rotuloStatusImportacao[l.status].cor)}>
+                        {rotuloStatusImportacao[l.status].texto}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1">{l.nome}</td>
+                    <td className="px-2 py-1">{l.inscricaoSei}</td>
+                    <td className="px-2 py-1">{l.curso}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{l.prova}</td>
+                    <td className="px-2 py-1">
+                      {l.numeroExistente ? `nº ${l.numeroExistente} · ` : ''}
+                      {l.motivo}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="space-y-2 rounded-lg bg-amber-50 p-3">
+            <p>
+              Vai criar <strong>{previa.resumo.criar}</strong> inscrições.{' '}
+              {avisar
+                ? `Os avisos não saem agora: entram na fila (e-mail de confirmação com nº e código + RD como nova inscrição, que dispara o WhatsApp) e saem em lotes.${previa.emailConfigurado ? '' : ' Atenção: o e-mail não está configurado neste ambiente.'}`
+                : 'Ninguém será avisado (opção desmarcada).'}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Senha do painel para confirmar"
+                aria-label="Senha do painel"
+                autoComplete="current-password"
+                className={cn(campo, 'w-[260px]')}
+              />
+              <button
+                type="button"
+                disabled={ocupado || !senha || !previa.resumo.criar}
+                onClick={() => chamar('importar')}
+                className="cursor-pointer rounded-full bg-green-600 px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50">
+                {ocupado ? 'Importando… (não feche a página)' : `Importar ${previa.resumo.criar} inscrições`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrevia(null)}
+                className="border-stroke-3 cursor-pointer rounded-full border px-4 py-2 text-[13px] font-bold">
+                Voltar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {aviso && <p className="font-semibold text-red-700">{aviso}</p>}
+      {importacoes.length > 0 && (
+        <ul className="text-secondary/60 text-[11px]">
+          {importacoes.map((h) => (
+            <li key={h.em}>
+              {dataHora(h.em)} · {h.por}: {h.criadas} criadas{h.avisar ? ' · avisos na fila' : ' · sem avisos'}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 // Faixa de cada candidato no resultado
 const faixa = (l: Linha) => (!l.aprovado ? 'Reprovado' : l.bolsa ? `Bolsa ${l.bolsa}%` : '40% garantido');
 
@@ -714,6 +1115,7 @@ const Painel = () => {
   const [ocupado, setOcupado] = useState(false);
   const [filtroDocumento, setFiltroDocumento] = useState<StatusDocumento | ''>('');
   const [abertas, setAbertas] = useState<Set<number>>(new Set());
+  const [importando, setImportando] = useState(false);
   // Link direto para um candidato (ex.: vindo da Kommo): /vestibular/painel?inscricao=2027100003.
   // O parâmetro fica na URL durante o login (a senha não muda de página), então abre assim que os dados chegam.
   const [destino, setDestino] = useState<number | null>(null);
@@ -1020,7 +1422,22 @@ const Painel = () => {
               className="border-stroke-3 cursor-pointer rounded-full border px-4 py-2.5 text-[14px] font-bold">
               Enviar lembretes da prova agora
             </button>
+            <button
+              type="button"
+              onClick={() => setImportando(!importando)}
+              className="border-stroke-3 cursor-pointer rounded-full border px-4 py-2.5 text-[14px] font-bold">
+              Importar do SEI
+            </button>
           </div>
+          {dados.filaSei && dados.filaSei.total > 0 && <FilaSei fila={dados.filaSei} atualizar={carregar} />}
+          {importando && (
+            <ImportarSei
+              revisor={revisor}
+              importacoes={dados.importacoes ?? []}
+              fechar={() => setImportando(false)}
+              concluido={carregar}
+            />
+          )}
           {/* Cabeçalho e coluna do candidato fixos; detalhes menos usados abrem numa linha abaixo */}
           <div className="border-stroke-2 max-h-[75vh] overflow-auto rounded-2xl border">
             <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-[13px]">
@@ -1097,7 +1514,9 @@ const Painel = () => {
                               <dl className="space-y-1 text-[13px]">
                                 <Detalhe rotulo="Inscrição">{dataHora(i.criadoEm)}</Detalhe>
                                 <Detalhe rotulo="Nascimento">
-                                  {dataBr(i.nascimento)} ({idade(i.nascimento)} anos)
+                                  {i.nascimento
+                                    ? `${dataBr(i.nascimento)} (${idade(i.nascimento)} anos)`
+                                    : 'não informado (importado do SEI; o candidato informa em Minha inscrição)'}
                                 </Detalhe>
                                 <Detalhe
                                   rotulo={i.origemValida ? 'Origem acadêmica' : 'Origem acadêmica (forma anterior)'}>

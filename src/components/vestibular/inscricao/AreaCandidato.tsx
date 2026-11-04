@@ -338,6 +338,66 @@ const TrocarHorario = ({
   );
 };
 
+// Inscrição importada do SEI sem data de nascimento: o candidato informa antes da prova (critério de desempate)
+const InformarNascimento = ({
+  cpf,
+  codigo,
+  aoSalvar,
+}: {
+  cpf: string;
+  codigo: string;
+  aoSalvar: (i: InscricaoConfirmada) => void;
+}) => {
+  const [nascimento, setNascimento] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [aviso, setAviso] = useState('');
+
+  const salvar = async (e: FormEvent) => {
+    e.preventDefault();
+    setSalvando(true);
+    setAviso('');
+    const res = await fetch('/api/vestibular/acesso', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cpf, codigo, nascimento }),
+    }).catch(() => null);
+    const resposta = res ? await res.json().catch(() => ({})) : {};
+    setSalvando(false);
+    if (res?.ok && resposta.ok) {
+      aoSalvar(resposta.inscricao);
+      return;
+    }
+    setAviso(resposta.mensagem ?? 'Não conseguimos salvar. Tente de novo.');
+  };
+
+  return (
+    <form onSubmit={salvar} className="space-y-3 rounded-[22px] border-2 border-amber-300 bg-amber-50 p-5">
+      <p className="text-vest-navy font-bold">Falta um dado: sua data de nascimento</p>
+      <p className="text-[14px]">
+        Sua inscrição veio do sistema da faculdade sem a data de nascimento. Informe aqui antes do dia da prova: sem
+        ela, a prova não pode ser iniciada.
+      </p>
+      <label className="block">
+        <span className={rotuloClass}>Data de nascimento</span>
+        <input
+          type="date"
+          required
+          value={nascimento}
+          onChange={(e) => setNascimento(e.target.value)}
+          className={campoClass}
+        />
+      </label>
+      {aviso && <p className="text-[14px] font-semibold text-red-600">{aviso}</p>}
+      <button
+        type="submit"
+        disabled={salvando || !nascimento}
+        className="bg-vest-blue hover:bg-vest-navy cursor-pointer rounded-full px-6 py-3 text-[15px] font-bold text-white disabled:opacity-60">
+        {salvando ? 'Salvando…' : 'Salvar data de nascimento'}
+      </button>
+    </form>
+  );
+};
+
 // "Esqueci meu código": manda o código para o e-mail da inscrição (nunca por WhatsApp). Sem e-mail configurado no
 // servidor, mostra o telefone da secretaria.
 const EsqueciCodigo = ({ cpf }: { cpf: string }) => {
@@ -489,6 +549,13 @@ const AreaCandidato = () => {
           <h2 className="font-chamada text-vest-navy text-center text-[32px] md:text-[40px]">
             Olá, {inscricao.nome.split(' ')[0]}!
           </h2>
+          {inscricao.precisaNascimento && (
+            <InformarNascimento
+              cpf={soDigitos(cpf)}
+              codigo={inscricao.codigo}
+              aoSalvar={(i) => setInscricao({ ...inscricao, ...i })}
+            />
+          )}
           {/* Documentos pendentes vêm antes de tudo; aprovados descem para depois do status da prova */}
           {inscricao.documentoStatus !== 'aprovado' && envio}
           <StatusProva inscricao={inscricao} agora={agora} modoTeste={modoTeste} resultado={resultado} />

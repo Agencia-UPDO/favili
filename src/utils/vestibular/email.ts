@@ -69,6 +69,8 @@ type Dados = {
   forma: string;
   prova: { quando: string; entrar: string; fim: string; agenda: string } | null;
   documento: string | null;
+  // Importada do SEI sem data de nascimento: o candidato precisa informar antes da prova
+  semNascimento: boolean;
 };
 
 // Botão de agenda: rota do nosso domínio que redireciona para o Google Agenda (src/app/vestibular/agenda/route.ts)
@@ -95,6 +97,7 @@ const dados = (i: Inscricao): Dados => {
           }
         : null,
     documento: documentoPorForma[i.forma as FormaId] ?? null,
+    semNascimento: !i.nascimento,
   };
 };
 
@@ -226,6 +229,15 @@ const montar = (opcoes: {
       : ''
   }
 
+  ${
+    d.semNascimento && !opcoes.semProva
+      ? aviso(
+          'Falta sua data de nascimento',
+          'Entre em Minha inscrição e informe sua data de nascimento antes do dia da prova. Sem ela, a prova não pode ser iniciada.',
+        )
+      : ''
+  }
+
   <tr><td align="center" style="padding:4px 32px 12px">${botao(linkAreaCandidato, 'Entrar em Minha inscrição', amarelo, azul)}</td></tr>
   ${
     opcoes.confirmacao && d.prova
@@ -258,6 +270,9 @@ const montar = (opcoes: {
     prova ? prova.entrar : '',
     prova ? prova.fim : '',
     ...(opcoes.blocos ?? []).flatMap((b) => ['', blocoTexto(b)]),
+    d.semNascimento && !opcoes.semProva
+      ? 'Falta sua data de nascimento: informe em Minha inscrição antes do dia da prova (sem ela, a prova não pode ser iniciada).'
+      : '',
     opcoes.confirmacao && d.documento ? `Último passo: envie ${d.documento} em Minha inscrição, até 20/11 às 18h.` : '',
     '',
     `Minha inscrição: ${linkAreaCandidato}`,
@@ -283,11 +298,14 @@ export const emailCodigo = (i: Inscricao) =>
     confirmacao: false,
   });
 
-export const emailConfirmacao = (i: Inscricao) =>
+// importada: inscrição feita no SEI (sistema da faculdade) e trazida pelo painel ("Importar do SEI")
+export const emailConfirmacao = (i: Inscricao, importada = false) =>
   montar({
     preheader: `Inscrição nº ${i.numero} confirmada. Guarde seu código: ${i.codigo}`,
     titulo: 'Inscrição confirmada!',
-    abertura: `Você está no ${vestibular.nome}. Guarde este e-mail: ele tem tudo o que você precisa.`,
+    abertura: importada
+      ? `A sua inscrição no ${vestibular.nome}, feita no sistema da faculdade, já está no site da prova on-line. Confira os dados e guarde este e-mail: ele tem o seu código de acesso para fazer a prova.`
+      : `Você está no ${vestibular.nome}. Guarde este e-mail: ele tem tudo o que você precisa.`,
     d: dados(i),
     confirmacao: true,
   });
@@ -412,7 +430,7 @@ export const enviarCodigo = (i: Inscricao) => {
   return enviar(i.email, `Seu código de acesso · ${vestibular.nome}`, html, texto);
 };
 
-export const enviarConfirmacao = (i: Inscricao) => {
-  const { html, texto } = emailConfirmacao(i);
+export const enviarConfirmacao = (i: Inscricao, importada = false) => {
+  const { html, texto } = emailConfirmacao(i, importada);
   return enviar(i.email, `Inscrição confirmada · ${vestibular.nome}`, html, texto);
 };

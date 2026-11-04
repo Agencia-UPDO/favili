@@ -79,7 +79,8 @@ const comparar = (a: Inscricao, b: Inscricao) =>
   (b.nota ?? 0) - (a.nota ?? 0) ||
   (b.nota_matematica ?? 0) - (a.nota_matematica ?? 0) ||
   // mais velho primeiro: nascimento mais antigo
-  a.nascimento.localeCompare(b.nascimento) ||
+  // sem data (importado do SEI e não informada) fica depois de quem tem
+  (a.nascimento ?? '9999-12-31').localeCompare(b.nascimento ?? '9999-12-31') ||
   a.criado_em.localeCompare(b.criado_em);
 
 const alcanca = (nota: number, percentual: number) => nota >= (notaMinimaBolsa[percentual] ?? Infinity);

@@ -32,6 +32,16 @@ import {
   validarPedido,
 } from '@/utils/vestibular/edicao';
 import { estatisticas } from '@/utils/vestibular/estatisticas';
+import { adicionarNaFila, configurarFila, lerFila, processarLote, resumoFila } from '@/utils/vestibular/filaSei';
+import {
+  analisar,
+  ErroImportacao,
+  importar,
+  lerImportacoes,
+  lerOpcoes,
+  registrarImportacao,
+  resumir,
+} from '@/utils/vestibular/importacao';
 import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { bloqueado, ipDe, limites, mensagemBloqueio, registrarErro } from '@/utils/vestibular/limite';
 import { abrirSessao, fecharSessao, painelConfigurado, senhaCorreta, sessaoValida } from '@/utils/vestibular/painel';
@@ -323,6 +333,14 @@ export async function GET(request: Request) {
       };
     }),
     publicadoEm: publicado?.publicadoEm ?? null,
+    // "Importar do SEI": últimas importações (sem dado pessoal)
+    importacoes: (await lerImportacoes()).slice(-5).map(({ por, em, criadas, opcoes }) => ({
+      por,
+      em,
+      criadas,
+      avisar: opcoes.avisar,
+    })),
+    filaSei: resumoFila(await lerFila()),
   });
 }
 
@@ -510,6 +528,69 @@ export async function POST(request: Request) {
       }
       throw e;
     }
+  }
+  // Importar do SEI: "previa" analisa a planilha (nada é gravado); "importar" pede a senha do painel de novo, cria as
+  // inscrições, manda e-mail/RD conforme as opções e registra quem importou
+  if (corpo.acao === 'importar-sei') {
+    if (!por) {
+      return negar('Digite seu nome no topo do painel: fica registrado quem importou.', 400);
+    }
+    const csvTexto = typeof corpo.csv === 'string' ? corpo.csv : '';
+    if (!csvTexto || csvTexto.length > 2_000_000) {
+      return negar('Envie a planilha em CSV (até 2 MB).', 400);
+    }
+    const opcoes = lerOpcoes(corpo.opcoes);
+    try {
+      const linhas = analisar(csvTexto, opcoes, await listarInscricoes());
+      const resumo = resumir(linhas);
+      if (corpo.etapa !== 'importar') {
+        return NextResponse.json({
+          ok: true,
+          resumo,
+          emailConfigurado: emailConfigurado(),
+          linhas: linhas.map(({ linha, nome, inscricaoSei, curso, prova, status, motivo, numeroExistente }) => ({
+            linha,
+            nome,
+            inscricaoSei,
+            curso,
+            prova,
+            status,
+            motivo,
+            numeroExistente,
+          })),
+        });
+      }
+      const chave = `painel:${ipDe(request)}`;
+      if (await bloqueado({ [chave]: limites.ipPainel })) {
+        return negar(mensagemBloqueio, 429);
+      }
+      if (!senhaCorreta(typeof corpo.senha === 'string' ? corpo.senha : '')) {
+        await registrarErro([chave]);
+        await new Promise((ok) => setTimeout(ok, 1000));
+        return negar('Senha do painel incorreta. Nada foi importado.', 401);
+      }
+      if (!resumo.criar) {
+        return negar('Nenhuma linha para importar.', 400);
+      }
+      const resultado = await importar(linhas);
+      // Avisos (e-mail + RD nova inscrição) saem pela fila, em lotes
+      const naFila = opcoes.avisar ? await adicionarNaFila(resultado.numeros) : 0;
+      await registrarImportacao({ por, em: new Date().toISOString(), opcoes, ...resultado });
+      return NextResponse.json({ ok: true, ...resultado, numeros: undefined, naFila });
+    } catch (e) {
+      if (e instanceof ErroImportacao) {
+        return negar(e.message, 400);
+      }
+      throw e;
+    }
+  }
+  // Fila de avisos do SEI: configurar (pausar/retomar, lote, intervalo, horário, reprocessar erros) e enviar um lote
+  if (corpo.acao === 'fila-sei-config') {
+    return NextResponse.json({ ok: true, fila: await configurarFila(corpo.config ?? {}) });
+  }
+  if (corpo.acao === 'fila-sei-lote') {
+    const lote = await processarLote({ automatico: false });
+    return NextResponse.json({ ok: true, ...lote, fila: resumoFila(await lerFila()) });
   }
   if (corpo.acao === 'publicar') {
     const resultado = await publicarResultado();
