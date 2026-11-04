@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { diaLembrete } from '@/data/inscricao';
 import { emailConfigurado, enviarConfirmacao } from './email';
 import { gravarConfig, Inscricao, lerConfig, listarInscricoes } from './inscricoes';
 import { enviarConversaoRd } from './rd';
@@ -118,6 +119,10 @@ export const processarLote = async ({ automatico }: { automatico: boolean }, ago
     const hora = horaBrasilia(agora);
     if (hora < fila.horaInicio || hora >= fila.horaFim) {
       return sem(`Fora do horário de envio (${fila.horaInicio}h às ${fila.horaFim}h).`);
+    }
+    // 19/11, das 10h às 11h: o lembrete da prova está saindo (limite de 2 e-mails/s do Resend é da conta toda)
+    if (new Date(agora - 3 * 60 * 60 * 1000).toISOString().slice(0, 10) === diaLembrete.id && hora === 10) {
+      return sem('Pausa automática: lembretes da prova saindo (19/11, 10h às 11h).');
     }
     if (fila.ultimoLote && agora - new Date(fila.ultimoLote).getTime() < fila.intervaloMin * 60 * 1000 - 30_000) {
       return sem('Ainda não deu o intervalo entre lotes.');
