@@ -1,6 +1,6 @@
 import { areasEnem, notaMinimaBolsa } from '@/data/bolsas';
 import { formas } from '@/data/vestibular';
-import { itensDocumento, ofertas } from '@/data/inscricao';
+import { itensDocumento } from '@/data/inscricao';
 import {
   confirmarNotasEnem,
   ErroDocumento,
@@ -290,7 +290,7 @@ export async function GET(request: Request) {
         nota: i.nota ?? null,
         // "Editar inscrição": valores atuais, motivo de trava (null: pode editar) e as últimas edições
         edicao: {
-          ofertaFormas: ofertas.find((o) => o.id === i.oferta_id)?.formas ?? formas.map((f) => f.id),
+          ofertaId: i.oferta_id,
           fazProva: i.faz_prova,
           dia: i.faz_prova ? i.dia_prova : null,
           hora: i.faz_prova ? (i.hora_prova?.slice(0, 5) ?? null) : null,

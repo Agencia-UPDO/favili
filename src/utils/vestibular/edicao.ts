@@ -1,13 +1,14 @@
 import 'server-only';
 
-import { diasProva, horariosProva, ofertas } from '@/data/inscricao';
+import { diasProva, horariosProva, ofertas, ofertasAtivas } from '@/data/inscricao';
 import { FormaId, formas } from '@/data/vestibular';
 import { atualizar, gravarConfig, Inscricao, lerConfig } from './inscricoes';
 import { fimDaJanela, modoTeste } from './prova';
 
 // "Editar inscrição" no painel (só a equipe, com a sessão do painel e a senha digitada de novo para salvar):
 // - muda a forma de ingresso (ex.: 2ª graduação sem documento que quer fazer a prova para tentar bolsa por nota);
-// - muda o dia/horário de quem faz a prova.
+// - muda o dia/horário de quem faz a prova;
+// - muda o curso (oferta: curso, modalidade, unidade e turno, só entre as ofertas abertas na inscrição).
 // Mantém o número de inscrição e o código de acesso. Nada é apagado: origem acadêmica, documentos enviados e notas do
 // Enem continuam gravados como histórico, mas só valem para a forma de ingresso atual (ver statusDocumento e
 // payloadRd). As regras de dia e horário são as mesmas da inscrição pública.
@@ -25,10 +26,12 @@ export type Pedido = {
   periodoAtual: string | null;
 };
 
-// O que aparece no "antes → depois" e no registro (sem dado pessoal: só forma, prova, dia e horário)
-export type Resumo = { forma: FormaId; fazProva: boolean; dia: string | null; hora: string | null };
+// O que aparece no "antes → depois" e no registro (sem dado pessoal: só curso, forma, prova, dia e horário).
+// oferta: id da oferta (registros antigos, de antes da troca de curso, não têm)
+export type Resumo = { oferta?: string; forma: FormaId; fazProva: boolean; dia: string | null; hora: string | null };
 
 export const resumo = (i: Inscricao): Resumo => ({
+  oferta: i.oferta_id,
   forma: i.forma as FormaId,
   fazProva: i.faz_prova,
   dia: i.faz_prova ? i.dia_prova : null,
@@ -60,9 +63,15 @@ export const validarPedido = (i: Inscricao, corpo: Record<string, unknown>, agor
   if (!formas.some((f) => f.id === forma)) {
     throw new ErroEdicao('Escolha a forma de ingresso.');
   }
-  const oferta = ofertas.find((o) => o.id === i.oferta_id);
-  if (oferta && !oferta.formas.includes(forma)) {
-    throw new ErroEdicao('Essa forma de ingresso não está disponível para o curso do candidato.');
+  // Curso: sem troca, vale o atual (mesmo que tenha saído desta edição); trocando, só ofertas abertas
+  const ofertaId = texto(corpo.oferta, 60) || i.oferta_id;
+  const oferta =
+    ofertaId === i.oferta_id ? ofertas.find((o) => o.id === ofertaId) : ofertasAtivas.find((o) => o.id === ofertaId);
+  if (!oferta) {
+    throw new ErroEdicao('Escolha o curso.');
+  }
+  if (!oferta.formas.includes(forma)) {
+    throw new ErroEdicao('Essa forma de ingresso não está disponível para esse curso.');
   }
 
   // Vestibular faz a prova; Enem pode fazer também para tentar uma bolsa maior; as outras não fazem
@@ -92,6 +101,12 @@ export const validarPedido = (i: Inscricao, corpo: Record<string, unknown>, agor
   }
 
   const campos: Partial<Inscricao> = {
+    oferta_id: oferta.id,
+    curso: oferta.curso,
+    modalidade: oferta.modalidade,
+    unidade: oferta.unidade,
+    turno: oferta.turno,
+    processo_sei: oferta.processoSei,
     forma,
     faz_prova: fazProva,
     dia_prova: dia || null,
@@ -100,7 +115,7 @@ export const validarPedido = (i: Inscricao, corpo: Record<string, unknown>, agor
     ...(deOutraFaculdade ? { instituicao_origem: instituicaoOrigem, curso_origem: cursoOrigem } : {}),
     ...(forma === 'transferencia' ? { periodo_atual: periodoAtual } : {}),
   };
-  const depois: Resumo = { forma, fazProva, dia: dia || null, hora: hora || null };
+  const depois: Resumo = { oferta: oferta.id, forma, fazProva, dia: dia || null, hora: hora || null };
   const antes = resumo(i);
   const mudouOrigem =
     deOutraFaculdade &&
@@ -108,7 +123,7 @@ export const validarPedido = (i: Inscricao, corpo: Record<string, unknown>, agor
       cursoOrigem !== (i.curso_origem ?? '') ||
       (forma === 'transferencia' && periodoAtual !== (i.periodo_atual ?? '')));
   if (JSON.stringify(antes) === JSON.stringify(depois) && !mudouOrigem) {
-    throw new ErroEdicao('Nada mudou: escolha outra forma de ingresso, dia ou horário.');
+    throw new ErroEdicao('Nada mudou: escolha outro curso, forma de ingresso, dia ou horário.');
   }
   return { campos, antes, depois };
 };

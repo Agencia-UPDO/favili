@@ -316,7 +316,7 @@ export const emailAtualizacao = (i: Inscricao, pelaEquipe = false) =>
     preheader: `Sua inscrição nº ${i.numero} foi atualizada. Confira os dados novos.`,
     titulo: 'Sua inscrição foi atualizada',
     abertura: pelaEquipe
-      ? `A equipe da Faculdade Vidal atualizou a sua inscrição (${i.faz_prova ? 'forma de ingresso, dia e horário da prova' : 'forma de ingresso'}). Seu número de inscrição e seu código de acesso continuam os mesmos. Estes são os dados que valem agora:`
+      ? 'A equipe da Faculdade Vidal atualizou a sua inscrição. Seu número de inscrição e seu código de acesso continuam os mesmos. Estes são os dados que valem agora (curso, forma de ingresso e prova):'
       : 'Houve uma alteração na sua inscrição (código de acesso ou dia e horário da prova). Estes são os dados que valem agora:',
     d: dados(i),
     confirmacao: true,

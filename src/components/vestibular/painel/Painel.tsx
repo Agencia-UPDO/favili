@@ -1,7 +1,7 @@
 'use client';
 
 import { areasEnem, enemAprovado, enemMediaMinima, mediaEnem, notaMinimaBolsa, NotasEnem } from '@/data/bolsas';
-import { diasProva, horariosProva, StatusDocumento } from '@/data/inscricao';
+import { diasProva, horariosProva, nomeOferta, ofertas, ofertasAtivas, StatusDocumento } from '@/data/inscricao';
 import { FormaId, formas } from '@/data/vestibular';
 import { cn } from '@/utils/cn';
 import { formatarCpf } from '@/utils/vestibular/validacao';
@@ -36,7 +36,7 @@ type Dados = {
     situacao: string;
     nota: number | null;
     edicao: {
-      ofertaFormas: FormaId[];
+      ofertaId: string;
       fazProva: boolean;
       dia: string | null;
       hora: string | null;
@@ -82,7 +82,7 @@ type Dados = {
   filaSei?: ResumoFila;
 };
 
-type ResumoEdicao = { forma: FormaId; fazProva: boolean; dia: string | null; hora: string | null };
+type ResumoEdicao = { oferta?: string; forma: FormaId; fazProva: boolean; dia: string | null; hora: string | null };
 type RegistroEdicao = {
   por: string;
   em: string;
@@ -414,15 +414,19 @@ const CelulaDocumentos = ({
 };
 
 const rotuloForma = (id: string) => formas.find((f) => f.id === id)?.rotulo ?? id;
-// "Vestibular · prova 21/11 às 8h" / "2ª graduação · sem prova"
+const rotuloOferta = (id: string) => {
+  const o = ofertas.find((x) => x.id === id);
+  return o ? nomeOferta(o) : id;
+};
+// "Psicologia · Presencial · Limoeiro do Norte · Vestibular · prova 21/11 às 8h" / "… · 2ª graduação · sem prova"
 const descreverEdicao = (r: ResumoEdicao) =>
-  `${rotuloForma(r.forma)} · ${
+  `${r.oferta ? `${rotuloOferta(r.oferta)} · ` : ''}${rotuloForma(r.forma)} · ${
     r.fazProva && r.dia && r.hora ? `prova ${dataBr(r.dia).slice(0, 5)} às ${Number(r.hora.slice(0, 2))}h` : 'sem prova'
   }`;
 
 type PreviaEdicao = { antes: ResumoEdicao; depois: ResumoEdicao; emailConfigurado: boolean };
 
-// Editar inscrição (equipe): forma de ingresso e dia/horário da prova, com as regras da inscrição pública.
+// Editar inscrição (equipe): curso, forma de ingresso e dia/horário da prova, com as regras da inscrição pública.
 // 1) "Revisar alteração" valida no servidor e mostra antes → depois; 2) "Salvar" pede a senha do painel de novo.
 // Número de inscrição e código de acesso não mudam; documentos, origem e notas do Enem antigas ficam no histórico.
 const EditarInscricao = ({
@@ -436,7 +440,10 @@ const EditarInscricao = ({
 }) => {
   const e = i.edicao;
   const [aberto, setAberto] = useState(false);
+  const [oferta, setOferta] = useState(e.ofertaId);
   const [forma, setForma] = useState<FormaId>(i.formaId as FormaId);
+  // Formas aceitas pelo curso escolhido (o atual, mesmo fora desta edição, ou um dos abertos)
+  const formasDoCurso = ofertas.find((o) => o.id === oferta)?.formas ?? formas.map((f) => f.id);
   const [fazProva, setFazProva] = useState(e.fazProva);
   const [dia, setDia] = useState(e.dia ?? '');
   const [hora, setHora] = useState(e.hora ?? '');
@@ -472,6 +479,7 @@ const EditarInscricao = ({
         etapa,
         numero: i.numero,
         por: revisor,
+        oferta,
         forma,
         fazProva: comProva,
         dia: comProva ? dia : null,
@@ -520,7 +528,7 @@ const EditarInscricao = ({
             type="button"
             onClick={() => setAberto(!aberto)}
             className="text-vest-blue cursor-pointer text-[12px] font-bold hover:underline">
-            {aberto ? 'Fechar' : 'Mudar forma ou horário'}
+            {aberto ? 'Fechar' : 'Mudar curso, forma ou horário'}
           </button>
         )}
       </div>
@@ -529,12 +537,31 @@ const EditarInscricao = ({
       {aberto && !e.trava && (
         <div className="space-y-2">
           <label className="block">
+            <span className="text-secondary/60 text-[12px]">Curso</span>
+            <select value={oferta} onChange={(ev) => mudar(setOferta)(ev.target.value)} className={campo}>
+              {!ofertasAtivas.some((o) => o.id === e.ofertaId) && (
+                <option value={e.ofertaId}>{rotuloOferta(e.ofertaId)} (atual, fora desta edição)</option>
+              )}
+              {ofertasAtivas.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {nomeOferta(o)} · {o.turno}
+                </option>
+              ))}
+            </select>
+          </label>
+          {oferta !== e.ofertaId && (
+            <p className="text-secondary/70 text-[12px]">
+              Muda o curso. O dia e o horário da prova continuam os escolhidos abaixo (confira se o candidato quer
+              outro).
+            </p>
+          )}
+          <label className="block">
             <span className="text-secondary/60 text-[12px]">Forma de ingresso</span>
             <select value={forma} onChange={(ev) => mudar(setForma)(ev.target.value as FormaId)} className={campo}>
               {formas.map((f) => (
-                <option key={f.id} value={f.id} disabled={!e.ofertaFormas.includes(f.id)}>
+                <option key={f.id} value={f.id} disabled={!formasDoCurso.includes(f.id)}>
                   {f.rotulo}
-                  {e.ofertaFormas.includes(f.id) ? '' : ' (não disponível no curso)'}
+                  {formasDoCurso.includes(f.id) ? '' : ' (não disponível no curso)'}
                 </option>
               ))}
             </select>
