@@ -3,6 +3,7 @@ import 'server-only';
 import { diasProva, horariosProva, ofertas, ofertasAtivas } from '@/data/inscricao';
 import { FormaId, formas, vestibular } from '@/data/vestibular';
 import { atualizar, gravarConfig, Inscricao, lerConfig } from './inscricoes';
+import { celularValido, emailValido, idadeEm, soDigitos } from './validacao';
 import { fimDaJanela, modoTeste } from './prova';
 
 // "Editar inscrição" no painel (só a equipe, com a sessão do painel e a senha digitada de novo para salvar):
@@ -216,3 +217,65 @@ export const validarTrocaCurso = (
   };
   return { campos, antes: resumo(i), depois: resumo({ ...i, ...campos }) };
 };
+
+// ---------- Dados de contato (painel): e-mail, WhatsApp e data de nascimento ----------
+// Mesmas validações da inscrição. A data de nascimento é critério de desempate: não muda depois do resultado publicado.
+// O registro guarda só QUAIS campos mudaram (nunca os valores).
+export type CampoContato = 'email' | 'celular' | 'nascimento';
+
+export const validarContato = (i: Inscricao, corpo: Record<string, unknown>, publicado: boolean) => {
+  const email = texto(corpo.email, 160).toLowerCase();
+  const celular = soDigitos(texto(corpo.celular, 30));
+  const nascimento = texto(corpo.nascimento, 10);
+  if (!emailValido(email)) {
+    throw new ErroEdicao('Confira o e-mail.');
+  }
+  if (!celularValido(celular)) {
+    throw new ErroEdicao('Confira o WhatsApp com DDD (11 dígitos).');
+  }
+  if (nascimento) {
+    const idade = idadeEm(nascimento);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nascimento) || !(idade >= 14 && idade <= 100)) {
+      throw new ErroEdicao('Confira a data de nascimento.');
+    }
+  } else if (i.nascimento) {
+    throw new ErroEdicao('A data de nascimento não pode ficar vazia.');
+  }
+  const campos: Partial<Inscricao> = {};
+  if (email !== i.email) {
+    campos.email = email;
+  }
+  if (celular !== i.celular) {
+    campos.celular = celular;
+  }
+  if (nascimento && nascimento !== i.nascimento) {
+    if (publicado) {
+      throw new ErroEdicao(
+        'O resultado já foi publicado: a data de nascimento (critério de desempate) não pode mudar.',
+      );
+    }
+    campos.nascimento = nascimento;
+  }
+  const mudou = Object.keys(campos) as CampoContato[];
+  if (!mudou.length) {
+    throw new ErroEdicao('Nada mudou: altere o e-mail, o WhatsApp ou a data de nascimento.');
+  }
+  const antes = { email: i.email, celular: i.celular, nascimento: i.nascimento ?? null };
+  const depois = { ...antes, ...campos };
+  return { campos, mudou, antes, depois };
+};
+
+export type RegistroContato = {
+  numero: number;
+  por: string;
+  em: string;
+  campos: CampoContato[];
+  codigoReenviado: boolean;
+};
+
+export const registrarContato = async (registro: RegistroContato) => {
+  const atual = (await lerConfig<RegistroContato[]>('log-contatos')) ?? [];
+  await gravarConfig('log-contatos', [...atual, registro].slice(-2000));
+};
+
+export const lerContatos = async () => (await lerConfig<RegistroContato[]>('log-contatos')) ?? [];

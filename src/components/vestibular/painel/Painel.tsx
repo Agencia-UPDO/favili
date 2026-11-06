@@ -45,6 +45,7 @@ type Dados = {
       periodoAtual: string;
       trava: string | null;
       historico: RegistroEdicao[];
+      contatos: { por: string; em: string; campos: ('email' | 'celular' | 'nascimento')[]; codigoReenviado: boolean }[];
     };
     atendimentoEspecial: string | null;
     documentoStatus: StatusDocumento | null;
@@ -280,10 +281,18 @@ const CodigoAcesso = ({ numero, revisor }: { numero: number; revisor: string }) 
   const [aviso, setAviso] = useState('');
   const [ocupado, setOcupado] = useState(false);
 
-  const pedir = async (acao: 'ver-codigo' | 'novo-codigo') => {
+  const pedir = async (acao: 'ver-codigo' | 'novo-codigo' | 'reenviar-codigo') => {
     if (
       acao === 'novo-codigo' &&
-      !window.confirm('Gerar um código novo? O código antigo deixa de funcionar e o candidato precisa receber o novo.')
+      !window.confirm(
+        'Gerar um código novo? O código antigo deixa de funcionar e o candidato recebe o novo por e-mail.',
+      )
+    ) {
+      return;
+    }
+    if (
+      acao === 'reenviar-codigo' &&
+      !window.confirm('Reenviar o código atual para o e-mail cadastrado do candidato?')
     ) {
       return;
     }
@@ -300,7 +309,11 @@ const CodigoAcesso = ({ numero, revisor }: { numero: number; revisor: string }) 
       setAviso(json.mensagem ?? 'Não deu certo. Tente de novo.');
       return;
     }
-    setCodigo(json.codigo);
+    if (acao === 'reenviar-codigo') {
+      setAviso(`Código reenviado para ${json.email}.`);
+    } else {
+      setCodigo(json.codigo);
+    }
     setHistorico(json.historico ?? []);
   };
 
@@ -321,17 +334,34 @@ const CodigoAcesso = ({ numero, revisor }: { numero: number; revisor: string }) 
         <button
           type="button"
           disabled={ocupado}
+          onClick={() => pedir('reenviar-codigo')}
+          className="bg-vest-blue cursor-pointer rounded-full px-2.5 py-1 text-[12px] font-bold text-white">
+          Reenviar código por e-mail
+        </button>
+        <button
+          type="button"
+          disabled={ocupado}
           onClick={() => pedir('novo-codigo')}
           className="border-stroke-3 cursor-pointer rounded-full border px-2.5 py-1 text-[12px] font-bold">
           Gerar novo código
         </button>
       </div>
-      {aviso && <p className="text-[12px] font-semibold text-red-700">{aviso}</p>}
+      <p className="text-secondary/60 text-[11px]">O código vai só por e-mail (não mande por WhatsApp).</p>
+      {aviso && (
+        <p
+          className={cn(
+            'text-[12px] font-semibold',
+            aviso.startsWith('Código reenviado') ? 'text-green-700' : 'text-red-700',
+          )}>
+          {aviso}
+        </p>
+      )}
       {historico.length > 0 && (
         <ul className="text-secondary/60 text-[11px]">
           {historico.map((h) => (
             <li key={h.em}>
-              {h.acao === 'gerar' ? 'Gerado' : 'Visto'} por {h.por} em {dataHora(h.em)}
+              {h.acao === 'gerar' ? 'Gerado' : h.acao === 'reenviar' ? 'Reenviado por e-mail' : 'Visto'} por {h.por} em{' '}
+              {dataHora(h.em)}
             </li>
           ))}
         </ul>
@@ -412,6 +442,200 @@ const CelulaDocumentos = ({
     </div>
   );
 };
+
+const rotuloCampoContato = { email: 'e-mail', celular: 'WhatsApp', nascimento: 'data de nascimento' };
+
+// Corrigir dados de contato (equipe): e-mail, WhatsApp e data de nascimento, com antes → depois e a senha do painel.
+// O registro guarda só quais campos mudaram. Opção de reenviar o código para o e-mail (novo).
+const EditarContato = ({
+  inscricao: i,
+  revisor,
+  salvo,
+}: {
+  inscricao: LinhaInscricao;
+  revisor: string;
+  salvo: () => void;
+}) => {
+  const [aberto, setAberto] = useState(false);
+  const [email, setEmail] = useState(i.email);
+  const [celular, setCelular] = useState(i.celular);
+  const [nascimento, setNascimento] = useState(i.nascimento ?? '');
+  const [reenviarCodigo, setReenviarCodigo] = useState(true);
+  const [senha, setSenha] = useState('');
+  const [previa, setPrevia] = useState<{
+    antes: { email: string; celular: string; nascimento: string | null };
+    depois: { email: string; celular: string; nascimento: string | null };
+    mudou: ('email' | 'celular' | 'nascimento')[];
+  } | null>(null);
+  const [aviso, setAviso] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+
+  const mudar = (set: (v: string) => void) => (v: string) => {
+    set(v);
+    setPrevia(null);
+    setAviso('');
+  };
+
+  const enviar = async (etapa: 'previa' | 'salvar') => {
+    setOcupado(true);
+    setAviso('');
+    const res = await fetch('/api/vestibular/painel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        acao: 'editar-contato',
+        etapa,
+        numero: i.numero,
+        por: revisor,
+        email,
+        celular,
+        nascimento,
+        reenviarCodigo,
+        senha: etapa === 'salvar' ? senha : undefined,
+      }),
+    }).catch(() => null);
+    const json = res ? await res.json().catch(() => ({})) : {};
+    setOcupado(false);
+    if (!res?.ok) {
+      setAviso(json.mensagem ?? 'Não deu certo. Tente de novo.');
+      return;
+    }
+    if (etapa === 'previa') {
+      setPrevia(json);
+      return;
+    }
+    setSenha('');
+    setPrevia(null);
+    setAberto(false);
+    window.alert(
+      [
+        'Dados corrigidos.',
+        json.mudou.some((c: string) => c !== 'nascimento')
+          ? json.rd
+            ? 'RD: atualizada.'
+            : 'RD: não confirmou o envio (dá para usar "Reenviar para a RD").'
+          : '',
+        reenviarCodigo
+          ? json.codigo
+            ? 'Código reenviado por e-mail.'
+            : 'O código NÃO foi reenviado (e-mail falhou ou não configurado).'
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    );
+    salvo();
+  };
+
+  const campo = 'border-stroke-3 h-9 w-full rounded-lg border bg-white px-2 text-[13px]';
+  const linha = (rotulo: string, a: string, d: string) =>
+    a === d ? null : (
+      <p key={rotulo}>
+        <span className="text-secondary/70">{rotulo}:</span> {a || '(vazio)'} → <strong>{d}</strong>
+      </p>
+    );
+  return (
+    <div className="border-vest-blue/40 mb-3 space-y-2 rounded-xl border border-dashed p-3 text-[13px]">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-vest-navy font-bold">Dados de contato</p>
+        <button
+          type="button"
+          onClick={() => setAberto(!aberto)}
+          className="text-vest-blue cursor-pointer text-[12px] font-bold hover:underline">
+          {aberto ? 'Fechar' : 'Corrigir e-mail, WhatsApp ou nascimento'}
+        </button>
+      </div>
+      {aberto && (
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <label className="block">
+              <span className="text-secondary/60 text-[12px]">E-mail</span>
+              <input value={email} onChange={(e) => mudar(setEmail)(e.target.value)} className={campo} />
+            </label>
+            <label className="block">
+              <span className="text-secondary/60 text-[12px]">WhatsApp (com DDD)</span>
+              <input value={celular} onChange={(e) => mudar(setCelular)(e.target.value)} className={campo} />
+            </label>
+            <label className="block">
+              <span className="text-secondary/60 text-[12px]">Data de nascimento</span>
+              <input
+                type="date"
+                value={nascimento}
+                onChange={(e) => mudar(setNascimento)(e.target.value)}
+                className={campo}
+              />
+            </label>
+          </div>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={reenviarCodigo} onChange={(e) => setReenviarCodigo(e.target.checked)} />
+            Reenviar o código de acesso para o e-mail {email !== i.email ? 'novo' : 'cadastrado'}
+          </label>
+          {!previa ? (
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={() => enviar('previa')}
+              className="bg-vest-blue cursor-pointer rounded-full px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50">
+              Revisar correção
+            </button>
+          ) : (
+            <div className="space-y-2 rounded-lg bg-amber-50 p-2">
+              <p className="font-bold">Confirme a correção da inscrição nº {i.numero}:</p>
+              {linha('E-mail', previa.antes.email, previa.depois.email)}
+              {linha('WhatsApp', celular_(previa.antes.celular), celular_(previa.depois.celular))}
+              {linha(
+                'Nascimento',
+                previa.antes.nascimento ? dataBr(previa.antes.nascimento) : '',
+                previa.depois.nascimento ? dataBr(previa.depois.nascimento) : '',
+              )}
+              <p className="text-secondary/70 text-[12px]">
+                {previa.mudou.some((c) => c !== 'nascimento')
+                  ? 'O e-mail/WhatsApp novo vai para a RD como atualização (sem WhatsApp). A data de nascimento nunca vai para a RD.'
+                  : 'A data de nascimento fica só no nosso sistema (não vai para a RD).'}
+              </p>
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Senha do painel para confirmar"
+                aria-label="Senha do painel"
+                autoComplete="current-password"
+                className={campo}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={ocupado || !senha}
+                  onClick={() => enviar('salvar')}
+                  className="cursor-pointer rounded-full bg-green-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50">
+                  Salvar correção
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrevia(null)}
+                  className="border-stroke-3 cursor-pointer rounded-full border px-3 py-1.5 text-[12px] font-bold">
+                  Voltar
+                </button>
+              </div>
+            </div>
+          )}
+          {aviso && <p className="text-[12px] font-semibold text-red-700">{aviso}</p>}
+        </div>
+      )}
+      {i.edicao.contatos.length > 0 && (
+        <ul className="text-secondary/60 space-y-0.5 text-[11px]">
+          {i.edicao.contatos.map((h) => (
+            <li key={h.em}>
+              {dataHora(h.em)} · {h.por}: corrigiu {h.campos.map((c) => rotuloCampoContato[c]).join(', ')}
+              {h.codigoReenviado ? ' · código reenviado' : ''}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+const celular_ = (c: string) => c.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
 
 const rotuloForma = (id: string) => formas.find((f) => f.id === id)?.rotulo ?? id;
 const rotuloOferta = (id: string) => {
@@ -1651,6 +1875,12 @@ const Painel = () => {
                                 ))}
                             </div>
                             <div className="sticky left-3 mt-4 max-w-[620px]">
+                              <EditarContato
+                                key={`contato-${i.email}-${i.celular}-${i.nascimento}`}
+                                inscricao={i}
+                                revisor={revisor}
+                                salvo={carregar}
+                              />
                               <EditarInscricao
                                 key={`${i.formaId}-${i.prova}-${i.edicao.historico.length}`}
                                 inscricao={i}

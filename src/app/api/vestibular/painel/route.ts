@@ -16,17 +16,21 @@ import {
   pendentesResultado,
 } from '@/utils/vestibular/resultadoEmail';
 import {
+  atualizar,
   historicoCodigo,
   listarInscricoes,
   registrarCodigo,
   statusDocumento,
   trocarCodigo,
 } from '@/utils/vestibular/inscricoes';
-import { emailConfigurado, enviarAtualizacao } from '@/utils/vestibular/email';
+import { emailConfigurado, enviarAtualizacao, enviarCodigo, mascararEmail } from '@/utils/vestibular/email';
 import {
   ErroEdicao,
+  lerContatos,
   lerEdicoes,
+  registrarContato,
   registrarEdicao,
+  validarContato,
   salvarEdicao,
   travaEdicao,
   validarPedido,
@@ -246,6 +250,7 @@ export async function GET(request: Request) {
 
   const publicado = await resultadoPublicado();
   const edicoes = await lerEdicoes();
+  const contatos = await lerContatos();
   return NextResponse.json({
     ok: true,
     resumo: {
@@ -299,6 +304,11 @@ export async function GET(request: Request) {
           periodoAtual: i.periodo_atual ?? '',
           trava: travaEdicao(i, !!publicado?.publicadoEm),
           historico: edicoes.filter((e) => e.numero === i.numero).slice(-5),
+          // Correções de contato: só quais campos mudaram, quem e quando
+          contatos: contatos
+            .filter((c) => c.numero === i.numero)
+            .slice(-5)
+            .map(({ por, em, campos, codigoReenviado }) => ({ por, em, campos, codigoReenviado })),
         },
         atendimentoEspecial: i.atendimento_especial,
         documentoStatus: statusDocumento(i),
@@ -425,6 +435,81 @@ export async function POST(request: Request) {
       codigo: inscricao.codigo,
       historico: await historicoCodigo(inscricao.numero),
     });
+  }
+  // Reenviar o código ATUAL para o e-mail cadastrado (não muda o código nem mostra na tela); fica registrado
+  if (corpo.acao === 'reenviar-codigo') {
+    if (!por) {
+      return negar('Digite seu nome no topo do painel: fica registrado quem reenviou o código.', 400);
+    }
+    const inscricao = (await listarInscricoes()).find((i) => i.numero === Number(corpo.numero));
+    if (!inscricao) {
+      return negar('Inscrição não encontrada.', 404);
+    }
+    if (!emailConfigurado()) {
+      return negar('O e-mail não está configurado neste ambiente.', 503);
+    }
+    if (!(await enviarCodigo(inscricao).catch(() => false))) {
+      return negar('O e-mail não saiu. Tente de novo em instantes.', 502);
+    }
+    await registrarCodigo(inscricao.numero, 'reenviar', por);
+    return NextResponse.json({
+      ok: true,
+      email: mascararEmail(inscricao.email),
+      historico: await historicoCodigo(inscricao.numero),
+    });
+  }
+  // Corrigir e-mail, WhatsApp e data de nascimento. "previa" valida e devolve antes → depois; "salvar" pede a senha
+  // do painel, grava, registra (só quais campos), manda a RD (atualização: e-mail/WhatsApp, nunca nascimento) e, se
+  // marcado, reenvia o código para o e-mail (novo)
+  if (corpo.acao === 'editar-contato') {
+    if (!por) {
+      return negar('Digite seu nome no topo do painel: fica registrado quem corrigiu os dados.', 400);
+    }
+    const inscricao = (await listarInscricoes()).find((i) => i.numero === Number(corpo.numero));
+    if (!inscricao) {
+      return negar('Inscrição não encontrada.', 404);
+    }
+    try {
+      const { campos, mudou, antes, depois } = validarContato(
+        inscricao,
+        corpo,
+        !!(await resultadoPublicado())?.publicadoEm,
+      );
+      if (corpo.etapa !== 'salvar') {
+        return NextResponse.json({ ok: true, antes, depois, mudou, emailConfigurado: emailConfigurado() });
+      }
+      const chave = `painel:${ipDe(request)}`;
+      if (await bloqueado({ [chave]: limites.ipPainel })) {
+        return negar(mensagemBloqueio, 429);
+      }
+      if (!senhaCorreta(typeof corpo.senha === 'string' ? corpo.senha : '')) {
+        await registrarErro([chave]);
+        await new Promise((r) => setTimeout(r, 1000));
+        return negar('Senha do painel incorreta. Nada foi alterado.', 401);
+      }
+      const atualizada = await atualizar(inscricao, campos);
+      const reenviar = corpo.reenviarCodigo === true && emailConfigurado();
+      const [rd, codigo] = await Promise.all([
+        mudou.some((c) => c !== 'nascimento') ? enviarConversaoRd(atualizada, 'atualizacao') : Promise.resolve(false),
+        reenviar ? enviarCodigo(atualizada).catch(() => false) : Promise.resolve(false),
+      ]);
+      if (codigo) {
+        await registrarCodigo(atualizada.numero, 'reenviar', por);
+      }
+      await registrarContato({
+        numero: atualizada.numero,
+        por,
+        em: new Date().toISOString(),
+        campos: mudou,
+        codigoReenviado: codigo,
+      });
+      return NextResponse.json({ ok: true, rd, codigo, mudou });
+    } catch (e) {
+      if (e instanceof ErroEdicao) {
+        return negar(e.message, 400);
+      }
+      throw e;
+    }
   }
   // Uma inscrição de novo como "nova inscrição" na RD (refaz o fluxo de entrada na Kommo, inclusive o WhatsApp)
   if (corpo.acao === 'reenviar-inscricao-rd') {

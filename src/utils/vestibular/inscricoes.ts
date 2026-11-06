@@ -249,7 +249,8 @@ export const trocarCodigo = async (inscricao: Inscricao): Promise<Inscricao> => 
 };
 
 // Registro de quem viu ou trocou o código pelo painel (últimos 2000)
-type RegistroCodigo = { numero: number; acao: 'ver' | 'gerar'; por: string; em: string };
+// ver: mostrado no painel; gerar: código novo (vai por e-mail); reenviar: o código atual reenviado por e-mail
+type RegistroCodigo = { numero: number; acao: 'ver' | 'gerar' | 'reenviar'; por: string; em: string };
 export const registrarCodigo = async (numero: number, acao: RegistroCodigo['acao'], por: string) => {
   const atual = (await lerConfig<RegistroCodigo[]>('log-codigos')) ?? [];
   await gravarConfig('log-codigos', [...atual, { numero, acao, por, em: new Date().toISOString() }].slice(-2000));
