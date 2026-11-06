@@ -5,12 +5,21 @@ import { enviarAtualizacao } from '@/utils/vestibular/email';
 import { entrarComLimite, mensagemBloqueio } from '@/utils/vestibular/limite';
 import { enviarConversaoRd } from '@/utils/vestibular/rd';
 import { entregarSeVenceu, modoTeste } from '@/utils/vestibular/prova';
-import { resultadoDoCandidato } from '@/utils/vestibular/resultado';
+import { resultadoDoCandidato, resultadoPublicado } from '@/utils/vestibular/resultado';
+import {
+  ErroEdicao,
+  lerEdicoes,
+  limiteTrocasCurso,
+  registrarEdicao,
+  salvarEdicao,
+  trocasCursoFeitas,
+  validarTrocaCurso,
+} from '@/utils/vestibular/edicao';
 import { idadeEm, soDigitos } from '@/utils/vestibular/validacao';
 import { NextResponse } from 'next/server';
 
-// Área do candidato: POST entra com CPF + código e devolve a inscrição; PATCH troca o dia/horário da prova
-// (até o fim das inscrições) ou registra a data de nascimento de quem foi importado do SEI sem ela.
+// Área do candidato: POST entra com CPF + código e devolve a inscrição; PATCH troca o dia/horário da prova ou o
+// curso (até o fim das inscrições) ou registra a data de nascimento de quem foi importado do SEI sem ela.
 // Toda chamada confere CPF e código de novo, então não há sessão para roubar.
 
 type Corpo = Partial<Record<string, unknown>>;
@@ -45,7 +54,10 @@ export async function POST(request: Request) {
   const atual = await entregarSeVenceu(inscricao);
   return NextResponse.json({
     ok: true,
-    inscricao: visaoCandidato(atual),
+    inscricao: {
+      ...visaoCandidato(atual),
+      trocasCursoRestantes: limiteTrocasCurso - trocasCursoFeitas(await lerEdicoes(), atual.numero),
+    },
     modoTeste,
     resultado: atual.faz_prova ? await resultadoDoCandidato(atual) : null,
     // Hora do servidor: a tela segue ela, não o relógio do celular (que pode estar errado ou em outro fuso)
@@ -62,13 +74,49 @@ export async function PATCH(request: Request) {
   if (!inscricao) {
     return naoEncontrada();
   }
+  // Troca de curso: sem "confirmar", só valida e devolve o antes → depois; com "confirmar", grava, registra no log de
+  // edições (origem: candidato), manda o e-mail "Sua inscrição foi atualizada" e a conversão de atualização na RD
+  if (corpo.oferta !== undefined) {
+    try {
+      const feitas = trocasCursoFeitas(await lerEdicoes(), inscricao.numero);
+      const publicado = !!(await resultadoPublicado())?.publicadoEm;
+      const { campos, antes, depois } = validarTrocaCurso(inscricao, texto(corpo.oferta, 60), { publicado, feitas });
+      if (corpo.confirmar !== true) {
+        return NextResponse.json({ ok: true, antes, depois, restantes: limiteTrocasCurso - feitas });
+      }
+      const atualizada = await salvarEdicao(inscricao, campos);
+      const [email, rd] = await Promise.all([
+        enviarAtualizacao(atualizada),
+        enviarConversaoRd(atualizada, 'atualizacao'),
+      ]);
+      await registrarEdicao({
+        numero: atualizada.numero,
+        origem: 'candidato',
+        por: 'Candidato (Minha inscrição)',
+        em: new Date().toISOString(),
+        antes,
+        depois,
+        avisouPorEmail: email,
+        rd,
+      });
+      return NextResponse.json({
+        ok: true,
+        inscricao: { ...visaoCandidato(atualizada), trocasCursoRestantes: limiteTrocasCurso - feitas - 1 },
+      });
+    } catch (e) {
+      if (e instanceof ErroEdicao) {
+        return NextResponse.json(
+          { ok: false, mensagem: e.message.replace('O candidato começou', 'Você começou') },
+          { status: 400 },
+        );
+      }
+      throw e;
+    }
+  }
   // Importado do SEI sem data de nascimento: o candidato informa uma vez (depois, só a secretaria corrige)
   if (corpo.nascimento !== undefined) {
     if (inscricao.nascimento) {
-      return NextResponse.json(
-        { ok: false, mensagem: 'Sua data de nascimento já está registrada.' },
-        { status: 400 },
-      );
+      return NextResponse.json({ ok: false, mensagem: 'Sua data de nascimento já está registrada.' }, { status: 400 });
     }
     const nascimento = texto(corpo.nascimento, 10);
     const idade = idadeEm(nascimento);

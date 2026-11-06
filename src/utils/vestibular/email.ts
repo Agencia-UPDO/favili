@@ -317,7 +317,7 @@ export const emailAtualizacao = (i: Inscricao, pelaEquipe = false) =>
     titulo: 'Sua inscrição foi atualizada',
     abertura: pelaEquipe
       ? 'A equipe da Faculdade Vidal atualizou a sua inscrição. Seu número de inscrição e seu código de acesso continuam os mesmos. Estes são os dados que valem agora (curso, forma de ingresso e prova):'
-      : 'Houve uma alteração na sua inscrição (código de acesso ou dia e horário da prova). Estes são os dados que valem agora:',
+      : 'Houve uma alteração na sua inscrição (curso, dia e horário da prova ou código de acesso). Estes são os dados que valem agora:',
     d: dados(i),
     confirmacao: true,
   });
@@ -416,7 +416,7 @@ export const enviarResultado = (i: Inscricao, bolsa: number | null) => {
   return enviar(i.email, assunto, html, texto).catch(() => false);
 };
 
-// Depois de trocar o código (painel) ou o dia/horário (Minha inscrição); só se o e-mail estiver configurado
+// Depois de trocar o código (painel) ou o curso ou o dia/horário (Minha inscrição); só se o e-mail estiver configurado
 export const enviarAtualizacao = (i: Inscricao, pelaEquipe = false) => {
   if (!emailConfigurado()) {
     return Promise.resolve(false);

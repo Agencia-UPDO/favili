@@ -8,7 +8,9 @@ import {
   horaFim,
   horariosProva,
   minutosAntes,
+  nomeOferta,
   ofertas,
+  ofertasAtivas,
 } from '@/data/inscricao';
 import { instituicao, vestibular } from '@/data/vestibular';
 import { formatarCpf, soDigitos } from '@/utils/vestibular/validacao';
@@ -338,6 +340,140 @@ const TrocarHorario = ({
   );
 };
 
+// Troca de curso pelo candidato (até o fim das inscrições, até 3 vezes): escolhe → confere antes → depois → confirma.
+// Forma de ingresso, dia e horário da prova, nº e código continuam os mesmos.
+const TrocarCurso = ({
+  inscricao,
+  codigo,
+  cpf,
+  aoTrocar,
+}: {
+  inscricao: InscricaoConfirmada;
+  codigo: string;
+  cpf: string;
+  aoTrocar: (i: InscricaoConfirmada) => void;
+}) => {
+  const [aberto, setAberto] = useState(false);
+  const [oferta, setOferta] = useState('');
+  const [previa, setPrevia] = useState<{ antes: string; depois: string } | null>(null);
+  const [status, setStatus] = useState<'idle' | 'salvando' | 'salvo'>('idle');
+  const [aviso, setAviso] = useState('');
+  const opcoes = ofertasAtivas.filter((o) => o.id !== inscricao.ofertaId && o.formas.includes(inscricao.forma));
+  const nome = (id?: string) => {
+    const o = ofertas.find((x) => x.id === id);
+    return o ? `${nomeOferta(o)} · ${o.turno}` : '';
+  };
+
+  const chamar = async (confirmar: boolean) => {
+    setStatus('salvando');
+    setAviso('');
+    const res = await fetch('/api/vestibular/acesso', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cpf, codigo, oferta, confirmar }),
+    }).catch(() => null);
+    const resposta = res ? await res.json().catch(() => ({})) : {};
+    setStatus('idle');
+    if (!res?.ok || !resposta.ok) {
+      setAviso(resposta.mensagem ?? 'Não conseguimos trocar o curso. Tente de novo.');
+      return;
+    }
+    if (!confirmar) {
+      setPrevia({ antes: nome(resposta.antes?.oferta), depois: nome(resposta.depois?.oferta) });
+      return;
+    }
+    aoTrocar(resposta.inscricao);
+    setStatus('salvo');
+    setAberto(false);
+    setPrevia(null);
+    setOferta('');
+  };
+
+  if (!opcoes.length) {
+    return null;
+  }
+  if (!aberto) {
+    return (
+      <div className="text-center print:hidden">
+        {status === 'salvo' && (
+          <p className="text-vest-blue mb-2 text-[14px] font-semibold">
+            Curso atualizado. Enviamos um e-mail com os dados novos.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          className="text-vest-blue cursor-pointer text-[15px] font-semibold underline-offset-4 hover:underline">
+          Trocar o curso
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-stroke-2 space-y-4 rounded-[22px] border p-5">
+      <p className="text-vest-navy font-bold">Escolha o novo curso</p>
+      <p className="text-[14px]">
+        Você pode trocar até 20/11, às 18h
+        {typeof inscricao.trocasCursoRestantes === 'number' &&
+          ` (${inscricao.trocasCursoRestantes === 1 ? 'resta 1 troca' : `restam ${inscricao.trocasCursoRestantes} trocas`})`}
+        . Sua forma de ingresso, o dia e o horário da prova, o número de inscrição e o código continuam os mesmos.
+      </p>
+      <select
+        value={oferta}
+        onChange={(e) => {
+          setOferta(e.target.value);
+          setPrevia(null);
+          setAviso('');
+        }}
+        aria-label="Novo curso"
+        className={campoClass}>
+        <option value="">Escolha o curso</option>
+        {opcoes.map((o) => (
+          <option key={o.id} value={o.id}>
+            {nomeOferta(o)} · {o.turno}
+          </option>
+        ))}
+      </select>
+      {previa && (
+        <div className="space-y-1 rounded-2xl bg-amber-50 p-4 text-[14px]">
+          <p>
+            <span className="text-secondary/70">Antes:</span> {previa.antes}
+          </p>
+          <p>
+            <span className="text-secondary/70">Depois:</span> <strong>{previa.depois}</strong>
+          </p>
+          {inscricao.documentoStatus === 'aprovado' && (
+            <p className="text-secondary/80 pt-1 text-[13px]">
+              Seu documento já foi aprovado e continua valendo; a equipe pode conferir de novo por causa da troca.
+            </p>
+          )}
+        </div>
+      )}
+      {aviso && <p className="text-[14px] font-semibold text-red-600">{aviso}</p>}
+      <div className="flex flex-wrap justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setAberto(false);
+            setPrevia(null);
+            setAviso('');
+          }}
+          className="text-secondary/70 cursor-pointer px-4 text-[15px] font-semibold">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={() => chamar(!!previa)}
+          disabled={!oferta || status === 'salvando'}
+          className="bg-vest-blue hover:bg-vest-navy cursor-pointer rounded-full px-6 py-3 text-[15px] font-bold text-white disabled:opacity-60">
+          {status === 'salvando' ? 'Aguarde…' : previa ? 'Confirmar troca de curso' : 'Continuar'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Inscrição importada do SEI sem data de nascimento: o candidato informa antes da prova (critério de desempate)
 const InformarNascimento = ({
   cpf,
@@ -534,6 +670,16 @@ const AreaCandidato = () => {
       !inscricao.provaEntregue &&
       agora < new Date(vestibular.fimInscricoes).getTime() &&
       (inicioDaProva(inscricao)?.getTime() ?? 0) > agora;
+    // Troca de curso: até o fim das inscrições, antes de começar a prova (sem prova: até o prazo) e sem resultado
+    const podeTrocarCurso =
+      !inscricao.provaIniciada &&
+      !inscricao.provaEntregue &&
+      !resultado?.publicado &&
+      agora < new Date(vestibular.fimInscricoes).getTime() &&
+      (!inscricao.fazProva ||
+        !inicioDaProva(inscricao) ||
+        agora < inicioDaProva(inscricao)!.getTime() + 2 * 60 * 60 * 1000) &&
+      (inscricao.trocasCursoRestantes ?? 1) > 0;
     const oferta = ofertas.find((o) => o.id === inscricao.ofertaId);
     const envio = (
       <EnvioDocumentos
@@ -589,7 +735,22 @@ const AreaCandidato = () => {
             <Confirmacao inscricao={inscricao} modo="area" />
             {podeTrocar && (
               <div className="print:hidden">
-                <TrocarHorario inscricao={inscricao} cpf={cpf} codigo={inscricao.codigo} aoTrocar={setInscricao} />
+                <TrocarHorario
+                  inscricao={inscricao}
+                  cpf={cpf}
+                  codigo={inscricao.codigo}
+                  aoTrocar={(i) => setInscricao({ ...inscricao, ...i })}
+                />
+              </div>
+            )}
+            {podeTrocarCurso && (
+              <div className="print:hidden">
+                <TrocarCurso
+                  inscricao={inscricao}
+                  cpf={cpf}
+                  codigo={inscricao.codigo}
+                  aoTrocar={(i) => setInscricao({ ...inscricao, ...i })}
+                />
               </div>
             )}
           </div>

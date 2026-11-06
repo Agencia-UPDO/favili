@@ -419,6 +419,11 @@ export const faq = [
       'O código aparece na tela e chega por e-mail logo depois da inscrição, e o lembrete chega em 19/11. Confira a caixa de spam e as abas de promoções. Se perdeu o código, use "Esqueci meu código" em Minha inscrição: ele chega no seu e-mail. Se ainda precisar de ajuda, fale com a Faculdade Vidal pelo (88) 3423-6090.',
   },
   {
+    pergunta: 'Posso trocar o curso ou o horário da prova depois de me inscrever?',
+    resposta:
+      'Pode, até 20/11, às 18h. Entre em Minha inscrição com seu CPF e o código de acesso e abra "Ver comprovante e opções": lá você troca o dia e o horário da prova e também o curso (até 3 trocas de curso). Seu número de inscrição e seu código continuam os mesmos, e você recebe um e-mail com os dados novos.',
+  },
+  {
     pergunta: 'Quanto tempo eu tenho para fazer a prova?',
     resposta:
       '2 horas, contadas a partir do horário que você escolheu. A prova termina 2 horas depois desse horário, mesmo que você comece atrasado: quem escolheu 18h e entra às 19h tem só até as 20h. Para usar as 2 horas inteiras, entre 15 minutos antes do seu horário.',

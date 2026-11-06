@@ -34,6 +34,8 @@ export type InscricaoConfirmada = {
   horaProva: string | null;
   provaIniciada?: boolean;
   precisaNascimento?: boolean;
+  // Trocas de curso que ainda pode fazer em Minha inscrição (limite por inscrição)
+  trocasCursoRestantes?: number;
   provaEntregue?: boolean;
 } & Omit<InscricaoComDocumentos, 'forma'>;
 

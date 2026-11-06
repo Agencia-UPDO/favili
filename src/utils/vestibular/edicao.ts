@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { diasProva, horariosProva, ofertas, ofertasAtivas } from '@/data/inscricao';
-import { FormaId, formas } from '@/data/vestibular';
+import { FormaId, formas, vestibular } from '@/data/vestibular';
 import { atualizar, gravarConfig, Inscricao, lerConfig } from './inscricoes';
 import { fimDaJanela, modoTeste } from './prova';
 
@@ -141,6 +141,8 @@ export const salvarEdicao = async (i: Inscricao, campos: Partial<Inscricao>) => 
 // Só nº de inscrição, quem (nome digitado no painel), quando e o que mudou: forma, prova, dia e horário.
 export type RegistroEdicao = {
   numero: number;
+  // equipe: painel ("Editar inscrição"); candidato: Minha inscrição (troca de curso). Registros antigos: equipe.
+  origem?: 'equipe' | 'candidato';
   por: string;
   em: string;
   antes: Resumo;
@@ -157,3 +159,60 @@ export const registrarEdicao = async (registro: RegistroEdicao) => {
 };
 
 export const lerEdicoes = async () => (await lerConfig<RegistroEdicao[]>(chaveLog)) ?? [];
+
+// ---------- Troca de curso pelo próprio candidato (Minha inscrição) ----------
+// Até o fim das inscrições (o mesmo prazo da troca de horário), só entre as ofertas abertas que aceitam a forma de
+// ingresso dele, no máximo 3 vezes por inscrição. Forma, dia e horário da prova não mudam. Documentos enviados e a
+// situação deles continuam como estão (são da forma de ingresso, não do curso).
+export const limiteTrocasCurso = 3;
+
+export const trocasCursoFeitas = (registros: RegistroEdicao[], numero: number) =>
+  registros.filter(
+    (r) => r.numero === numero && r.origem === 'candidato' && r.antes.oferta && r.antes.oferta !== r.depois.oferta,
+  ).length;
+
+export const validarTrocaCurso = (
+  i: Inscricao,
+  ofertaId: string,
+  { publicado, feitas }: { publicado: boolean; feitas: number },
+  agora = Date.now(),
+) => {
+  if (agora > new Date(vestibular.fimInscricoes).getTime()) {
+    throw new ErroEdicao('O curso só pode ser trocado até 20/11, às 18h.');
+  }
+  const trava = travaEdicao(i, publicado, agora);
+  if (trava) {
+    // As mesmas travas do painel, com a mensagem para o candidato
+    throw new ErroEdicao(
+      publicado
+        ? 'O resultado já foi publicado: o curso não pode mais ser trocado.'
+        : i.prova_inicio || i.prova_entregue_em
+          ? 'Você já começou a prova: o curso não pode mais ser trocado.'
+          : 'O seu horário de prova já terminou: o curso não pode mais ser trocado.',
+    );
+  }
+  if (feitas >= limiteTrocasCurso) {
+    throw new ErroEdicao(
+      `Você já trocou de curso ${limiteTrocasCurso} vezes, o limite pelo site. Para trocar de novo, fale com a Faculdade Vidal.`,
+    );
+  }
+  const oferta = ofertasAtivas.find((o) => o.id === ofertaId);
+  if (!oferta) {
+    throw new ErroEdicao('Escolha o curso.');
+  }
+  if (oferta.id === i.oferta_id) {
+    throw new ErroEdicao('Esse já é o seu curso.');
+  }
+  if (!oferta.formas.includes(i.forma as FormaId)) {
+    throw new ErroEdicao('Esse curso não aceita a sua forma de ingresso.');
+  }
+  const campos: Partial<Inscricao> = {
+    oferta_id: oferta.id,
+    curso: oferta.curso,
+    modalidade: oferta.modalidade,
+    unidade: oferta.unidade,
+    turno: oferta.turno,
+    processo_sei: oferta.processoSei,
+  };
+  return { campos, antes: resumo(i), depois: resumo({ ...i, ...campos }) };
+};
